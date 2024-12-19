@@ -1,0 +1,5 @@
+build/
+.cache
+.cache/
+*.spv
+.vs/

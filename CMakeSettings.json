@@ -1,0 +1,61 @@
+﻿{
+	"configurations": [
+		{
+			"name": "x64-Debug-clang",
+			"generator": "Ninja",
+			"configurationType": "Debug",
+			"inheritEnvironments": [ "clang_cl_x64_x64" ],
+			"buildRoot": "${projectDir}\\out\\build\\${name}",
+			"installRoot": "${projectDir}\\out\\install\\${name}",
+			"cmakeCommandArgs": "",
+			"buildCommandArgs": "",
+			"ctestCommandArgs": "",
+			"variables": [
+				{
+					"name": "CMAKE_CXX_COMPILER",
+					"type": "PATH",
+					"value": "C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\Llvm\\x64\\bin\\clang-cl.exe"
+				},
+				{
+					"name": "CMAKE_C_COMPILER",
+					"type": "PATH",
+					"value": "C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\Llvm\\x64\\bin\\clang-cl.exe"
+				}
+			]
+		},
+		{
+			"name": "x64-Release-clang",
+			"generator": "Ninja",
+			"configurationType": "Release",
+			"inheritEnvironments": [ "clang_cl_x64_x64" ],
+			"buildRoot": "${projectDir}\\out\\build\\${name}",
+			"installRoot": "${projectDir}\\out\\install\\${name}",
+			"cmakeCommandArgs": "",
+			"buildCommandArgs": "",
+			"ctestCommandArgs": "",
+			"variables": [
+				{
+					"name": "CMAKE_CXX_COMPILER",
+					"type": "PATH",
+					"value": "C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\Llvm\\x64\\bin\\clang-cl.exe"
+				},
+				{
+					"name": "CMAKE_C_COMPILER",
+					"type": "PATH",
+					"value": "C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\Llvm\\x64\\bin\\clang-cl.exe"
+				}
+			]
+		},
+		{
+			"name": "x64-Debug",
+			"generator": "Ninja",
+			"configurationType": "Debug",
+			"inheritEnvironments": [ "msvc_x64_x64" ],
+			"buildRoot": "${projectDir}\\out\\build\\${name}",
+			"installRoot": "${projectDir}\\out\\install\\${name}",
+			"cmakeCommandArgs": "",
+			"buildCommandArgs": "",
+			"ctestCommandArgs": ""
+		}
+	]
+}
