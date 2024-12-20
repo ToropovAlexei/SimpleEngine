@@ -48,12 +48,12 @@ private:
 };
 
 #ifndef NDEBUG
-#define LOG_TRACE(fmt, ...) Logger::log<LogLevel::Trace>(fmt, ##__VA_ARGS__)
-#define LOG_DEBUG(fmt, ...) Logger::log<LogLevel::Debug>(fmt, ##__VA_ARGS__)
-#define LOG_INFO(fmt, ...) Logger::log<LogLevel::Info>(fmt, ##__VA_ARGS__)
-#define LOG_WARN(fmt, ...) Logger::log<LogLevel::Warn>(fmt, ##__VA_ARGS__)
-#define LOG_ERROR(fmt, ...) Logger::log<LogLevel::Error>(fmt, ##__VA_ARGS__)
-#define LOG_FATAL(fmt, ...) Logger::log<LogLevel::Fatal>(fmt, ##__VA_ARGS__)
+#define LOG_TRACE(fmt, ...) Logger::log<LogLevel::Trace>(fmt __VA_OPT__(, ) __VA_ARGS__)
+#define LOG_DEBUG(fmt, ...) Logger::log<LogLevel::Debug>(fmt __VA_OPT__(, ) __VA_ARGS__)
+#define LOG_INFO(fmt, ...) Logger::log<LogLevel::Info>(fmt __VA_OPT__(, ) __VA_ARGS__)
+#define LOG_WARN(fmt, ...) Logger::log<LogLevel::Warn>(fmt __VA_OPT__(, ) __VA_ARGS__)
+#define LOG_ERROR(fmt, ...) Logger::log<LogLevel::Error>(fmt __VA_OPT__(, ) __VA_ARGS__)
+#define LOG_FATAL(fmt, ...) Logger::log<LogLevel::Fatal>(fmt __VA_OPT__(, ) __VA_ARGS__)
 #else
 #define LOG_TRACE(fmt, ...)
 #define LOG_DEBUG(fmt, ...)
