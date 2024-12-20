@@ -24,32 +24,53 @@ set(IMGUI_DIR ${CMAKE_CURRENT_SOURCE_DIR}/libs/imgui)
 
 file(GLOB IMGUI_SOURCES ${IMGUI_DIR}/*.cpp)
 
+find_package(SDL3 QUIET)
+if(SDL3_FOUND)
+    message(STATUS "Using SDL3 via find_package")
+endif()
+
+# 2. Try using a vendored SDL library
+if(NOT SDL3_FOUND AND EXISTS "${CMAKE_CURRENT_LIST_DIR}/SDL/CMakeLists.txt")
+    add_subdirectory(SDL EXCLUDE_FROM_ALL)
+    message(STATUS "Using SDL3 via add_subdirectory")
+    set(SDL3_FOUND TRUE)
+endif()
+
+# 3. Download SDL, and use that.
+if(NOT SDL3_FOUND)
+    set(SDL_SHARED TRUE CACHE BOOL "Build a SDL shared library (if available)")
+    set(SDL_STATIC TRUE CACHE BOOL "Build a SDL static library (if available)")
+    FetchContent_Declare(
+        SDL
+        GIT_REPOSITORY https://github.com/libsdl-org/SDL.git
+        GIT_TAG main  # Replace this with a particular git tag or git hash
+        GIT_SHALLOW TRUE
+        GIT_PROGRESS TRUE
+    )
+    message(STATUS "Using SDL3 via FetchContent")
+    FetchContent_MakeAvailable(SDL)
+    set_property(DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/_deps/sdl-src" PROPERTY EXCLUDE_FROM_ALL TRUE)
+endif()
+
 FetchContent_Declare(
-    glfw
-    GIT_REPOSITORY https://github.com/glfw/glfw.git
-    GIT_TAG 3.4
-    GIT_SHALLOW ON
+  nlohmann_json
+  GIT_REPOSITORY https://github.com/nlohmann/json.git
+  GIT_TAG master
+  GIT_SHALLOW ON
 )
 
 FetchContent_Declare(
-    nlohmann_json
-    GIT_REPOSITORY https://github.com/nlohmann/json.git
-    GIT_TAG master
-    GIT_SHALLOW ON
+  tinygltf
+  GIT_REPOSITORY https://github.com/syoyo/tinygltf.git
+  GIT_TAG release
+  GIT_SHALLOW ON
 )
 
 FetchContent_Declare(
-    tinygltf
-    GIT_REPOSITORY https://github.com/syoyo/tinygltf.git
-    GIT_TAG release
-    GIT_SHALLOW ON
-)
-
-FetchContent_Declare(
-    FastNoise2
-    GIT_REPOSITORY https://github.com/Auburn/FastNoise2.git
-    GIT_TAG master
-    GIT_SHALLOW ON
+  FastNoise2
+  GIT_REPOSITORY https://github.com/Auburn/FastNoise2.git
+  GIT_TAG master
+  GIT_SHALLOW ON
 )
 
 FetchContent_Declare(
@@ -89,21 +110,24 @@ FetchContent_Declare (
 
 find_package(Vulkan REQUIRED)
 include_directories(${Vulkan_INCLUDE_DIRS})
+
 # TODO REMOVE LIBS/VulkanMemoryAllocator
 # add_subdirectory(libs/VulkanMemoryAllocator)
 
-FetchContent_MakeAvailable(glm glfw stb tracy nlohmann_json FastNoise2 VulkanMemoryAllocator tinygltf)
+FetchContent_MakeAvailable(glm stb tracy nlohmann_json FastNoise2 VulkanMemoryAllocator tinygltf)
 
 file(GLOB_RECURSE HEADERS CONFIGURE_DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/src/*.hpp)
 file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp)
 
 add_executable(${PROJECT_NAME} ${HEADERS} ${SOURCES} ${IMGUI_SOURCES})
+target_include_directories(SimpleEngine PRIVATE ${CMAKE_SOURCE_DIR}/src)
 
 # add_definitions(-DGLM_FORCE_RADIANS -DGLM_FORCE_DEPTH_ZERO_TO_ONE -DGLFW_INCLUDE_VULKAN)
 
 # find_package(VulkanMemoryAllocator CONFIG REQUIRED PATHS /usr/include/vk_mem_alloc.h)
 find_program(GLSL_VALIDATOR NAMES glslangValidator)
-# target_link_libraries(${PROJECT_NAME} PUBLIC glfw glm::glm ${Vulkan_LIBRARIES} GPUOpen::VulkanMemoryAllocator nlohmann_json::nlohmann_json FastNoise2 tinygltf) # TracyClient
+target_link_libraries(${PROJECT_NAME} PRIVATE SDL3::SDL3)
+# target_link_libraries(${PROJECT_NAME} PUBLIC SDL3 glm::glm ${Vulkan_LIBRARIES} GPUOpen::VulkanMemoryAllocator nlohmann_json::nlohmann_json FastNoise2 tinygltf) # TracyClient
 # target_include_directories(${PROJECT_NAME} PRIVATE ${stb_SOURCE_DIR} ${IMGUI_DIR})
 # target_compile_definitions(${PROJECT_NAME} PRIVATE STB_IMAGE_IMPLEMENTATION STB_IMAGE_RESIZE_IMPLEMENTATION VULKAN_HPP_NO_CONSTRUCTORS)
 # target_link_libraries (${PROJECT_NAME} PUBLIC Tracy::TracyClient)
