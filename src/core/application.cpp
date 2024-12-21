@@ -13,16 +13,18 @@ int Application::run() {
       if (event.type == SDL_EVENT_QUIT) {
         m_running = false;
       }
+      m_keyboard.handleEvent(event);
+      m_mouse.handleEvent(event);
     }
-    m_keyboard.handleEvent(event);
-    m_mouse.handleEvent(event);
-    m_renderer.clear();
     const double now = ((double)SDL_GetTicks()) / 1000.0; /* convert from milliseconds to seconds. */
     /* choose the color for the frame we will draw. The sine wave trick makes it fade between colors smoothly. */
     const uint8_t red = static_cast<uint8_t>(255 * SDL_sin(now));
     const uint8_t green = static_cast<uint8_t>(255 * SDL_sin(now + SDL_PI_D * 2 / 3));
     const uint8_t blue = static_cast<uint8_t>(255 * SDL_sin(now + SDL_PI_D * 4 / 3));
     m_renderer.setDrawColor(red, green, blue, SDL_ALPHA_OPAQUE);
+    m_renderer.clear();
+    m_renderer.setDrawColor(50 * m_keyboard.isKeyDown(SDL_SCANCODE_LSHIFT), 0, 0, SDL_ALPHA_OPAQUE);
+    m_renderer.renderRect({m_mouse.getMouseX() - 50, m_mouse.getMouseY() - 50, 100, 100});
     m_renderer.present();
   }
 
