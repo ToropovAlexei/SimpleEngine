@@ -14,6 +14,8 @@ int Application::run() {
         m_running = false;
       }
     }
+    m_keyboard.handleEvent(event);
+    m_mouse.handleEvent(event);
     m_renderer.clear();
     const double now = ((double)SDL_GetTicks()) / 1000.0; /* convert from milliseconds to seconds. */
     /* choose the color for the frame we will draw. The sine wave trick makes it fade between colors smoothly. */
