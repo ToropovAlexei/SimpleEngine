@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.29)
+cmake_minimum_required(VERSION 3.31)
 
 include(FetchContent)
 include(FindVulkan)
@@ -7,13 +7,6 @@ project(SimpleEngine LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 26)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(GLFW_BUILD_WAYLAND ON)
-set(GLFW_BUILD_X11 OFF)
-option(PROFILING "" OFF)
-
-if(NOT PROFILING)
-  add_definitions(-U TRACY_ENABLE)
-endif()
 
 file(
   DOWNLOAD
@@ -46,19 +39,19 @@ find_program(GLSL_VALIDATOR NAMES glslangValidator)
 target_link_libraries(${PROJECT_NAME} PRIVATE SDL3::SDL3)
 
 target_compile_options(${PROJECT_NAME} PRIVATE
- -Wall               # Все базовые предупреждения
- -Wextra             # Дополнительные предупреждения
- -Wpedantic          # Соответствие стандартам C++
- -Wshadow            # Предупреждение при затенении переменных
- -Wnon-virtual-dtor  # Виртуальные деструкторы
- -Wcast-align        # Несоответствие выравнивания при приведении типов
- -Woverloaded-virtual # Перекрытие виртуальных функций
- -Wconversion        # Предупреждение при опасных преобразованиях типов
- -Wsign-conversion   # Предупреждение при изменении знака
- -Wnull-dereference  # Отключение предупреждения о разыменовании nullptr
- -Wdouble-promotion  # Автоматическое преобразование float в double
- -Wformat=2          # Проверка форматирования строк
- -Wredundant-decls   # Повторяющиеся объявления
- -Wunreachable-code  # Невыполнимый код
+ -Wall
+ -Wextra
+ -Wpedantic
+ -Wshadow
+ -Wnon-virtual-dtor
+ -Wcast-align
+ -Woverloaded-virtual
+ -Wconversion
+ -Wsign-conversion
+ -Wnull-dereference
+ -Wdouble-promotion
+ -Wformat=2
+ -Wredundant-decls
+ -Wunreachable-code
 )
 set_source_files_properties(${IMGUI_SOURCES} PROPERTIES COMPILE_FLAGS "-w")

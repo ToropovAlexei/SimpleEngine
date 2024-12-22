@@ -1,5 +1,6 @@
 #pragma once
 
+#include <core/clock.hpp>
 #include <core/input/keyboard.hpp>
 #include <core/input/mouse.hpp>
 #include <core/renderer.hpp>
@@ -16,6 +17,11 @@ public:
   int run();
 
 private:
+  void handleEvents();
+  void update(float dt);
+  void render(float dt);
+
+private:
   int m_width;
   int m_height;
   std::string m_name;
@@ -26,4 +32,5 @@ private:
   Mouse m_mouse;
   Window m_window;
   Renderer m_renderer;
+  Clock m_clock;
 };
