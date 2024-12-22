@@ -3,6 +3,7 @@
 #include "imgui_impl_sdl3.h"
 #include "imgui_impl_sdlrenderer3.h"
 #include <SDL3/SDL_events.h>
+#include <renderer/renderer_types.hpp>
 
 Application::Application(int width, int height, std::string_view name)
     : m_width{width}, m_height{height}, m_window{width, height, name}, m_renderer{m_window.getWindow()} {
@@ -25,7 +26,8 @@ Application::~Application() {
 
 int Application::run() {
   while (m_running) {
-    float dt = m_clock.getDeltaTime();
+    m_clock.update();
+    double dt = m_clock.getDeltaTime();
     handleEvents();
     update(dt);
     render(dt);
@@ -46,9 +48,11 @@ void Application::handleEvents() {
   }
 }
 
-void Application::update(float dt) {}
+void Application::update(double dt) {}
 
-void Application::render(float dt) {
+void Application::render(double dt) {
+  FrameData frameData{.deltaTime = dt};
+  m_rendererFrontend.drawFrame(frameData);
   ImGui_ImplSDLRenderer3_NewFrame();
   ImGui_ImplSDL3_NewFrame();
   ImGui::NewFrame();

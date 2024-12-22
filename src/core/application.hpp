@@ -5,7 +5,7 @@
 #include <core/input/mouse.hpp>
 #include <core/renderer.hpp>
 #include <core/window.hpp>
-#include <cstdint>
+#include <renderer/renderer_frontend.hpp>
 #include <string>
 #include <string_view>
 
@@ -18,8 +18,8 @@ public:
 
 private:
   void handleEvents();
-  void update(float dt);
-  void render(float dt);
+  void update(double dt);
+  void render(double dt);
 
 private:
   int m_width;
@@ -27,10 +27,10 @@ private:
   std::string m_name;
   bool m_running = true;
   bool m_isSuspended = false;
-  uint64_t m_lastFrameTime;
   Keyboard m_keyboard;
   Mouse m_mouse;
   Window m_window;
   Renderer m_renderer;
+  RendererFrontend m_rendererFrontend;
   Clock m_clock;
 };

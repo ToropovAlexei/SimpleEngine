@@ -8,7 +8,7 @@ Window::Window(int width, int height, std::string_view title) {
     SDL_Quit();
   }
 
-  m_window = SDL_CreateWindow(title.data(), width, height, SDL_WINDOW_RESIZABLE);
+  m_window = SDL_CreateWindow(title.data(), width, height, SDL_WINDOW_RESIZABLE | SDL_WINDOW_VULKAN);
 
   if (!m_window) {
     LOG_FATAL("Couldn't create window: {}", SDL_GetError());
