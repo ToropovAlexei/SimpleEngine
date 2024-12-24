@@ -14,7 +14,13 @@ file(
   ${CMAKE_CURRENT_BINARY_DIR}/cmake/CPM.cmake
 )
 include(${CMAKE_CURRENT_BINARY_DIR}/cmake/CPM.cmake)
-CPMAddPackage("gh:libsdl-org/SDL#main")
+CPMAddPackage(
+  NAME SDL3
+  GIT_TAG main
+  GITHUB_REPOSITORY libsdl-org/SDL
+  OPTIONS
+    "SDL_X11 OFF"
+)
 CPMAddPackage("gh:GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator#master")
 
 set(CMAKE_CXX_FLAGS_DEBUG "-g")
