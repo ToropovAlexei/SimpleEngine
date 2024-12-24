@@ -7,6 +7,7 @@ Window::Window(int width, int height, std::string_view title) {
     LOG_FATAL("Couldn't initialize SDL: {}", SDL_GetError());
     SDL_Quit();
   }
+  LOG_INFO("SDL initialized");
 
   m_window = SDL_CreateWindow(title.data(), width, height, SDL_WINDOW_RESIZABLE | SDL_WINDOW_VULKAN);
 
@@ -14,6 +15,7 @@ Window::Window(int width, int height, std::string_view title) {
     LOG_FATAL("Couldn't create window: {}", SDL_GetError());
     SDL_Quit();
   }
+  LOG_INFO("Window created");
 }
 
 Window::~Window() { SDL_DestroyWindow(m_window); }

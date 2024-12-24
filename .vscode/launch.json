@@ -8,7 +8,7 @@
       "type": "lldb",
       "request": "launch",
       "name": "Debug",
-      "program": "${workspaceFolder}/build/VulkanMine",
+      "program": "${workspaceFolder}/build/SimpleEngine",
       "args": [],
       "cwd": "${workspaceFolder}/build"
     }

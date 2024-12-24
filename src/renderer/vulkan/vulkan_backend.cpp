@@ -1,6 +1,7 @@
 #include <cstddef>
 #include <map>
 #include <set>
+#include <vulkan/vulkan.hpp>
 #include <vulkan/vulkan_core.h>
 #define VMA_IMPLEMENTATION
 #include "vulkan_backend.hpp"
@@ -65,11 +66,11 @@ void VulkanBackend::initVulkan() {
 #endif
 
   vk::ApplicationInfo appInfo = {
-      .pApplicationName = "VulkanMine",
+      .pApplicationName = "SimpleEngine",
       .applicationVersion = VK_MAKE_VERSION(1, 0, 0),
-      .pEngineName = "VulkanMineEngine",
+      .pEngineName = "SimpleEngine",
       .engineVersion = VK_MAKE_VERSION(1, 0, 0),
-      .apiVersion = VK_API_VERSION_1_4,
+      .apiVersion = VulkanBackend::VK_API_VERSION,
   };
 
   vk::InstanceCreateInfo createInfo = {
@@ -80,7 +81,7 @@ void VulkanBackend::initVulkan() {
   auto remainingRequiredExtensions = requiredExtensions;
   if (!checkInstanceExtensionSupport(remainingRequiredExtensions)) {
     for (auto &extension : remainingRequiredExtensions) {
-      LOG_FATAL("Missing required extension: {}", std::string(extension));
+      LOG_FATAL("Missing required extension: {}", extension);
     }
 
     throw std::runtime_error("Required extensions are missing!");
@@ -98,6 +99,7 @@ void VulkanBackend::initVulkan() {
 #endif
 
   m_instance = vk::createInstance(createInfo);
+  LOG_INFO("Vulkan instance created");
 }
 
 void VulkanBackend::setupDebugMessenger() {
@@ -108,13 +110,15 @@ void VulkanBackend::setupDebugMessenger() {
   dldi = vk::detail::DispatchLoaderDynamic(m_instance, vkGetInstanceProcAddr);
 
   m_debugMessenger = m_instance.createDebugUtilsMessengerEXT(createInfo, nullptr, dldi);
+  LOG_INFO("Vulkan debug messenger created");
 #endif
 }
 
 void VulkanBackend::createSurface() {
   VkSurfaceKHR surface;
-  SDL_Vulkan_CreateSurface(m_window, m_instance, m_allocator->GetAllocationCallbacks(), &surface);
+  SDL_Vulkan_CreateSurface(m_window, m_instance, nullptr, &surface);
   m_surface = vk::SurfaceKHR(surface);
+  LOG_INFO("Vulkan surface created");
 }
 
 void VulkanBackend::pickPhysicalDevice() {
@@ -124,6 +128,7 @@ void VulkanBackend::pickPhysicalDevice() {
   std::multimap<int, vk::PhysicalDevice> candidates;
 
   for (const auto &device : devices) {
+    LOG_INFO("Found device: {}", std::string(device.getProperties().deviceName));
     int score = rateDeviceSuitability(device);
     candidates.insert(std::make_pair(score, device));
   }
@@ -131,6 +136,7 @@ void VulkanBackend::pickPhysicalDevice() {
   // Check if the best candidate is suitable at all
   if (candidates.rbegin()->first > 0) {
     m_physicalDevice = candidates.rbegin()->second;
+    LOG_INFO("Selected device: {}", std::string(m_physicalDevice.getProperties().deviceName));
   } else {
     LOG_FATAL("Failed to find a suitable GPU!");
     throw std::runtime_error("Failed to find a suitable GPU!");
@@ -224,6 +230,7 @@ void VulkanBackend::createLogicalDevice() {
   m_graphicsQueue = m_device.getQueue(indices.graphicsFamily.value(), 0);
   m_transferQueue = m_device.getQueue(indices.transferFamily.value(), 0);
   m_presentQueue = m_device.getQueue(indices.presentFamily.value(), 0);
+  LOG_INFO("Vulkan logical device created");
 }
 
 void VulkanBackend::createAllocator() {
@@ -237,11 +244,18 @@ void VulkanBackend::createAllocator() {
       .pHeapSizeLimit = NULL,
       .pVulkanFunctions = NULL,
       .instance = m_instance,
-      .vulkanApiVersion = VK_API_VERSION_1_3,
+      .vulkanApiVersion = VulkanBackend::VK_API_VERSION,
       .pTypeExternalMemoryHandleTypes = NULL,
   };
 
-  vmaCreateAllocator(&allocatorInfo, &m_allocator);
+  VkResult result = vmaCreateAllocator(&allocatorInfo, &m_allocator);
+
+  if (result != VK_SUCCESS) {
+    LOG_FATAL("Failed to create Vulkan allocator");
+    throw std::runtime_error("failed to create Vulkan allocator!");
+  }
+
+  LOG_INFO("Vulkan allocator created");
 }
 
 void VulkanBackend::createCommandPool() {
@@ -253,6 +267,7 @@ void VulkanBackend::createCommandPool() {
   };
 
   m_commandPool = m_device.createCommandPool(poolInfo);
+  LOG_INFO("Vulkan command pool created");
 }
 
 void VulkanBackend::checkValidationLayerSupport() {
@@ -291,12 +306,14 @@ bool VulkanBackend::checkInstanceExtensionSupport(std::vector<const char *> &req
 
 std::vector<const char *> VulkanBackend::getRequiredExtensions() {
   uint32_t glfwExtensionCount = 0;
-  const char *const *sdlExtensions;
-  sdlExtensions = SDL_Vulkan_GetInstanceExtensions(&glfwExtensionCount);
+  const char *const *sdlExtensions = SDL_Vulkan_GetInstanceExtensions(&glfwExtensionCount);
 
   std::vector<const char *> extensions(sdlExtensions, sdlExtensions + glfwExtensionCount);
 
 #ifndef NDEBUG
+  for (auto extension : extensions) {
+    LOG_DEBUG("SDL required extension: {}", extension);
+  }
   extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
   extensions.push_back("VK_KHR_get_physical_device_properties2");
   extensions.push_back("VK_EXT_debug_report");
@@ -357,7 +374,7 @@ QueueFamilyIndices VulkanBackend::findQueueFamilies(const vk::PhysicalDevice dev
 
   vk::QueueFlags transferQueueFlags = vk::QueueFlagBits::eTransfer;
 
-  int i = 0;
+  uint32_t i = 0;
   for (const auto &queueFamily : queueFamilies) {
     if (queueFamily.queueCount > 0 && queueFamily.queueFlags & vk::QueueFlagBits::eGraphics) {
       indices.graphicsFamily = i;
@@ -369,7 +386,7 @@ QueueFamilyIndices VulkanBackend::findQueueFamilies(const vk::PhysicalDevice dev
       indices.transferFamilySupportsTimeStamps = queueFamily.timestampValidBits > 0;
     }
 
-    VkBool32 presentSupport = device.getSurfaceSupportKHR(static_cast<uint32_t>(i), m_surface);
+    vk::Bool32 presentSupport = device.getSurfaceSupportKHR(i, m_surface);
 
     if (queueFamily.queueCount > 0 && presentSupport) {
       indices.presentFamily = i;

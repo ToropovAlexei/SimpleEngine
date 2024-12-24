@@ -12,6 +12,6 @@ void RendererFrontend::endFrame() { m_backend.endFrame(); }
 
 void RendererFrontend::onResize(int width, int height) {}
 
-RendererFrontend::RendererFrontend() {}
+RendererFrontend::RendererFrontend(SDL_Window *window) : m_window{window}, m_backend{window} {}
 
 RendererFrontend::~RendererFrontend() {}

@@ -6,21 +6,22 @@
 #include <renderer/renderer_types.hpp>
 
 Application::Application(int width, int height, std::string_view name)
-    : m_width{width}, m_height{height}, m_window{width, height, name}, m_renderer{m_window.getWindow()} {
-  IMGUI_CHECKVERSION();
-  ImGui::CreateContext();
-  ImGuiIO &io = ImGui::GetIO();
-  (void)io;
-  io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
-  ImGui::StyleColorsDark();
-  ImGui_ImplSDL3_InitForSDLRenderer(m_window.getWindow(), m_renderer.getRenderer());
-  ImGui_ImplSDLRenderer3_Init(m_renderer.getRenderer());
+    : m_width{width}, m_height{height}, m_window{width, height, name},
+      m_rendererFrontend{m_window.getWindow()} {
+  // IMGUI_CHECKVERSION();
+  // ImGui::CreateContext();
+  // ImGuiIO &io = ImGui::GetIO();
+  // (void)io;
+  // io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
+  // ImGui::StyleColorsDark();
+  // ImGui_ImplSDL3_InitForSDLRenderer(m_window.getWindow(), m_renderer.getRenderer());
+  // ImGui_ImplSDLRenderer3_Init(m_renderer.getRenderer());
 }
 
 Application::~Application() {
-  ImGui_ImplSDLRenderer3_Shutdown();
-  ImGui_ImplSDL3_Shutdown();
-  ImGui::DestroyContext();
+  // ImGui_ImplSDLRenderer3_Shutdown();
+  // ImGui_ImplSDL3_Shutdown();
+  // ImGui::DestroyContext();
   SDL_Quit();
 }
 
@@ -39,7 +40,7 @@ int Application::run() {
 void Application::handleEvents() {
   SDL_Event event;
   while (SDL_PollEvent(&event)) {
-    ImGui_ImplSDL3_ProcessEvent(&event);
+    // ImGui_ImplSDL3_ProcessEvent(&event);
     if (event.type == SDL_EVENT_QUIT) {
       m_running = false;
     }
@@ -52,20 +53,20 @@ void Application::update(double dt) {}
 
 void Application::render(double dt) {
   FrameData frameData{.deltaTime = dt};
-  m_rendererFrontend.drawFrame(frameData);
-  ImGui_ImplSDLRenderer3_NewFrame();
-  ImGui_ImplSDL3_NewFrame();
-  ImGui::NewFrame();
-  ImGui::ShowDemoWindow();
-  ImGui::Render();
+  // m_rendererFrontend.drawFrame(frameData);
+  // ImGui_ImplSDLRenderer3_NewFrame();
+  // ImGui_ImplSDL3_NewFrame();
+  // ImGui::NewFrame();
+  // ImGui::ShowDemoWindow();
+  // ImGui::Render();
   const double now = (static_cast<double>(m_clock.getElapsedTime()));
   const uint8_t red = static_cast<uint8_t>(255 * SDL_sin(now));
   const uint8_t green = static_cast<uint8_t>(255 * SDL_sin(now + SDL_PI_D * 2 / 3));
   const uint8_t blue = static_cast<uint8_t>(255 * SDL_sin(now + SDL_PI_D * 4 / 3));
-  m_renderer.setDrawColor(red, green, blue, SDL_ALPHA_OPAQUE);
-  m_renderer.clear();
-  m_renderer.setDrawColor(50 * m_keyboard.isKeyDown(SDL_SCANCODE_LSHIFT), 0, 0, SDL_ALPHA_OPAQUE);
-  m_renderer.renderRect({m_mouse.getMouseX() - 50, m_mouse.getMouseY() - 50, 100, 100});
-  ImGui_ImplSDLRenderer3_RenderDrawData(ImGui::GetDrawData(), m_renderer.getRenderer());
-  m_renderer.present();
+  // m_renderer.setDrawColor(red, green, blue, SDL_ALPHA_OPAQUE);
+  // m_renderer.clear();
+  // m_renderer.setDrawColor(50 * m_keyboard.isKeyDown(SDL_SCANCODE_LSHIFT), 0, 0, SDL_ALPHA_OPAQUE);
+  // m_renderer.renderRect({m_mouse.getMouseX() - 50, m_mouse.getMouseY() - 50, 100, 100});
+  // ImGui_ImplSDLRenderer3_RenderDrawData(ImGui::GetDrawData(), m_renderer.getRenderer());
+  // m_renderer.present();
 }

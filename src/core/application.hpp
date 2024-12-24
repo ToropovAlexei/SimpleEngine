@@ -30,7 +30,7 @@ private:
   Keyboard m_keyboard;
   Mouse m_mouse;
   Window m_window;
-  Renderer m_renderer;
+  // Renderer m_renderer;
   RendererFrontend m_rendererFrontend;
   Clock m_clock;
 };
