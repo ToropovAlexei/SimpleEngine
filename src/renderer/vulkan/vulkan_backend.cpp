@@ -30,6 +30,8 @@ static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(VkDebugUtilsMessageSeverityF
     LOG_WARN("Validation Warning: {}", pCallbackData->pMessage);
   } else if (messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT) {
     LOG_INFO("Validation Info: {}", pCallbackData->pMessage);
+  } else if (messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT) {
+    LOG_TRACE("Validation Verbose: {}", pCallbackData->pMessage);
   } else {
     LOG_INFO("Validation Debug: {}", pCallbackData->pMessage);
   }
@@ -148,14 +150,25 @@ void VulkanBackend::createLogicalDevice() {
 
   std::vector<vk::DeviceQueueCreateInfo> queueCreateInfos;
   std::set<uint32_t> uniqueQueueFamilies = {indices.graphicsFamily.value(), indices.transferFamily.value(),
-                                            indices.presentFamily.value()};
+                                            indices.presentFamily.value(), indices.computeFamily.value()};
+
+  LOG_INFO("Unique queue families: {}", uniqueQueueFamilies.size());
+  if (uniqueQueueFamilies.size() < 2) {
+    LOG_WARN("One queue family is used for all operations"); // TODO not sure if this is correct
+  }
+  LOG_INFO("Graphics queue family: {}", indices.graphicsFamily.value());
+  LOG_INFO("Transfer queue family: {}", indices.transferFamily.value());
+  LOG_INFO("Present queue family: {}", indices.presentFamily.value());
+  LOG_INFO("Compute queue family: {}", indices.computeFamily.value());
 
   float queuePriority = 1.0f;
   for (uint32_t queueFamily : uniqueQueueFamilies) {
     queueCreateInfos.push_back({.queueFamilyIndex = queueFamily, .queueCount = 1, .pQueuePriorities = &queuePriority});
   }
 
-  vk::PhysicalDeviceHostQueryResetFeaturesEXT resetFeatures = {.hostQueryReset = VK_TRUE};
+  vk::PhysicalDeviceHostQueryResetFeaturesEXT resetFeatures = {
+      .hostQueryReset = VK_TRUE,
+  };
 
   vk::PhysicalDeviceShaderSubgroupExtendedTypesFeaturesKHR shaderSubgroupFeatures = {
       .pNext = &resetFeatures,
@@ -376,6 +389,7 @@ QueueFamilyIndices VulkanBackend::findQueueFamilies(const vk::PhysicalDevice dev
 
   uint32_t i = 0;
   for (const auto &queueFamily : queueFamilies) {
+    // TODO Check this loop for correct queue families
     if (queueFamily.queueCount > 0 && queueFamily.queueFlags & vk::QueueFlagBits::eGraphics) {
       indices.graphicsFamily = i;
       indices.graphicsFamilySupportsTimeStamps = queueFamily.timestampValidBits > 0;
@@ -384,6 +398,11 @@ QueueFamilyIndices VulkanBackend::findQueueFamilies(const vk::PhysicalDevice dev
     if (queueFamily.queueCount > 0 && (queueFamily.queueFlags & transferQueueFlags) == transferQueueFlags) {
       indices.transferFamily = i;
       indices.transferFamilySupportsTimeStamps = queueFamily.timestampValidBits > 0;
+    }
+
+    if (queueFamily.queueCount > 0 && queueFamily.queueFlags & vk::QueueFlagBits::eCompute) {
+      indices.computeFamily = i;
+      indices.computeFamilySupportsTimeStamps = queueFamily.timestampValidBits > 0;
     }
 
     vk::Bool32 presentSupport = device.getSurfaceSupportKHR(i, m_surface);

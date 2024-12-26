@@ -22,7 +22,13 @@ struct QueueFamilyIndices {
   std::optional<uint32_t> presentFamily;
   bool presentFamilySupportsTimeStamps;
 
-  bool IsComplete() { return graphicsFamily.has_value() && transferFamily.has_value() && presentFamily.has_value(); }
+  std::optional<uint32_t> computeFamily;
+  bool computeFamilySupportsTimeStamps;
+
+  bool IsComplete() {
+    return graphicsFamily.has_value() && transferFamily.has_value() && presentFamily.has_value() &&
+           computeFamily.has_value();
+  }
 };
 
 class VulkanBackend {
@@ -88,6 +94,8 @@ private:
 
   vk::CommandPool m_commandPool;
 
+#ifndef NDEBUG
   vk::DebugUtilsMessengerEXT m_debugMessenger;
+#endif
   vk::detail::DispatchLoaderDynamic dldi;
 };
