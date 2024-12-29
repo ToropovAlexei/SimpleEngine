@@ -13,4 +13,46 @@ VulkanBackend::VulkanBackend(SDL_Window *window) : m_window{window} {
                                                                   });
 }
 
-VulkanBackend::~VulkanBackend() {}
+void VulkanBackend::beginSwapChainRenderPass(vk::CommandBuffer commandBuffer) {
+  assert(m_isFrameStarted && "Can't call beginSwapChainRenderPass "
+                             "without first calling beginFrame");
+  assert(commandBuffer == getCurrentCommandBuffer() &&
+         "Can't call beginSwapChainRenderPass on a different command buffer");
+
+  std::array<vk::ClearValue, 2> clearValues{};
+  clearValues[0] = vk::ClearValue(vk::ClearColorValue(std::array<float, 4>{0.0f, 0.0f, 0.0f, 1.0f}));
+  clearValues[1] = vk::ClearValue({.depthStencil = {1.0f, 0}});
+
+  vk::RenderPassBeginInfo renderPassInfo = {
+      .renderPass = m_swapChain->getRenderPass(),
+      .framebuffer = m_swapChain->getFrameBuffer(m_currentImageIndex),
+      .renderArea =
+          {
+              .offset = {0, 0},
+              .extent = m_swapChain->getSwapChainExtent(),
+          },
+      .clearValueCount = static_cast<uint32_t>(clearValues.size()),
+      .pClearValues = clearValues.data(),
+  };
+
+  commandBuffer.beginRenderPass(renderPassInfo, vk::SubpassContents::eInline);
+
+  vk::Viewport viewport{.x = 0.0f,
+                        .y = 0.0f,
+                        .width = static_cast<float>(m_swapChain->getSwapChainExtent().width),
+                        .height = static_cast<float>(m_swapChain->getSwapChainExtent().height),
+                        .minDepth = 0.0f,
+                        .maxDepth = 1.0f};
+  vk::Rect2D scissor{{0, 0}, m_swapChain->getSwapChainExtent()};
+  commandBuffer.setViewport(0, viewport);
+  commandBuffer.setScissor(0, scissor);
+}
+
+void VulkanBackend::endSwapChainRenderPass(vk::CommandBuffer commandBuffer) {
+  assert(m_isFrameStarted && "Can't call endSwapChainRenderPass "
+                             "without first calling beginFrame");
+  assert(commandBuffer == getCurrentCommandBuffer() &&
+         "Can't call endSwapChainRenderPass on a different command buffer");
+
+  commandBuffer.endRenderPass();
+}

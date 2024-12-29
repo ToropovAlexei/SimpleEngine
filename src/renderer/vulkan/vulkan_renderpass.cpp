@@ -36,12 +36,10 @@ VulkanRenderPass::VulkanRenderPass(VulkanDevice device, vk::Format swapchainForm
   vk::SubpassDependency dependency{
       .srcSubpass = vk::SubpassExternal,
       .dstSubpass = 0,
-      .srcStageMask =
-          vk::PipelineStageFlagBits::eColorAttachmentOutput | vk::PipelineStageFlagBits::eEarlyFragmentTests,
-      .dstStageMask =
-          vk::PipelineStageFlagBits::eColorAttachmentOutput | vk::PipelineStageFlagBits::eEarlyFragmentTests,
+      .srcStageMask = vk::PipelineStageFlagBits::eColorAttachmentOutput,
+      .dstStageMask = vk::PipelineStageFlagBits::eColorAttachmentOutput,
       .srcAccessMask = vk::AccessFlagBits::eNone,
-      .dstAccessMask = vk::AccessFlagBits::eColorAttachmentWrite | vk::AccessFlagBits::eDepthStencilAttachmentWrite,
+      .dstAccessMask = vk::AccessFlagBits::eColorAttachmentRead | vk::AccessFlagBits::eColorAttachmentWrite,
   };
 
   std::array<vk::AttachmentDescription, 2> attachments = {colorAttachment, depthAttachment};
