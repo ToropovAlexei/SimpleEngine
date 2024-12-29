@@ -1,7 +1,7 @@
 #pragma once
 
-#include "renderer/vulkan/vulkan_backend.hpp"
 #include <SDL3/SDL_video.h>
+#include <renderer/vulkan/vulkan_backend.hpp>
 
 class RendererBackend {
 public:
