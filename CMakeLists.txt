@@ -19,7 +19,7 @@ CPMAddPackage(
   GIT_TAG main
   GITHUB_REPOSITORY libsdl-org/SDL
   OPTIONS
-    "SDL_X11 OFF"
+    "SDL_X11 ON"
 )
 CPMAddPackage("gh:GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator#master")
 

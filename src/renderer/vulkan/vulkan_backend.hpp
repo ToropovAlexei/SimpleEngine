@@ -7,9 +7,15 @@
 class VulkanBackend {
 public:
   VulkanBackend(SDL_Window *window);
+  ~VulkanBackend();
 
   void beginSwapChainRenderPass(vk::CommandBuffer commandBuffer);
   void endSwapChainRenderPass(vk::CommandBuffer commandBuffer);
+
+  vk::CommandBuffer beginFrame();
+  void endFrame();
+
+  void onResize(int width, int height);
 
   inline float getAspectRatio() const { return m_swapChain->extentAspectRatio(); }
   inline VkRenderPass getSwapChainRenderPass() const { return m_swapChain->getRenderPass(); }
@@ -23,6 +29,10 @@ public:
   }
 
 private:
+  void recreateSwapChain();
+  void createCommandBuffers();
+
+private:
   SDL_Window *m_window;
   std::unique_ptr<VulkanDevice> m_device;
   std::unique_ptr<VulkanSwapchain> m_swapChain;
@@ -30,5 +40,8 @@ private:
 
   uint32_t m_currentImageIndex = 0;
   size_t m_currentFrameIndex = 0;
+
+#ifndef NDEBUG
   bool m_isFrameStarted = false;
+#endif
 };

@@ -17,8 +17,7 @@ VulkanCommandBuffer::~VulkanCommandBuffer() {
 void VulkanCommandBuffer::begin(vk::CommandBufferUsageFlags usage) {
   SE_ASSERT(!isRecording, "Command buffer is already recording.");
 
-  vk::CommandBufferBeginInfo beginInfo;
-  beginInfo.setFlags(usage);
+  vk::CommandBufferBeginInfo beginInfo{.flags = usage};
 
   m_commandBuffer.begin(beginInfo);
 #ifndef NDEBUG

@@ -54,8 +54,11 @@ VulkanDevice::VulkanDevice(SDL_Window *window) : m_window{window} {
 
 VulkanDevice::~VulkanDevice() {
   vmaDestroyAllocator(m_allocator);
+  LOG_INFO("VMA allocator destroyed");
   m_device.destroyCommandPool(m_commandPool);
+  LOG_INFO("Vulkan command pool destroyed");
   m_device.destroy();
+  LOG_INFO("Vulkan device destroyed");
 
 #ifndef NDEBUG
   if (m_debugMessenger) {
@@ -64,7 +67,9 @@ VulkanDevice::~VulkanDevice() {
 #endif
 
   m_instance.destroySurfaceKHR(m_surface);
+  LOG_INFO("Vulkan surface destroyed");
   m_instance.destroy();
+  LOG_INFO("Vulkan instance destroyed");
 }
 
 void VulkanDevice::initVulkan() {

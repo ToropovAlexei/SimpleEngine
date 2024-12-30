@@ -10,8 +10,10 @@ public:
 
   bool beginFrame();
   void endFrame();
+  void onResize(int width, int height);
 
 private:
   SDL_Window *m_window;
   VulkanBackend m_backend;
+  vk::CommandBuffer m_commandBuffer;
 };

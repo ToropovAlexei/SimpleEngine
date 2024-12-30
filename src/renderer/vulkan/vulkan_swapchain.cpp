@@ -7,6 +7,7 @@
 #include <cstring>
 #include <limits>
 #include <stdexcept>
+#include <vulkan/vulkan_core.h>
 
 VulkanSwapchain::VulkanSwapchain(VulkanDevice *device, vk::Extent2D extent) : m_device{device}, m_windowExtent{extent} {
   init();
@@ -18,7 +19,7 @@ VulkanSwapchain::VulkanSwapchain(VulkanDevice *device, vk::Extent2D extent,
     : m_device{device}, m_windowExtent{extent}, m_oldSwapChain{previousSwapChain} {
   init();
   m_oldSwapChain = nullptr;
-  LOG_INFO("Vulkan swapchain recreated");
+  LOG_INFO("Vulkan swapchain created");
 }
 
 void VulkanSwapchain::init() {
@@ -58,6 +59,8 @@ VulkanSwapchain::~VulkanSwapchain() {
     m_device->getDevice().destroySemaphore(m_imageAvailableSemaphores[i]);
     m_device->getDevice().destroyFence(m_inFlightFences[i]);
   }
+
+  LOG_INFO("Vulkan swapchain destroyed");
 }
 
 vk::Result VulkanSwapchain::acquireNextImage(uint32_t *imageIndex) {
@@ -117,12 +120,13 @@ vk::Result VulkanSwapchain::submitCommandBuffers(const vk::CommandBuffer *buffer
   presentInfo.pSwapchains = swapChains;
 
   presentInfo.pImageIndices = imageIndex;
+  VkPresentInfoKHR rawPresentInfo = presentInfo;
 
-  auto result = m_device->getPresentQueue().presentKHR(presentInfo);
+  auto result = vkQueuePresentKHR(m_device->getPresentQueue(), &rawPresentInfo);
 
   m_currentFrame = (m_currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
 
-  return result;
+  return vk::Result(result);
 }
 
 void VulkanSwapchain::createSwapChain() {

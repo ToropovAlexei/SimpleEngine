@@ -22,7 +22,7 @@ Application::~Application() {
   // ImGui_ImplSDLRenderer3_Shutdown();
   // ImGui_ImplSDL3_Shutdown();
   // ImGui::DestroyContext();
-  SDL_Quit();
+  // SDL_Quit();
 }
 
 int Application::run() {
@@ -44,6 +44,11 @@ void Application::handleEvents() {
     if (event.type == SDL_EVENT_QUIT) {
       m_running = false;
     }
+    if (event.type == SDL_EVENT_WINDOW_RESIZED) {
+      m_width = event.window.data1;
+      m_height = event.window.data2;
+      m_rendererFrontend.onResize(m_width, m_height);
+    }
     m_keyboard.handleEvent(event);
     m_mouse.handleEvent(event);
   }
@@ -53,7 +58,7 @@ void Application::update(double dt) {}
 
 void Application::render(double dt) {
   FrameData frameData{.deltaTime = dt};
-  // m_rendererFrontend.drawFrame(frameData);
+  m_rendererFrontend.drawFrame(frameData);
   // ImGui_ImplSDLRenderer3_NewFrame();
   // ImGui_ImplSDL3_NewFrame();
   // ImGui::NewFrame();
