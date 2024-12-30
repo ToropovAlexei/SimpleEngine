@@ -72,7 +72,9 @@ private:
 
   void checkValidationLayerSupport();
   bool checkInstanceExtensionSupport(std::vector<const char *> &requiredExtensions);
+#ifndef NDEBUG
   void populateDebugMessengerCreateInfo(vk::DebugUtilsMessengerCreateInfoEXT &createInfo);
+#endif
   std::vector<const char *> getRequiredExtensions();
   int rateDeviceSuitability(const vk::PhysicalDevice &device);
   bool checkDeviceExtensionSupport(const vk::PhysicalDevice &device);
@@ -96,6 +98,6 @@ private:
 
 #ifndef NDEBUG
   vk::DebugUtilsMessengerEXT m_debugMessenger;
-#endif
   vk::detail::DispatchLoaderDynamic dldi;
+#endif
 };

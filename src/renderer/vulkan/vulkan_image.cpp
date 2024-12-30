@@ -1,5 +1,5 @@
 #include "vulkan_image.hpp"
-#include "core/logger.hpp"
+#include <core/exception.hpp>
 #include <vulkan/vulkan.hpp>
 
 VulkanImage::VulkanImage(VulkanDevice device, uint32_t width, uint32_t height, vk::Format format,
@@ -24,8 +24,7 @@ VulkanImage::VulkanImage(VulkanDevice device, uint32_t width, uint32_t height, v
   VkResult res = vmaCreateImage(m_device.getAllocator(), reinterpret_cast<const VkImageCreateInfo *>(&imageCreateInfo),
                                 &allocCreateInfo, &vkImage, &allocation, nullptr);
   if (res != VK_SUCCESS) {
-    LOG_FATAL("Failed to create Vulkan image");
-    throw std::runtime_error("Failed to create Vulkan image");
+    SE_THROW_ERROR("Failed to create Vulkan image");
   }
 
   m_image = vk::Image(vkImage);

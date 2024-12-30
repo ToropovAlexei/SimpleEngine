@@ -3,11 +3,11 @@
 #include "imgui_impl_sdl3.h"
 #include "imgui_impl_sdlrenderer3.h"
 #include <SDL3/SDL_events.h>
+#include <core/assert.hpp>
 #include <renderer/renderer_types.hpp>
 
 Application::Application(int width, int height, std::string_view name)
-    : m_width{width}, m_height{height}, m_window{width, height, name},
-      m_rendererFrontend{m_window.getWindow()} {
+    : m_width{width}, m_height{height}, m_window{width, height, name}, m_rendererFrontend{m_window.getWindow()} {
   // IMGUI_CHECKVERSION();
   // ImGui::CreateContext();
   // ImGuiIO &io = ImGui::GetIO();

@@ -6,6 +6,7 @@
 #define VMA_IMPLEMENTATION
 #include "vulkan_device.hpp"
 #include <SDL3/SDL_vulkan.h>
+#include <core/exception.hpp>
 #include <core/logger.hpp>
 #include <vulkan/vulkan_enums.hpp>
 #include <vulkan/vulkan_handles.hpp>
@@ -20,6 +21,7 @@ const std::vector<const char *> deviceExtensions = {
     "VK_EXT_descriptor_indexing", "VK_EXT_sampler_filter_minmax", "VK_EXT_host_query_reset",
     "VK_KHR_shader_float16_int8", "VK_KHR_shader_atomic_int64"};
 
+#ifndef NDEBUG
 static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
                                                     [[maybe_unused]] VkDebugUtilsMessageTypeFlagsEXT messageType,
                                                     const VkDebugUtilsMessengerCallbackDataEXT *pCallbackData,
@@ -38,6 +40,7 @@ static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(VkDebugUtilsMessageSeverityF
 
   return VK_FALSE;
 }
+#endif
 
 VulkanDevice::VulkanDevice(SDL_Window *window) : m_window{window} {
   initVulkan();
@@ -54,9 +57,11 @@ VulkanDevice::~VulkanDevice() {
   m_device.destroyCommandPool(m_commandPool);
   m_device.destroy();
 
+#ifndef NDEBUG
   if (m_debugMessenger) {
     m_instance.destroyDebugUtilsMessengerEXT(m_debugMessenger, nullptr, dldi);
   }
+#endif
 
   m_instance.destroySurfaceKHR(m_surface);
   m_instance.destroy();
@@ -86,7 +91,7 @@ void VulkanDevice::initVulkan() {
       LOG_FATAL("Missing required extension: {}", extension);
     }
 
-    throw std::runtime_error("Required extensions are missing!");
+    SE_THROW_ERROR("Required extensions are missing!");
   }
 
   createInfo.enabledExtensionCount = static_cast<uint32_t>(requiredExtensions.size());
@@ -140,8 +145,7 @@ void VulkanDevice::pickPhysicalDevice() {
     m_physicalDevice = candidates.rbegin()->second;
     LOG_INFO("Selected device: {}", std::string(m_physicalDevice.getProperties().deviceName));
   } else {
-    LOG_FATAL("Failed to find a suitable GPU!");
-    throw std::runtime_error("Failed to find a suitable GPU!");
+    SE_THROW_ERROR("Failed to find a suitable GPU!");
   }
 }
 
@@ -264,8 +268,7 @@ void VulkanDevice::createAllocator() {
   VkResult result = vmaCreateAllocator(&allocatorInfo, &m_allocator);
 
   if (result != VK_SUCCESS) {
-    LOG_FATAL("Failed to create Vulkan allocator");
-    throw std::runtime_error("failed to create Vulkan allocator!");
+    SE_THROW_ERROR("Failed to create Vulkan allocator");
   }
 
   LOG_INFO("Vulkan allocator created");
@@ -335,6 +338,7 @@ std::vector<const char *> VulkanDevice::getRequiredExtensions() {
   return extensions;
 };
 
+#ifndef NDEBUG
 void VulkanDevice::populateDebugMessengerCreateInfo(vk::DebugUtilsMessengerCreateInfoEXT &createInfo) {
   createInfo.messageSeverity = vk::DebugUtilsMessageSeverityFlagBitsEXT::eVerbose |
                                vk::DebugUtilsMessageSeverityFlagBitsEXT::eWarning |
@@ -344,6 +348,7 @@ void VulkanDevice::populateDebugMessengerCreateInfo(vk::DebugUtilsMessengerCreat
                            vk::DebugUtilsMessageTypeFlagBitsEXT::ePerformance;
   createInfo.pfnUserCallback = debugCallback;
 }
+#endif
 
 int VulkanDevice::rateDeviceSuitability(const vk::PhysicalDevice &device) {
   vk::PhysicalDeviceProperties deviceProperties = device.getProperties();
@@ -440,8 +445,7 @@ void VulkanDevice::createImageWithInfo(const vk::ImageCreateInfo &imageInfo, Vma
   VkImage rawImage;
   if (vmaCreateImage(m_allocator, reinterpret_cast<const VkImageCreateInfo *>(&imageCreateInfo), &allocCreateInfo,
                      &rawImage, &imageAllocation, nullptr) != VK_SUCCESS) {
-    LOG_FATAL("Failed to create image!");
-    throw std::runtime_error("Failed to create image!");
+    SE_THROW_ERROR("Failed to create image with VMA!");
   }
 
   image = vk::Image(rawImage);
@@ -459,8 +463,7 @@ vk::Format VulkanDevice::findSupportedFormat(const std::vector<vk::Format> &cand
       return format;
     }
   }
-  LOG_FATAL("Failed to find supported format!");
-  throw std::runtime_error("failed to find supported format!");
+  SE_THROW_ERROR("Failed to find supported format!");
 }
 
 vk::CommandBuffer VulkanDevice::beginSingleTimeCommands() {
@@ -499,8 +502,7 @@ void VulkanDevice::createBuffer(vk::DeviceSize size, vk::BufferUsageFlags usage,
   VkBuffer bufferRaw;
   if (vmaCreateBuffer(m_allocator, reinterpret_cast<const VkBufferCreateInfo *>(&bufferInfo), &allocCreateInfo,
                       &bufferRaw, &allocation, &allocInfo) != VK_SUCCESS) {
-    LOG_FATAL("Failed to create buffer with VMA!");
-    throw std::runtime_error("failed to create buffer with VMA!");
+    SE_THROW_ERROR("Failed to create buffer with VMA!");
   }
 
   buffer = vk::Buffer(bufferRaw);
