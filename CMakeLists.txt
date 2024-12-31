@@ -22,6 +22,14 @@ CPMAddPackage(
     "SDL_X11 ON"
 )
 CPMAddPackage("gh:GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator#master")
+CPMAddPackage(
+  NAME glm
+  GIT_TAG master
+  GITHUB_REPOSITORY g-truc/glm
+  OPTIONS
+   "GLM_ENABLE_CXX_20 ON"
+   "GLM_ENABLE_SIMD_AVX2 ON"
+)
 
 set(CMAKE_CXX_FLAGS_DEBUG "-g")
 set(CMAKE_CXX_FLAGS_RELEASE "-O3 -march=native -flto -funroll-loops -fomit-frame-pointer -ffast-math -fvisibility=hidden -DNDEBUG")
@@ -43,8 +51,13 @@ target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_SOURCE_DIR}/src)
 target_include_directories(${PROJECT_NAME} PRIVATE ${IMGUI_DIR})
 
 find_program(GLSL_VALIDATOR NAMES glslangValidator)
-target_link_libraries(${PROJECT_NAME} PRIVATE ${Vulkan_LIBRARIES} SDL3::SDL3 GPUOpen::VulkanMemoryAllocator)
-target_compile_definitions(${PROJECT_NAME} PRIVATE STB_IMAGE_IMPLEMENTATION STB_IMAGE_RESIZE_IMPLEMENTATION VULKAN_HPP_NO_CONSTRUCTORS)
+target_link_libraries(${PROJECT_NAME} PRIVATE ${Vulkan_LIBRARIES} SDL3::SDL3 GPUOpen::VulkanMemoryAllocator glm)
+target_compile_definitions(${PROJECT_NAME} PRIVATE
+  STB_IMAGE_IMPLEMENTATION
+  STB_IMAGE_RESIZE_IMPLEMENTATION
+  VULKAN_HPP_NO_CONSTRUCTORS
+  GLM_FORCE_DEPTH_ZERO_TO_ONE
+  GLM_FORCE_RADIANS)
 
 target_compile_options(${PROJECT_NAME} PRIVATE
  -Wall
