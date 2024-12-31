@@ -1,4 +1,5 @@
 #include "vulkan_image.hpp"
+#include "renderer/vulkan/vulkan_utils.hpp"
 #include <core/exception.hpp>
 #include <vulkan/vulkan.hpp>
 
@@ -21,11 +22,8 @@ VulkanImage::VulkanImage(VulkanDevice device, uint32_t width, uint32_t height, v
 
   VkImage vkImage;
   VmaAllocation allocation;
-  VkResult res = vmaCreateImage(m_device.getAllocator(), reinterpret_cast<const VkImageCreateInfo *>(&imageCreateInfo),
-                                &allocCreateInfo, &vkImage, &allocation, nullptr);
-  if (res != VK_SUCCESS) {
-    SE_THROW_ERROR("Failed to create Vulkan image");
-  }
+  VK_CHECK_RESULT(vmaCreateImage(m_device.getAllocator(), reinterpret_cast<const VkImageCreateInfo *>(&imageCreateInfo),
+                                 &allocCreateInfo, &vkImage, &allocation, nullptr));
 
   m_image = vk::Image(vkImage);
   m_allocationHandle = allocation;

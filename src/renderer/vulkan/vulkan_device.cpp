@@ -1,3 +1,4 @@
+#include "renderer/vulkan/vulkan_utils.hpp"
 #include <cstddef>
 #include <map>
 #include <set>
@@ -270,11 +271,7 @@ void VulkanDevice::createAllocator() {
       .pTypeExternalMemoryHandleTypes = NULL,
   };
 
-  VkResult result = vmaCreateAllocator(&allocatorInfo, &m_allocator);
-
-  if (result != VK_SUCCESS) {
-    SE_THROW_ERROR("Failed to create Vulkan allocator");
-  }
+  VK_CHECK_RESULT(vmaCreateAllocator(&allocatorInfo, &m_allocator));
 
   LOG_INFO("Vulkan allocator created");
 }
@@ -448,10 +445,8 @@ void VulkanDevice::createImageWithInfo(const vk::ImageCreateInfo &imageInfo, Vma
   allocCreateInfo.usage = memoryUsage;
 
   VkImage rawImage;
-  if (vmaCreateImage(m_allocator, reinterpret_cast<const VkImageCreateInfo *>(&imageCreateInfo), &allocCreateInfo,
-                     &rawImage, &imageAllocation, nullptr) != VK_SUCCESS) {
-    SE_THROW_ERROR("Failed to create image with VMA!");
-  }
+  VK_CHECK_RESULT(vmaCreateImage(m_allocator, reinterpret_cast<const VkImageCreateInfo *>(&imageCreateInfo),
+                                 &allocCreateInfo, &rawImage, &imageAllocation, nullptr));
 
   image = vk::Image(rawImage);
 }
@@ -505,10 +500,8 @@ void VulkanDevice::createBuffer(vk::DeviceSize size, vk::BufferUsageFlags usage,
   allocCreateInfo.flags = flags;
 
   VkBuffer bufferRaw;
-  if (vmaCreateBuffer(m_allocator, reinterpret_cast<const VkBufferCreateInfo *>(&bufferInfo), &allocCreateInfo,
-                      &bufferRaw, &allocation, &allocInfo) != VK_SUCCESS) {
-    SE_THROW_ERROR("Failed to create buffer with VMA!");
-  }
+  VK_CHECK_RESULT(vmaCreateBuffer(m_allocator, reinterpret_cast<const VkBufferCreateInfo *>(&bufferInfo),
+                                  &allocCreateInfo, &bufferRaw, &allocation, &allocInfo));
 
   buffer = vk::Buffer(bufferRaw);
 }
