@@ -2,9 +2,11 @@
 #include "SDL3/SDL_video.h"
 #include "core/logger.hpp"
 #include "renderer/vulkan/vulkan_swapchain.hpp"
+#include "renderer/vulkan/vulkan_utils.hpp"
 #include <core/assert.hpp>
 #include <core/exception.hpp>
 #include <cstdint>
+#include <vulkan/vulkan_core.h>
 #include <vulkan/vulkan_structs.hpp>
 
 VulkanBackend::VulkanBackend(SDL_Window *window) : m_window{window} {
@@ -15,21 +17,24 @@ VulkanBackend::VulkanBackend(SDL_Window *window) : m_window{window} {
 
 VulkanBackend::~VulkanBackend() {
   m_device->getDevice().waitIdle();
-  m_device->getDevice().freeCommandBuffers(m_device->getCommandPool(), m_commandBuffers);
+  vkFreeCommandBuffers(m_device->getDevice(), m_device->getCommandPool(),
+                       static_cast<uint32_t>(m_commandBuffers.size()), m_commandBuffers.data());
   m_commandBuffers.clear();
 }
 
-void VulkanBackend::beginSwapChainRenderPass(vk::CommandBuffer commandBuffer) {
+void VulkanBackend::beginSwapChainRenderPass(VkCommandBuffer commandBuffer) {
   assert(m_isFrameStarted && "Can't call beginSwapChainRenderPass "
                              "without first calling beginFrame");
   assert(commandBuffer == getCurrentCommandBuffer() &&
          "Can't call beginSwapChainRenderPass on a different command buffer");
 
-  std::array<vk::ClearValue, 2> clearValues{};
+  std::array<VkClearValue, 2> clearValues{};
   clearValues[0] = vk::ClearValue(vk::ClearColorValue(std::array<float, 4>{0.0f, 0.0f, 0.0f, 1.0f}));
   clearValues[1] = vk::ClearValue({.depthStencil = {1.0f, 0}});
 
-  vk::RenderPassBeginInfo renderPassInfo = {
+  VkRenderPassBeginInfo renderPassInfo = {
+      .sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO,
+      .pNext = nullptr,
       .renderPass = m_swapChain->getRenderPass(),
       .framebuffer = m_swapChain->getFrameBuffer(m_currentImageIndex),
       .renderArea =
@@ -41,29 +46,29 @@ void VulkanBackend::beginSwapChainRenderPass(vk::CommandBuffer commandBuffer) {
       .pClearValues = clearValues.data(),
   };
 
-  commandBuffer.beginRenderPass(renderPassInfo, vk::SubpassContents::eInline);
+  vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 
-  vk::Viewport viewport{.x = 0.0f,
-                        .y = 0.0f,
-                        .width = static_cast<float>(m_swapChain->getSwapChainExtent().width),
-                        .height = static_cast<float>(m_swapChain->getSwapChainExtent().height),
-                        .minDepth = 0.0f,
-                        .maxDepth = 1.0f};
-  vk::Rect2D scissor{{0, 0}, m_swapChain->getSwapChainExtent()};
-  commandBuffer.setViewport(0, viewport);
-  commandBuffer.setScissor(0, scissor);
+  VkViewport viewport{.x = 0.0f,
+                      .y = 0.0f,
+                      .width = static_cast<float>(m_swapChain->getSwapChainExtent().width),
+                      .height = static_cast<float>(m_swapChain->getSwapChainExtent().height),
+                      .minDepth = 0.0f,
+                      .maxDepth = 1.0f};
+  VkRect2D scissor{{0, 0}, m_swapChain->getSwapChainExtent()};
+  vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
+  vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
 }
 
-void VulkanBackend::endSwapChainRenderPass(vk::CommandBuffer commandBuffer) {
+void VulkanBackend::endSwapChainRenderPass(VkCommandBuffer commandBuffer) {
   assert(m_isFrameStarted && "Can't call endSwapChainRenderPass "
                              "without first calling beginFrame");
   assert(commandBuffer == getCurrentCommandBuffer() &&
          "Can't call endSwapChainRenderPass on a different command buffer");
 
-  commandBuffer.endRenderPass();
+  vkCmdEndRenderPass(commandBuffer);
 }
 
-vk::CommandBuffer VulkanBackend::beginFrame() {
+VkCommandBuffer VulkanBackend::beginFrame() {
   SE_ASSERT(!m_isFrameStarted, "Can't call beginFrame while already in progress");
 
   auto result = m_swapChain->acquireNextImage(&m_currentImageIndex);
@@ -82,9 +87,9 @@ vk::CommandBuffer VulkanBackend::beginFrame() {
 #endif
 
   auto commandBuffer = getCurrentCommandBuffer();
-  vk::CommandBufferBeginInfo beginInfo{};
-
-  commandBuffer.begin(beginInfo);
+  VkCommandBufferBeginInfo beginInfo{};
+  beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+  VK_CHECK_RESULT(vkBeginCommandBuffer(commandBuffer, &beginInfo));
 
   return commandBuffer;
 }
@@ -93,7 +98,7 @@ void VulkanBackend::endFrame() {
   assert(m_isFrameStarted && "Can't call endFrame while frame not in progress");
 
   auto commandBuffer = getCurrentCommandBuffer();
-  commandBuffer.end();
+  vkEndCommandBuffer(commandBuffer);
 
   auto result = m_swapChain->submitCommandBuffers(&commandBuffer, &m_currentImageIndex);
 
@@ -133,13 +138,15 @@ void VulkanBackend::recreateSwapChain() {
 void VulkanBackend::createCommandBuffers() {
   m_commandBuffers.resize(VulkanSwapchain::MAX_FRAMES_IN_FLIGHT);
 
-  vk::CommandBufferAllocateInfo allocInfo = {
+  VkCommandBufferAllocateInfo allocInfo = {
+      .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
+      .pNext = nullptr,
       .commandPool = m_device->getCommandPool(),
-      .level = vk::CommandBufferLevel::ePrimary,
+      .level = VK_COMMAND_BUFFER_LEVEL_PRIMARY,
       .commandBufferCount = static_cast<uint32_t>(m_commandBuffers.size()),
   };
 
-  m_commandBuffers = m_device->getDevice().allocateCommandBuffers(allocInfo);
+  VK_CHECK_RESULT(vkAllocateCommandBuffers(m_device->getDevice(), &allocInfo, m_commandBuffers.data()));
 }
 
 void VulkanBackend::onResize(int width, int height) {

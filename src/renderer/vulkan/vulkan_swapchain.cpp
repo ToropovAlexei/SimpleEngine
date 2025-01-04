@@ -78,7 +78,7 @@ vk::Result VulkanSwapchain::acquireNextImage(uint32_t *imageIndex) {
   return result;
 }
 
-vk::Result VulkanSwapchain::submitCommandBuffers(const vk::CommandBuffer *buffers, uint32_t *imageIndex) {
+vk::Result VulkanSwapchain::submitCommandBuffers(const VkCommandBuffer *buffers, uint32_t *imageIndex) {
   if (m_imagesInFlight[*imageIndex] != VK_NULL_HANDLE) {
     auto result = m_device->getDevice().waitForFences(1, &m_imagesInFlight[*imageIndex], VK_TRUE, UINT64_MAX);
     if (result != vk::Result::eSuccess) {
@@ -87,10 +87,11 @@ vk::Result VulkanSwapchain::submitCommandBuffers(const vk::CommandBuffer *buffer
   }
   m_imagesInFlight[*imageIndex] = m_inFlightFences[m_currentFrame];
 
-  vk::SubmitInfo submitInfo = {};
+  VkSubmitInfo submitInfo = {};
+  submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
 
-  vk::Semaphore waitSemaphores[] = {m_imageAvailableSemaphores[m_currentFrame]};
-  vk::PipelineStageFlags waitStages[] = {vk::PipelineStageFlagBits::eColorAttachmentOutput};
+  VkSemaphore waitSemaphores[] = {m_imageAvailableSemaphores[m_currentFrame]};
+  VkPipelineStageFlags waitStages[] = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
   submitInfo.waitSemaphoreCount = 1;
   submitInfo.pWaitSemaphores = waitSemaphores;
   submitInfo.pWaitDstStageMask = waitStages;
@@ -98,7 +99,7 @@ vk::Result VulkanSwapchain::submitCommandBuffers(const vk::CommandBuffer *buffer
   submitInfo.commandBufferCount = 1;
   submitInfo.pCommandBuffers = buffers;
 
-  vk::Semaphore signalSemaphores[] = {m_renderFinishedSemaphores[m_currentFrame]};
+  VkSemaphore signalSemaphores[] = {m_renderFinishedSemaphores[m_currentFrame]};
   submitInfo.signalSemaphoreCount = 1;
   submitInfo.pSignalSemaphores = signalSemaphores;
 
@@ -108,21 +109,20 @@ vk::Result VulkanSwapchain::submitCommandBuffers(const vk::CommandBuffer *buffer
     throw std::runtime_error("failed to reset fence!");
   }
 
-  m_device->getGraphicsQueue().submit(submitInfo, m_inFlightFences[m_currentFrame]);
+  vkQueueSubmit(m_device->getGraphicsQueue(), 1, &submitInfo, m_inFlightFences[m_currentFrame]);
 
-  vk::PresentInfoKHR presentInfo = {
-      .waitSemaphoreCount = 1,
-      .pWaitSemaphores = signalSemaphores,
-  };
+  VkPresentInfoKHR presentInfo = {};
+  presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
+  presentInfo.waitSemaphoreCount = 1;
+  presentInfo.pWaitSemaphores = signalSemaphores;
 
-  vk::SwapchainKHR swapChains[] = {m_swapChain};
+  VkSwapchainKHR swapChains[] = {m_swapChain};
   presentInfo.swapchainCount = 1;
   presentInfo.pSwapchains = swapChains;
 
   presentInfo.pImageIndices = imageIndex;
-  VkPresentInfoKHR rawPresentInfo = presentInfo;
 
-  auto result = vkQueuePresentKHR(m_device->getPresentQueue(), &rawPresentInfo);
+  auto result = vkQueuePresentKHR(m_device->getPresentQueue(), &presentInfo);
 
   m_currentFrame = (m_currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
 

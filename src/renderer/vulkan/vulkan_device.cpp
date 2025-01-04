@@ -56,8 +56,9 @@ VulkanDevice::VulkanDevice(SDL_Window *window) : m_window{window} {
 VulkanDevice::~VulkanDevice() {
   vmaDestroyAllocator(m_allocator);
   LOG_INFO("VMA allocator destroyed");
-  m_device.destroyCommandPool(m_commandPool);
-  LOG_INFO("Vulkan command pool destroyed");
+  vkDestroyCommandPool(m_device, m_graphicsCommandPool, nullptr);
+  vkDestroyCommandPool(m_device, m_transferCommandPool, nullptr);
+  LOG_INFO("Vulkan command pools destroyed");
   m_device.destroy();
   LOG_INFO("Vulkan device destroyed");
 
@@ -279,13 +280,30 @@ void VulkanDevice::createAllocator() {
 void VulkanDevice::createCommandPool() {
   QueueFamilyIndices queueFamilyIndices = findQueueFamilies(m_physicalDevice);
 
-  vk::CommandPoolCreateInfo poolInfo = {
-      .flags = vk::CommandPoolCreateFlagBits::eResetCommandBuffer,
-      .queueFamilyIndex = queueFamilyIndices.graphicsFamily.value(),
-  };
+  // Create graphics command pool
+  {
+    VkCommandPoolCreateInfo poolInfo = {
+        .sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO,
+        .pNext = NULL,
+        .flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT, // Optional
+        .queueFamilyIndex = queueFamilyIndices.graphicsFamily.value(),
+    };
 
-  m_commandPool = m_device.createCommandPool(poolInfo);
-  LOG_INFO("Vulkan command pool created");
+    VK_CHECK_RESULT(vkCreateCommandPool(m_device, &poolInfo, nullptr, &m_graphicsCommandPool));
+  }
+
+  // Create transfer command pool
+  {
+    VkCommandPoolCreateInfo poolInfo = {
+        .sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO,
+        .pNext = NULL,
+        .flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT, // Optional
+        .queueFamilyIndex = queueFamilyIndices.transferFamily.value(),
+    };
+
+    VK_CHECK_RESULT(vkCreateCommandPool(m_device, &poolInfo, nullptr, &m_transferCommandPool));
+  }
+  LOG_INFO("Vulkan command pools created");
 }
 
 void VulkanDevice::checkValidationLayerSupport() {
@@ -466,28 +484,41 @@ vk::Format VulkanDevice::findSupportedFormat(const std::vector<vk::Format> &cand
   SE_THROW_ERROR("Failed to find supported format!");
 }
 
-vk::CommandBuffer VulkanDevice::beginSingleTimeCommands() {
-  vk::CommandBufferAllocateInfo allocInfo = {
-      .commandPool = m_commandPool, .level = vk::CommandBufferLevel::ePrimary, .commandBufferCount = 1};
+VkCommandBuffer VulkanDevice::beginSingleTimeCommands() {
+  VkCommandBufferAllocateInfo allocInfo = {
+      .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
+      .pNext = nullptr,
+      .commandPool = m_graphicsCommandPool,
+      .level = VK_COMMAND_BUFFER_LEVEL_PRIMARY,
+      .commandBufferCount = 1,
+  };
+  VkCommandBuffer commandBuffer;
+  VK_CHECK_RESULT(vkAllocateCommandBuffers(m_device, &allocInfo, &commandBuffer));
 
-  vk::CommandBuffer commandBuffer = m_device.allocateCommandBuffers(allocInfo).front();
+  VkCommandBufferBeginInfo beginInfo = {
+      .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
+      .pNext = nullptr,
+      .flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT,
+      .pInheritanceInfo = nullptr,
+  };
 
-  vk::CommandBufferBeginInfo beginInfo = {.flags = vk::CommandBufferUsageFlagBits::eOneTimeSubmit};
+  VK_CHECK_RESULT(vkBeginCommandBuffer(commandBuffer, &beginInfo));
 
-  commandBuffer.begin(beginInfo);
   return commandBuffer;
 }
 
-void VulkanDevice::endSingleTimeCommands(vk::CommandBuffer commandBuffer) {
-  commandBuffer.end();
+void VulkanDevice::endSingleTimeCommands(VkCommandBuffer commandBuffer) {
+  vkEndCommandBuffer(commandBuffer);
 
-  vk::SubmitInfo submitInfo = {};
-  submitInfo.setCommandBuffers(commandBuffer);
+  VkSubmitInfo submitInfo = {};
+  submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+  submitInfo.commandBufferCount = 1;
+  submitInfo.pCommandBuffers = &commandBuffer;
 
-  m_graphicsQueue.submit(submitInfo, nullptr);
-  m_graphicsQueue.waitIdle();
+  vkQueueSubmit(m_graphicsQueue, 1, &submitInfo, VK_NULL_HANDLE);
+  vkQueueWaitIdle(m_graphicsQueue);
 
-  m_device.freeCommandBuffers(m_commandPool, commandBuffer);
+  vkFreeCommandBuffers(m_device, m_graphicsCommandPool, 1, &commandBuffer);
 }
 
 void VulkanDevice::createBuffer(vk::DeviceSize size, vk::BufferUsageFlags usage, VmaMemoryUsage memoryUsage,

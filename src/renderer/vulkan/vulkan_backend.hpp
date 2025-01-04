@@ -9,10 +9,10 @@ public:
   VulkanBackend(SDL_Window *window);
   ~VulkanBackend();
 
-  void beginSwapChainRenderPass(vk::CommandBuffer commandBuffer);
-  void endSwapChainRenderPass(vk::CommandBuffer commandBuffer);
+  void beginSwapChainRenderPass(VkCommandBuffer commandBuffer);
+  void endSwapChainRenderPass(VkCommandBuffer commandBuffer);
 
-  vk::CommandBuffer beginFrame();
+  VkCommandBuffer beginFrame();
   void endFrame();
 
   void onResize(int width, int height);
@@ -23,7 +23,7 @@ public:
     assert(m_isFrameStarted && "Cannog get frame index when frame not in progress");
     return m_currentFrameIndex;
   }
-  inline vk::CommandBuffer getCurrentCommandBuffer() {
+  inline VkCommandBuffer getCurrentCommandBuffer() {
     assert(m_isFrameStarted && "Cannog get command buffer when frame not in progress");
     return m_commandBuffers[m_currentFrameIndex];
   }
@@ -36,7 +36,7 @@ private:
   SDL_Window *m_window;
   std::unique_ptr<VulkanDevice> m_device;
   std::unique_ptr<VulkanSwapchain> m_swapChain;
-  std::vector<vk::CommandBuffer> m_commandBuffers;
+  std::vector<VkCommandBuffer> m_commandBuffers;
 
   uint32_t m_currentImageIndex = 0;
   size_t m_currentFrameIndex = 0;

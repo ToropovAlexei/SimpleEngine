@@ -4,6 +4,7 @@
 #include <vector>
 #include <vk_mem_alloc.h>
 #include <vulkan/vulkan.hpp>
+#include <vulkan/vulkan_core.h>
 #include <vulkan/vulkan_handles.hpp>
 
 struct SwapChainSupportDetails {
@@ -43,19 +44,19 @@ public:
   inline vk::Device &getDevice() noexcept { return m_device; };
   inline vk::PhysicalDevice &getPhysicalDevice() noexcept { return m_physicalDevice; };
   inline vk::SurfaceKHR &getSurface() noexcept { return m_surface; };
-  inline vk::Queue &getGraphicsQueue() noexcept { return m_graphicsQueue; };
-  inline vk::Queue &getTransferQueue() noexcept { return m_transferQueue; };
-  inline vk::Queue &getPresentQueue() noexcept { return m_presentQueue; };
+  inline VkQueue &getGraphicsQueue() noexcept { return m_graphicsQueue; };
+  inline VkQueue &getTransferQueue() noexcept { return m_transferQueue; };
+  inline VkQueue &getPresentQueue() noexcept { return m_presentQueue; };
   inline VmaAllocator &getAllocator() noexcept { return m_allocator; };
-  inline vk::CommandPool &getCommandPool() noexcept { return m_commandPool; };
+  inline VkCommandPool &getCommandPool() noexcept { return m_graphicsCommandPool; };
   inline vk::Instance &getInstance() noexcept { return m_instance; };
 
   void createImageWithInfo(const vk::ImageCreateInfo &imageInfo, VmaMemoryUsage memoryUsage, vk::Image &image,
                            VmaAllocation &imageAllocation);
   vk::Format findSupportedFormat(const std::vector<vk::Format> &candidates, vk::ImageTiling tiling,
                                  vk::FormatFeatureFlags features);
-  vk::CommandBuffer beginSingleTimeCommands();
-  void endSingleTimeCommands(vk::CommandBuffer commandBuffer);
+  VkCommandBuffer beginSingleTimeCommands();
+  void endSingleTimeCommands(VkCommandBuffer commandBuffer);
   void createBuffer(vk::DeviceSize size, vk::BufferUsageFlags usage, VmaMemoryUsage memoryUsage,
                     VmaAllocationCreateFlags flags, vk::Buffer &buffer, VmaAllocation &allocation,
                     VmaAllocationInfo &allocInfo);
@@ -90,11 +91,12 @@ private:
   vk::Device m_device;
   VmaAllocator m_allocator;
 
-  vk::Queue m_graphicsQueue;
-  vk::Queue m_transferQueue;
-  vk::Queue m_presentQueue;
+  VkQueue m_graphicsQueue;
+  VkQueue m_transferQueue;
+  VkQueue m_presentQueue;
 
-  vk::CommandPool m_commandPool;
+  VkCommandPool m_graphicsCommandPool = VK_NULL_HANDLE;
+  VkCommandPool m_transferCommandPool = VK_NULL_HANDLE;
 
 #ifndef NDEBUG
   vk::DebugUtilsMessengerEXT m_debugMessenger;

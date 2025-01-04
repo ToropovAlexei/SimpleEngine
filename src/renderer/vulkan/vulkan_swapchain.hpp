@@ -24,7 +24,7 @@ public:
   vk::Format findDepthFormat();
 
   vk::Result acquireNextImage(uint32_t *imageIndex);
-  vk::Result submitCommandBuffers(const vk::CommandBuffer *buffers, uint32_t *imageIndex);
+  vk::Result submitCommandBuffers(const VkCommandBuffer *buffers, uint32_t *imageIndex);
 
   inline bool compareSwapFormats(const VulkanSwapchain &other) const noexcept {
     return other.m_swapChainDepthFormat == m_swapChainDepthFormat &&
