@@ -16,7 +16,7 @@ VulkanBackend::VulkanBackend(SDL_Window *window) : m_window{window} {
 }
 
 VulkanBackend::~VulkanBackend() {
-  m_device->getDevice().waitIdle();
+  vkDeviceWaitIdle(m_device->getDevice());
   vkFreeCommandBuffers(m_device->getDevice(), m_device->getCommandPool(),
                        static_cast<uint32_t>(m_commandBuffers.size()), m_commandBuffers.data());
   m_commandBuffers.clear();
@@ -73,12 +73,12 @@ VkCommandBuffer VulkanBackend::beginFrame() {
 
   auto result = m_swapChain->acquireNextImage(&m_currentImageIndex);
 
-  if (result == vk::Result::eErrorOutOfDateKHR) {
+  if (result == VK_ERROR_OUT_OF_DATE_KHR) {
     recreateSwapChain();
     return nullptr;
   }
 
-  if (result != vk::Result::eSuccess && result != vk::Result::eSuboptimalKHR) {
+  if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR) {
     SE_THROW_ERROR("Failed to acquire swap chain image!");
   }
 
@@ -102,9 +102,9 @@ void VulkanBackend::endFrame() {
 
   auto result = m_swapChain->submitCommandBuffers(&commandBuffer, &m_currentImageIndex);
 
-  if (result == vk::Result::eErrorOutOfDateKHR || result == vk::Result::eSuboptimalKHR) {
+  if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR) {
     recreateSwapChain();
-  } else if (result != vk::Result::eSuccess) {
+  } else if (result != VK_SUCCESS) {
     SE_THROW_ERROR("Failed to present swap chain image!");
   }
 
@@ -119,8 +119,8 @@ void VulkanBackend::recreateSwapChain() {
   int width = 0;
   int height = 0;
   SDL_GetWindowSize(m_window, &width, &height);
-  vk::Extent2D extent = {static_cast<uint32_t>(width), static_cast<uint32_t>(height)};
-  m_device->getDevice().waitIdle();
+  VkExtent2D extent = {static_cast<uint32_t>(width), static_cast<uint32_t>(height)};
+  vkDeviceWaitIdle(m_device->getDevice());
 
   if (m_swapChain == nullptr) {
     m_swapChain = std::make_unique<VulkanSwapchain>(m_device.get(), extent);
@@ -152,6 +152,6 @@ void VulkanBackend::createCommandBuffers() {
 void VulkanBackend::onResize(int width, int height) {
   if (width == 0 || height == 0)
     return;
-  m_device->getDevice().waitIdle();
+  vkDeviceWaitIdle(m_device->getDevice());
   recreateSwapChain();
 }

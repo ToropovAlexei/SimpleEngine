@@ -15,5 +15,5 @@ public:
 private:
   SDL_Window *m_window;
   VulkanBackend m_backend;
-  vk::CommandBuffer m_commandBuffer;
+  VkCommandBuffer m_commandBuffer;
 };

@@ -1,7 +1,9 @@
 #include "renderer/vulkan/vulkan_utils.hpp"
 #include <cstddef>
+#include <cstdint>
 #include <map>
 #include <set>
+#include <vector>
 #include <vulkan/vulkan.hpp>
 #include <vulkan/vulkan_core.h>
 #define VMA_IMPLEMENTATION
@@ -59,18 +61,20 @@ VulkanDevice::~VulkanDevice() {
   vkDestroyCommandPool(m_device, m_graphicsCommandPool, nullptr);
   vkDestroyCommandPool(m_device, m_transferCommandPool, nullptr);
   LOG_INFO("Vulkan command pools destroyed");
-  m_device.destroy();
+  vkDestroyDevice(m_device, nullptr);
   LOG_INFO("Vulkan device destroyed");
 
 #ifndef NDEBUG
   if (m_debugMessenger) {
-    m_instance.destroyDebugUtilsMessengerEXT(m_debugMessenger, nullptr, dldi);
+    auto func =
+        (PFN_vkDestroyDebugUtilsMessengerEXT)vkGetInstanceProcAddr(m_instance, "vkDestroyDebugUtilsMessengerEXT");
+    func(m_instance, m_debugMessenger, nullptr);
   }
 #endif
 
-  m_instance.destroySurfaceKHR(m_surface);
+  vkDestroySurfaceKHR(m_instance, m_surface, nullptr);
   LOG_INFO("Vulkan surface destroyed");
-  m_instance.destroy();
+  vkDestroyInstance(m_instance, nullptr);
   LOG_INFO("Vulkan instance destroyed");
 }
 
@@ -79,7 +83,9 @@ void VulkanDevice::initVulkan() {
   checkValidationLayerSupport();
 #endif
 
-  vk::ApplicationInfo appInfo = {
+  VkApplicationInfo appInfo = {
+      .sType = VK_STRUCTURE_TYPE_APPLICATION_INFO,
+      .pNext = nullptr,
       .pApplicationName = "SimpleEngine",
       .applicationVersion = VK_MAKE_VERSION(1, 0, 0),
       .pEngineName = "SimpleEngine",
@@ -87,9 +93,9 @@ void VulkanDevice::initVulkan() {
       .apiVersion = VulkanDevice::VK_API_VERSION,
   };
 
-  vk::InstanceCreateInfo createInfo = {
-      .pApplicationInfo = &appInfo,
-  };
+  VkInstanceCreateInfo createInfo = {};
+  createInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
+  createInfo.pApplicationInfo = &appInfo;
 
   auto requiredExtensions = getRequiredExtensions();
   auto remainingRequiredExtensions = requiredExtensions;
@@ -105,25 +111,24 @@ void VulkanDevice::initVulkan() {
   createInfo.ppEnabledExtensionNames = requiredExtensions.data();
 
 #ifndef NDEBUG
-  vk::DebugUtilsMessengerCreateInfoEXT debugCreateInfo;
   createInfo.enabledLayerCount = static_cast<uint32_t>(validationLayers.size());
   createInfo.ppEnabledLayerNames = validationLayers.data();
+  VkDebugUtilsMessengerCreateInfoEXT debugCreateInfo;
   populateDebugMessengerCreateInfo(debugCreateInfo);
   createInfo.pNext = &debugCreateInfo;
 #endif
 
-  m_instance = vk::createInstance(createInfo);
+  VK_CHECK_RESULT(vkCreateInstance(&createInfo, nullptr, &m_instance));
   LOG_INFO("Vulkan instance created");
 }
 
 void VulkanDevice::setupDebugMessenger() {
 #ifndef NDEBUG
-  vk::DebugUtilsMessengerCreateInfoEXT createInfo;
+  VkDebugUtilsMessengerCreateInfoEXT createInfo;
   populateDebugMessengerCreateInfo(createInfo);
 
-  dldi = vk::detail::DispatchLoaderDynamic(m_instance, vkGetInstanceProcAddr);
-
-  m_debugMessenger = m_instance.createDebugUtilsMessengerEXT(createInfo, nullptr, dldi);
+  auto fn = (PFN_vkCreateDebugUtilsMessengerEXT)vkGetInstanceProcAddr(m_instance, "vkCreateDebugUtilsMessengerEXT");
+  fn(m_instance, &createInfo, nullptr, &m_debugMessenger);
   LOG_INFO("Vulkan debug messenger created");
 #endif
 }
@@ -136,13 +141,19 @@ void VulkanDevice::createSurface() {
 }
 
 void VulkanDevice::pickPhysicalDevice() {
-  auto devices = m_instance.enumeratePhysicalDevices();
+  uint32_t deviceCount = 0;
+  std::vector<VkPhysicalDevice> devices;
+  vkEnumeratePhysicalDevices(m_instance, &deviceCount, nullptr);
+  devices.resize(deviceCount);
+  vkEnumeratePhysicalDevices(m_instance, &deviceCount, devices.data());
 
   // Use an ordered map to automatically sort candidates by increasing score
   std::multimap<int, vk::PhysicalDevice> candidates;
 
   for (const auto &device : devices) {
-    LOG_INFO("Found device: {}", std::string(device.getProperties().deviceName));
+    VkPhysicalDeviceProperties props;
+    vkGetPhysicalDeviceProperties(device, &props);
+    LOG_INFO("Found device: {}", std::string(props.deviceName));
     int score = rateDeviceSuitability(device);
     candidates.insert(std::make_pair(score, device));
   }
@@ -150,7 +161,9 @@ void VulkanDevice::pickPhysicalDevice() {
   // Check if the best candidate is suitable at all
   if (candidates.rbegin()->first > 0) {
     m_physicalDevice = candidates.rbegin()->second;
-    LOG_INFO("Selected device: {}", std::string(m_physicalDevice.getProperties().deviceName));
+    VkPhysicalDeviceProperties props;
+    vkGetPhysicalDeviceProperties(m_physicalDevice, &props);
+    LOG_INFO("Selected device: {}", std::string(props.deviceName));
   } else {
     SE_THROW_ERROR("Failed to find a suitable GPU!");
   }
@@ -159,7 +172,7 @@ void VulkanDevice::pickPhysicalDevice() {
 void VulkanDevice::createLogicalDevice() {
   QueueFamilyIndices indices = findQueueFamilies(m_physicalDevice);
 
-  std::vector<vk::DeviceQueueCreateInfo> queueCreateInfos;
+  std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
   std::set<uint32_t> uniqueQueueFamilies = {indices.graphicsFamily.value(), indices.transferFamily.value(),
                                             indices.presentFamily.value(), indices.computeFamily.value()};
 
@@ -174,61 +187,65 @@ void VulkanDevice::createLogicalDevice() {
 
   float queuePriority = 1.0f;
   for (uint32_t queueFamily : uniqueQueueFamilies) {
-    queueCreateInfos.push_back({.queueFamilyIndex = queueFamily, .queueCount = 1, .pQueuePriorities = &queuePriority});
+    queueCreateInfos.push_back({.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO,
+                                .pNext = nullptr,
+                                .flags = 0,
+                                .queueFamilyIndex = queueFamily,
+                                .queueCount = 1,
+                                .pQueuePriorities = &queuePriority});
   }
 
-  vk::PhysicalDeviceHostQueryResetFeaturesEXT resetFeatures = {
+  VkPhysicalDeviceHostQueryResetFeaturesEXT resetFeatures = {
+      .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_HOST_QUERY_RESET_FEATURES,
+      .pNext = nullptr,
       .hostQueryReset = VK_TRUE,
   };
 
-  vk::PhysicalDeviceShaderSubgroupExtendedTypesFeaturesKHR shaderSubgroupFeatures = {
+  VkPhysicalDeviceShaderSubgroupExtendedTypesFeaturesKHR shaderSubgroupFeatures = {
+      .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_SUBGROUP_EXTENDED_TYPES_FEATURES_KHR,
       .pNext = &resetFeatures,
       .shaderSubgroupExtendedTypes = VK_TRUE,
   };
 
-  vk::PhysicalDeviceDescriptorIndexingFeaturesEXT descriptorIndexingFeatures = {
-      .pNext = &shaderSubgroupFeatures,
-      .shaderSampledImageArrayNonUniformIndexing = VK_TRUE,
-      .runtimeDescriptorArray = VK_TRUE,
-  };
+  VkPhysicalDeviceDescriptorIndexingFeaturesEXT descriptorIndexingFeatures = {};
+  descriptorIndexingFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_FEATURES_EXT;
+  descriptorIndexingFeatures.pNext = &shaderSubgroupFeatures;
+  descriptorIndexingFeatures.shaderSampledImageArrayNonUniformIndexing = VK_TRUE;
+  descriptorIndexingFeatures.runtimeDescriptorArray = VK_TRUE;
 
-  vk::PhysicalDeviceShaderAtomicInt64FeaturesKHR atomicInt64Features = {
-      .pNext = &descriptorIndexingFeatures,
-      .shaderBufferInt64Atomics = VK_TRUE,
-  };
+  VkPhysicalDeviceShaderAtomicInt64FeaturesKHR atomicInt64Features = {};
+  atomicInt64Features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_ATOMIC_INT64_FEATURES_KHR;
+  atomicInt64Features.pNext = &descriptorIndexingFeatures;
+  atomicInt64Features.shaderBufferInt64Atomics = VK_TRUE;
 
-  vk::PhysicalDeviceFloat16Int8FeaturesKHR float16Int8Features = {
-      .pNext = &atomicInt64Features,
-      .shaderFloat16 = VK_TRUE,
-  };
+  VkPhysicalDeviceFloat16Int8FeaturesKHR float16Int8Features = {};
+  float16Int8Features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FLOAT16_INT8_FEATURES_KHR;
+  float16Int8Features.pNext = &atomicInt64Features;
+  float16Int8Features.shaderFloat16 = VK_TRUE;
 
-  vk::PhysicalDeviceFeatures2 deviceFeatures = {
-      .pNext = &float16Int8Features,
-      .features =
-          {
-              .independentBlend = VK_TRUE,
-              .geometryShader = VK_TRUE,
-              .multiDrawIndirect = VK_TRUE,
-              .drawIndirectFirstInstance = VK_TRUE,
-              .depthClamp = VK_TRUE,
-              .fillModeNonSolid = VK_TRUE,
-              .samplerAnisotropy = VK_TRUE,
-              .vertexPipelineStoresAndAtomics = VK_TRUE,
-              .fragmentStoresAndAtomics = VK_TRUE,
-              .shaderImageGatherExtended = VK_TRUE,
-              .shaderStorageImageReadWithoutFormat = VK_TRUE,
-              .shaderInt64 = VK_TRUE,
-          },
-  };
+  VkPhysicalDeviceFeatures2 deviceFeatures = {};
+  deviceFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
+  deviceFeatures.pNext = &float16Int8Features;
+  deviceFeatures.features.independentBlend = VK_TRUE;
+  deviceFeatures.features.geometryShader = VK_TRUE;
+  deviceFeatures.features.multiDrawIndirect = VK_TRUE;
+  deviceFeatures.features.drawIndirectFirstInstance = VK_TRUE;
+  deviceFeatures.features.depthClamp = VK_TRUE;
+  deviceFeatures.features.fillModeNonSolid = VK_TRUE;
+  deviceFeatures.features.samplerAnisotropy = VK_TRUE;
+  deviceFeatures.features.vertexPipelineStoresAndAtomics = VK_TRUE;
+  deviceFeatures.features.fragmentStoresAndAtomics = VK_TRUE;
+  deviceFeatures.features.shaderImageGatherExtended = VK_TRUE;
+  deviceFeatures.features.shaderStorageImageReadWithoutFormat = VK_TRUE;
+  deviceFeatures.features.shaderInt64 = VK_TRUE;
   // TODO Check if device features are supported
   // checkDeviceFeatureSupport(m_physicalDevice, deviceFeatures);
 
-  vk::DeviceCreateInfo createInfo = {
-      .pNext = &deviceFeatures,
-      .queueCreateInfoCount = static_cast<uint32_t>(queueCreateInfos.size()),
-      .pQueueCreateInfos = queueCreateInfos.data(),
-      .pEnabledFeatures = NULL,
-  };
+  VkDeviceCreateInfo createInfo = {};
+  createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
+  createInfo.pNext = &deviceFeatures;
+  createInfo.queueCreateInfoCount = static_cast<uint32_t>(queueCreateInfos.size());
+  createInfo.pQueueCreateInfos = queueCreateInfos.data();
 
   std::vector<const char *> enabledExtensions;
   for (const char *extension : deviceExtensions) {
@@ -250,10 +267,10 @@ void VulkanDevice::createLogicalDevice() {
   createInfo.enabledLayerCount = 0;
 #endif
 
-  m_device = m_physicalDevice.createDevice(createInfo);
-  m_graphicsQueue = m_device.getQueue(indices.graphicsFamily.value(), 0);
-  m_transferQueue = m_device.getQueue(indices.transferFamily.value(), 0);
-  m_presentQueue = m_device.getQueue(indices.presentFamily.value(), 0);
+  VK_CHECK_RESULT(vkCreateDevice(m_physicalDevice, &createInfo, nullptr, &m_device));
+  vkGetDeviceQueue(m_device, indices.graphicsFamily.value(), 0, &m_graphicsQueue);
+  vkGetDeviceQueue(m_device, indices.transferFamily.value(), 0, &m_transferQueue);
+  vkGetDeviceQueue(m_device, indices.presentFamily.value(), 0, &m_presentQueue);
   LOG_INFO("Vulkan logical device created");
 }
 
@@ -359,13 +376,15 @@ std::vector<const char *> VulkanDevice::getRequiredExtensions() {
 };
 
 #ifndef NDEBUG
-void VulkanDevice::populateDebugMessengerCreateInfo(vk::DebugUtilsMessengerCreateInfoEXT &createInfo) {
-  createInfo.messageSeverity = vk::DebugUtilsMessageSeverityFlagBitsEXT::eVerbose |
-                               vk::DebugUtilsMessageSeverityFlagBitsEXT::eWarning |
-                               vk::DebugUtilsMessageSeverityFlagBitsEXT::eError;
-  createInfo.messageType = vk::DebugUtilsMessageTypeFlagBitsEXT::eGeneral |
-                           vk::DebugUtilsMessageTypeFlagBitsEXT::eValidation |
-                           vk::DebugUtilsMessageTypeFlagBitsEXT::ePerformance;
+void VulkanDevice::populateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT &createInfo) {
+  createInfo = {};
+  createInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
+  createInfo.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT |
+                               VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT |
+                               VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
+  createInfo.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT |
+                           VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT |
+                           VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
   createInfo.pfnUserCallback = debugCallback;
 }
 #endif
@@ -448,36 +467,46 @@ QueueFamilyIndices VulkanDevice::findQueueFamilies(const vk::PhysicalDevice devi
 }
 
 SwapChainSupportDetails VulkanDevice::getSwapChainSupport() {
+  VkSurfaceCapabilitiesKHR capabilities;
+  vkGetPhysicalDeviceSurfaceCapabilitiesKHR(m_physicalDevice, m_surface, &capabilities);
+
+  std::vector<VkSurfaceFormatKHR> formats;
+  uint32_t formatsSize;
+  vkGetPhysicalDeviceSurfaceFormatsKHR(m_physicalDevice, m_surface, &formatsSize, nullptr);
+  formats.resize(formatsSize);
+  vkGetPhysicalDeviceSurfaceFormatsKHR(m_physicalDevice, m_surface, &formatsSize, formats.data());
+
+  std::vector<VkPresentModeKHR> presentModes;
+  uint32_t presentModesSize;
+  vkGetPhysicalDeviceSurfacePresentModesKHR(m_physicalDevice, m_surface, &presentModesSize, nullptr);
+  presentModes.resize(presentModesSize);
+  vkGetPhysicalDeviceSurfacePresentModesKHR(m_physicalDevice, m_surface, &presentModesSize, presentModes.data());
+
   return {
-      .capabilities = m_physicalDevice.getSurfaceCapabilitiesKHR(m_surface),
-      .formats = m_physicalDevice.getSurfaceFormatsKHR(m_surface),
-      .presentModes = m_physicalDevice.getSurfacePresentModesKHR(m_surface),
+      .capabilities = capabilities,
+      .formats = formats,
+      .presentModes = presentModes,
   };
 }
 
-void VulkanDevice::createImageWithInfo(const vk::ImageCreateInfo &imageInfo, VmaMemoryUsage memoryUsage,
-                                       vk::Image &image, VmaAllocation &imageAllocation) {
-  vk::ImageCreateInfo imageCreateInfo = imageInfo;
+void VulkanDevice::createImageWithInfo(const VkImageCreateInfo &imageInfo, VmaMemoryUsage memoryUsage, VkImage &image,
+                                       VmaAllocation &imageAllocation) {
 
   VmaAllocationCreateInfo allocCreateInfo{};
   allocCreateInfo.usage = memoryUsage;
 
-  VkImage rawImage;
-  VK_CHECK_RESULT(vmaCreateImage(m_allocator, reinterpret_cast<const VkImageCreateInfo *>(&imageCreateInfo),
-                                 &allocCreateInfo, &rawImage, &imageAllocation, nullptr));
-
-  image = vk::Image(rawImage);
+  VK_CHECK_RESULT(vmaCreateImage(m_allocator, &imageInfo, &allocCreateInfo, &image, &imageAllocation, nullptr));
 }
 
-vk::Format VulkanDevice::findSupportedFormat(const std::vector<vk::Format> &candidates, vk::ImageTiling tiling,
-                                             vk::FormatFeatureFlags features) {
-  for (vk::Format format : candidates) {
+VkFormat VulkanDevice::findSupportedFormat(const std::vector<VkFormat> &candidates, VkImageTiling tiling,
+                                           VkFormatFeatureFlags features) {
+  for (VkFormat format : candidates) {
+    VkFormatProperties props;
+    vkGetPhysicalDeviceFormatProperties(m_physicalDevice, format, &props);
 
-    vk::FormatProperties props = m_physicalDevice.getFormatProperties(format);
-
-    if (tiling == vk::ImageTiling::eLinear && (props.linearTilingFeatures & features) == features) {
+    if (tiling == VK_IMAGE_TILING_LINEAR && (props.linearTilingFeatures & features) == features) {
       return format;
-    } else if (tiling == vk::ImageTiling::eOptimal && (props.optimalTilingFeatures & features) == features) {
+    } else if (tiling == VK_IMAGE_TILING_OPTIMAL && (props.optimalTilingFeatures & features) == features) {
       return format;
     }
   }

@@ -1,4 +1,6 @@
 #include "vulkan_pipeline.hpp"
+#include "renderer/vulkan/vulkan_utils.hpp"
+#include <vulkan/vulkan_core.h>
 #include <vulkan/vulkan_enums.hpp>
 
 VulkanPipeline::VulkanPipeline(VulkanDevice *device, const PipelineVkConfigInfo &configInfo) : m_device(device) {
@@ -7,7 +9,8 @@ VulkanPipeline::VulkanPipeline(VulkanDevice *device, const PipelineVkConfigInfo 
 
 void VulkanPipeline::createPipelineVk(const PipelineVkConfigInfo &configInfo) {
 
-  vk::PipelineVertexInputStateCreateInfo vertexInputInfo = {};
+  VkPipelineVertexInputStateCreateInfo vertexInputInfo = {};
+  vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
   vertexInputInfo.vertexBindingDescriptionCount =
       static_cast<uint32_t>(configInfo.vertexInputBindingDescriptions.size());
   vertexInputInfo.vertexAttributeDescriptionCount =
@@ -15,20 +18,27 @@ void VulkanPipeline::createPipelineVk(const PipelineVkConfigInfo &configInfo) {
   vertexInputInfo.pVertexAttributeDescriptions = configInfo.vertexInputAttributeDescriptions.data();
   vertexInputInfo.pVertexBindingDescriptions = configInfo.vertexInputBindingDescriptions.data();
 
-  vk::PipelineLayoutCreateInfo pipelineLayoutInfo = {
+  VkPipelineLayoutCreateInfo pipelineLayoutInfo = {
+      .sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
+      .pNext = nullptr,
+      .flags = 0,
       .setLayoutCount = static_cast<uint32_t>(configInfo.descriptorSetLayouts.size()),
       .pSetLayouts = configInfo.descriptorSetLayouts.data(),
       .pushConstantRangeCount = static_cast<uint32_t>(configInfo.pushConstantRanges.size()),
       .pPushConstantRanges = configInfo.pushConstantRanges.data(),
   };
 
-  m_pipelineLayout = m_device->getDevice().createPipelineLayout(pipelineLayoutInfo);
+  vkCreatePipelineLayout(m_device->getDevice(), &pipelineLayoutInfo, nullptr, &m_pipelineLayout);
 
-  vk::GraphicsPipelineCreateInfo pipelineInfo = {
+  VkGraphicsPipelineCreateInfo pipelineInfo = {
+      .sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO,
+      .pNext = nullptr,
+      .flags = 0,
       .stageCount = static_cast<uint32_t>(configInfo.shaderStages.size()),
       .pStages = configInfo.shaderStages.data(),
       .pVertexInputState = &vertexInputInfo,
       .pInputAssemblyState = &configInfo.inputAssemblyInfo,
+      .pTessellationState = nullptr,
       .pViewportState = &configInfo.viewportInfo,
       .pRasterizationState = &configInfo.rasterizationInfo,
       .pMultisampleState = &configInfo.multisampleInfo,
@@ -42,19 +52,14 @@ void VulkanPipeline::createPipelineVk(const PipelineVkConfigInfo &configInfo) {
       .basePipelineIndex = -1,
   };
 
-  auto result = m_device->getDevice().createGraphicsPipeline(nullptr, pipelineInfo);
-
-  if (result.result != vk::Result::eSuccess) {
-    throw std::runtime_error("failed to create graphics pipeline!");
-  }
-
-  m_graphicsPipeline = result.value;
+  VK_CHECK_RESULT(
+      vkCreateGraphicsPipelines(m_device->getDevice(), nullptr, 1, &pipelineInfo, nullptr, &m_graphicsPipeline));
 }
 
-VulkanPipeline::~VulkanPipeline() { m_device->getDevice().destroyPipeline(m_graphicsPipeline); }
+VulkanPipeline::~VulkanPipeline() { vkDestroyPipeline(m_device->getDevice(), m_graphicsPipeline, nullptr); }
 
 void VulkanPipeline::defaultPipelineVkConfigInfo(PipelineVkConfigInfo &configInfo) {
-  configInfo.inputAssemblyInfo.topology = vk::PrimitiveTopology::eTriangleList;
+  configInfo.inputAssemblyInfo.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
   configInfo.inputAssemblyInfo.primitiveRestartEnable = VK_FALSE;
 
   configInfo.viewportInfo.viewportCount = 1;
@@ -64,34 +69,34 @@ void VulkanPipeline::defaultPipelineVkConfigInfo(PipelineVkConfigInfo &configInf
 
   configInfo.rasterizationInfo.depthClampEnable = VK_FALSE;
   configInfo.rasterizationInfo.rasterizerDiscardEnable = VK_FALSE;
-  configInfo.rasterizationInfo.polygonMode = vk::PolygonMode::eFill;
+  configInfo.rasterizationInfo.polygonMode = VK_POLYGON_MODE_FILL;
   configInfo.rasterizationInfo.lineWidth = 1.0f;
-  configInfo.rasterizationInfo.cullMode = vk::CullModeFlagBits::eBack;
-  configInfo.rasterizationInfo.frontFace = vk::FrontFace::eCounterClockwise;
+  configInfo.rasterizationInfo.cullMode = VK_CULL_MODE_BACK_BIT;
+  configInfo.rasterizationInfo.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
   configInfo.rasterizationInfo.depthBiasEnable = VK_FALSE;
   configInfo.rasterizationInfo.depthBiasConstantFactor = 0.0f;
   configInfo.rasterizationInfo.depthBiasClamp = 0.0f;
   configInfo.rasterizationInfo.depthBiasSlopeFactor = 0.0f;
 
   configInfo.multisampleInfo.sampleShadingEnable = VK_FALSE;
-  configInfo.multisampleInfo.rasterizationSamples = vk::SampleCountFlagBits::e1;
+  configInfo.multisampleInfo.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
   configInfo.multisampleInfo.minSampleShading = 1.0f;          // Optional
   configInfo.multisampleInfo.pSampleMask = nullptr;            // Optional
   configInfo.multisampleInfo.alphaToCoverageEnable = VK_FALSE; // Optional
   configInfo.multisampleInfo.alphaToOneEnable = VK_FALSE;      // Optional
 
-  configInfo.colorBlendAttachment.colorWriteMask = vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG |
-                                                   vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eA;
+  configInfo.colorBlendAttachment.colorWriteMask =
+      VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
   configInfo.colorBlendAttachment.blendEnable = VK_FALSE;
-  configInfo.colorBlendAttachment.srcColorBlendFactor = vk::BlendFactor::eOne;  // Optional
-  configInfo.colorBlendAttachment.dstColorBlendFactor = vk::BlendFactor::eZero; // Optional
-  configInfo.colorBlendAttachment.colorBlendOp = vk::BlendOp::eAdd;             // Optional
-  configInfo.colorBlendAttachment.srcAlphaBlendFactor = vk::BlendFactor::eOne;  // Optional
-  configInfo.colorBlendAttachment.dstAlphaBlendFactor = vk::BlendFactor::eZero; // Optional
-  configInfo.colorBlendAttachment.alphaBlendOp = vk::BlendOp::eAdd;             // Optional
+  configInfo.colorBlendAttachment.srcColorBlendFactor = VK_BLEND_FACTOR_ONE;  // Optional
+  configInfo.colorBlendAttachment.dstColorBlendFactor = VK_BLEND_FACTOR_ZERO; // Optional
+  configInfo.colorBlendAttachment.colorBlendOp = VK_BLEND_OP_ADD;             // Optional
+  configInfo.colorBlendAttachment.srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE;  // Optional
+  configInfo.colorBlendAttachment.dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO; // Optional
+  configInfo.colorBlendAttachment.alphaBlendOp = VK_BLEND_OP_ADD;             // Optional
 
   configInfo.colorBlendInfo.logicOpEnable = VK_FALSE;
-  configInfo.colorBlendInfo.logicOp = vk::LogicOp::eCopy; // Optional
+  configInfo.colorBlendInfo.logicOp = VK_LOGIC_OP_COPY; // Optional
   configInfo.colorBlendInfo.attachmentCount = 1;
   configInfo.colorBlendInfo.pAttachments = &configInfo.colorBlendAttachment;
   configInfo.colorBlendInfo.blendConstants[0] = 0.0f; // Optional
@@ -101,7 +106,7 @@ void VulkanPipeline::defaultPipelineVkConfigInfo(PipelineVkConfigInfo &configInf
 
   configInfo.depthStencilInfo.depthTestEnable = VK_TRUE;
   configInfo.depthStencilInfo.depthWriteEnable = VK_TRUE;
-  configInfo.depthStencilInfo.depthCompareOp = vk::CompareOp::eLess;
+  configInfo.depthStencilInfo.depthCompareOp = VK_COMPARE_OP_LESS;
   configInfo.depthStencilInfo.depthBoundsTestEnable = VK_FALSE;
   configInfo.depthStencilInfo.minDepthBounds = 0.0f; // Optional
   configInfo.depthStencilInfo.maxDepthBounds = 1.0f; // Optional
@@ -109,7 +114,7 @@ void VulkanPipeline::defaultPipelineVkConfigInfo(PipelineVkConfigInfo &configInf
   configInfo.depthStencilInfo.front = {}; // Optional
   configInfo.depthStencilInfo.back = {};  // Optional
 
-  configInfo.dynamicStateEnables = {vk::DynamicState::eViewport, vk::DynamicState::eScissor};
+  configInfo.dynamicStateEnables = {VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR};
   configInfo.dynamicStateInfo.pDynamicStates = configInfo.dynamicStateEnables.data();
   configInfo.dynamicStateInfo.dynamicStateCount = static_cast<uint32_t>(configInfo.dynamicStateEnables.size());
   configInfo.dynamicStateInfo.flags = {};
@@ -117,6 +122,6 @@ void VulkanPipeline::defaultPipelineVkConfigInfo(PipelineVkConfigInfo &configInf
   configInfo.shaderStages = {};
 }
 
-void VulkanPipeline::bind(vk::CommandBuffer commandBuffer, vk::PipelineBindPoint bindPoint) {
-  commandBuffer.bindPipeline(bindPoint, m_graphicsPipeline);
+void VulkanPipeline::bind(VkCommandBuffer commandBuffer, VkPipelineBindPoint bindPoint) {
+  vkCmdBindPipeline(commandBuffer, bindPoint, m_graphicsPipeline);
 }

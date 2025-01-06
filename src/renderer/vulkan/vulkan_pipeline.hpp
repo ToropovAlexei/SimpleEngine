@@ -2,24 +2,25 @@
 
 #include "renderer/vulkan/vulkan_device.hpp"
 #include <vector>
+#include <vulkan/vulkan_core.h>
 
 struct PipelineVkConfigInfo {
-  std::vector<vk::PipelineShaderStageCreateInfo> shaderStages;
-  std::vector<vk::DescriptorSetLayout> descriptorSetLayouts;
-  std::vector<vk::PushConstantRange> pushConstantRanges;
-  vk::PipelineViewportStateCreateInfo viewportInfo;
-  vk::PipelineInputAssemblyStateCreateInfo inputAssemblyInfo;
-  vk::PipelineRasterizationStateCreateInfo rasterizationInfo;
-  vk::PipelineMultisampleStateCreateInfo multisampleInfo;
-  vk::PipelineColorBlendAttachmentState colorBlendAttachment;
-  vk::PipelineColorBlendStateCreateInfo colorBlendInfo;
-  vk::PipelineDepthStencilStateCreateInfo depthStencilInfo;
-  std::vector<vk::DynamicState> dynamicStateEnables;
-  vk::PipelineDynamicStateCreateInfo dynamicStateInfo;
-  std::vector<vk::VertexInputBindingDescription> vertexInputBindingDescriptions;
-  std::vector<vk::VertexInputAttributeDescription> vertexInputAttributeDescriptions;
-  vk::PipelineLayout pipelineLayout = nullptr;
-  vk::RenderPass renderPass = nullptr;
+  std::vector<VkPipelineShaderStageCreateInfo> shaderStages;
+  std::vector<VkDescriptorSetLayout> descriptorSetLayouts;
+  std::vector<VkPushConstantRange> pushConstantRanges;
+  VkPipelineViewportStateCreateInfo viewportInfo;
+  VkPipelineInputAssemblyStateCreateInfo inputAssemblyInfo;
+  VkPipelineRasterizationStateCreateInfo rasterizationInfo;
+  VkPipelineMultisampleStateCreateInfo multisampleInfo;
+  VkPipelineColorBlendAttachmentState colorBlendAttachment;
+  VkPipelineColorBlendStateCreateInfo colorBlendInfo;
+  VkPipelineDepthStencilStateCreateInfo depthStencilInfo;
+  std::vector<VkDynamicState> dynamicStateEnables;
+  VkPipelineDynamicStateCreateInfo dynamicStateInfo;
+  std::vector<VkVertexInputBindingDescription> vertexInputBindingDescriptions;
+  std::vector<VkVertexInputAttributeDescription> vertexInputAttributeDescriptions;
+  VkPipelineLayout pipelineLayout = nullptr;
+  VkRenderPass renderPass = nullptr;
   uint32_t subpass = 0;
 };
 
@@ -30,12 +31,12 @@ public:
 
   static void defaultPipelineVkConfigInfo(PipelineVkConfigInfo &configInfo);
 
-  void bind(vk::CommandBuffer commandBuffer, vk::PipelineBindPoint bindPoint = vk::PipelineBindPoint::eGraphics);
+  void bind(VkCommandBuffer commandBuffer, VkPipelineBindPoint bindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS);
 
 private:
   void createPipelineVk(const PipelineVkConfigInfo &configInfo);
 
   VulkanDevice *m_device;
-  vk::Pipeline m_graphicsPipeline;
-  vk::PipelineLayout m_pipelineLayout;
+  VkPipeline m_graphicsPipeline;
+  VkPipelineLayout m_pipelineLayout;
 };

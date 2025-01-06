@@ -6,10 +6,10 @@
 
 class VulkanShaderModule {
 public:
-  VulkanShaderModule(VulkanDevice *device, std::string_view filePath, vk::ShaderStageFlagBits stage);
+  VulkanShaderModule(VulkanDevice *device, std::string_view filePath, VkShaderStageFlagBits stage);
   ~VulkanShaderModule();
 
-  vk::PipelineShaderStageCreateInfo getShaderStageInfo() const;
+  VkPipelineShaderStageCreateInfo getShaderStageInfo() const;
 
 private:
   static std::vector<char> readFile(std::string_view filename);
@@ -17,6 +17,6 @@ private:
 
 private:
   VulkanDevice *m_device;
-  vk::ShaderModule m_shaderModule{};
-  vk::ShaderStageFlagBits m_stage;
+  VkShaderModule m_shaderModule{};
+  VkShaderStageFlagBits m_stage;
 };

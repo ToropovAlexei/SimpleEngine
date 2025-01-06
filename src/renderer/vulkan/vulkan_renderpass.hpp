@@ -5,12 +5,12 @@
 
 class VulkanRenderPass {
 public:
-  VulkanRenderPass(VulkanDevice device, vk::Format swapchainFormat, vk::Format depthFormat);
+  VulkanRenderPass(VulkanDevice device, VkFormat swapchainFormat, VkFormat depthFormat);
   ~VulkanRenderPass();
 
-  inline vk::RenderPass getRenderPass() const noexcept { return m_renderPass; }
+  inline VkRenderPass getRenderPass() const noexcept { return m_renderPass; }
 
 private:
   VulkanDevice m_device;
-  vk::RenderPass m_renderPass;
+  VkRenderPass m_renderPass;
 };

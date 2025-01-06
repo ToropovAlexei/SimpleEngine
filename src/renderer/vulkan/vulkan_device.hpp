@@ -8,9 +8,9 @@
 #include <vulkan/vulkan_handles.hpp>
 
 struct SwapChainSupportDetails {
-  vk::SurfaceCapabilitiesKHR capabilities;
-  std::vector<vk::SurfaceFormatKHR> formats;
-  std::vector<vk::PresentModeKHR> presentModes;
+  VkSurfaceCapabilitiesKHR capabilities;
+  std::vector<VkSurfaceFormatKHR> formats;
+  std::vector<VkPresentModeKHR> presentModes;
 };
 
 struct QueueFamilyIndices {
@@ -41,20 +41,20 @@ public:
   inline QueueFamilyIndices findQueueFamilies() { return findQueueFamilies(m_physicalDevice); }
   SwapChainSupportDetails getSwapChainSupport();
 
-  inline vk::Device &getDevice() noexcept { return m_device; };
-  inline vk::PhysicalDevice &getPhysicalDevice() noexcept { return m_physicalDevice; };
-  inline vk::SurfaceKHR &getSurface() noexcept { return m_surface; };
+  inline VkDevice &getDevice() noexcept { return m_device; };
+  inline VkPhysicalDevice &getPhysicalDevice() noexcept { return m_physicalDevice; };
+  inline VkSurfaceKHR &getSurface() noexcept { return m_surface; };
   inline VkQueue &getGraphicsQueue() noexcept { return m_graphicsQueue; };
   inline VkQueue &getTransferQueue() noexcept { return m_transferQueue; };
   inline VkQueue &getPresentQueue() noexcept { return m_presentQueue; };
   inline VmaAllocator &getAllocator() noexcept { return m_allocator; };
   inline VkCommandPool &getCommandPool() noexcept { return m_graphicsCommandPool; };
-  inline vk::Instance &getInstance() noexcept { return m_instance; };
+  inline VkInstance &getInstance() noexcept { return m_instance; };
 
-  void createImageWithInfo(const vk::ImageCreateInfo &imageInfo, VmaMemoryUsage memoryUsage, vk::Image &image,
+  void createImageWithInfo(const VkImageCreateInfo &imageInfo, VmaMemoryUsage memoryUsage, VkImage &image,
                            VmaAllocation &imageAllocation);
-  vk::Format findSupportedFormat(const std::vector<vk::Format> &candidates, vk::ImageTiling tiling,
-                                 vk::FormatFeatureFlags features);
+  VkFormat findSupportedFormat(const std::vector<VkFormat> &candidates, VkImageTiling tiling,
+                                 VkFormatFeatureFlags features);
   VkCommandBuffer beginSingleTimeCommands();
   void endSingleTimeCommands(VkCommandBuffer commandBuffer);
   void createBuffer(vk::DeviceSize size, vk::BufferUsageFlags usage, VmaMemoryUsage memoryUsage,
@@ -74,7 +74,7 @@ private:
   void checkValidationLayerSupport();
   bool checkInstanceExtensionSupport(std::vector<const char *> &requiredExtensions);
 #ifndef NDEBUG
-  void populateDebugMessengerCreateInfo(vk::DebugUtilsMessengerCreateInfoEXT &createInfo);
+  void populateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT &createInfo);
 #endif
   std::vector<const char *> getRequiredExtensions();
   int rateDeviceSuitability(const vk::PhysicalDevice &device);
@@ -85,10 +85,10 @@ private:
 
 private:
   SDL_Window *m_window;
-  vk::SurfaceKHR m_surface;
-  vk::Instance m_instance;
-  vk::PhysicalDevice m_physicalDevice;
-  vk::Device m_device;
+  VkSurfaceKHR m_surface;
+  VkInstance m_instance;
+  VkPhysicalDevice m_physicalDevice;
+  VkDevice m_device;
   VmaAllocator m_allocator;
 
   VkQueue m_graphicsQueue;
@@ -99,7 +99,7 @@ private:
   VkCommandPool m_transferCommandPool = VK_NULL_HANDLE;
 
 #ifndef NDEBUG
-  vk::DebugUtilsMessengerEXT m_debugMessenger;
+  VkDebugUtilsMessengerEXT m_debugMessenger;
   vk::detail::DispatchLoaderDynamic dldi;
 #endif
 };

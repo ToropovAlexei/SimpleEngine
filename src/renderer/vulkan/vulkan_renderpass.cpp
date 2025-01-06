@@ -1,61 +1,77 @@
 #include "vulkan_renderpass.hpp"
 #include <vulkan/vulkan.hpp>
+#include <vulkan/vulkan_core.h>
 
-VulkanRenderPass::VulkanRenderPass(VulkanDevice device, vk::Format swapchainFormat, vk::Format depthFormat)
+VulkanRenderPass::VulkanRenderPass(VulkanDevice device, VkFormat swapchainFormat, VkFormat depthFormat)
     : m_device(device) {
-  vk::AttachmentDescription colorAttachment{.format = swapchainFormat,
-                                            .samples = vk::SampleCountFlagBits::e1,
-                                            .loadOp = vk::AttachmentLoadOp::eClear,
-                                            .storeOp = vk::AttachmentStoreOp::eStore,
-                                            .stencilLoadOp = vk::AttachmentLoadOp::eDontCare,
-                                            .stencilStoreOp = vk::AttachmentStoreOp::eDontCare,
-                                            .initialLayout = vk::ImageLayout::eUndefined,
-                                            .finalLayout = vk::ImageLayout::ePresentSrcKHR};
+  VkAttachmentDescription colorAttachment{.flags = 0,
+                                          .format = swapchainFormat,
+                                          .samples = VK_SAMPLE_COUNT_1_BIT,
+                                          .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
+                                          .storeOp = VK_ATTACHMENT_STORE_OP_STORE,
+                                          .stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE,
+                                          .stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE,
+                                          .initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
+                                          .finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR};
 
-  vk::AttachmentDescription depthAttachment{
+  VkAttachmentDescription depthAttachment{
+      .flags = 0,
       .format = depthFormat,
-      .samples = vk::SampleCountFlagBits::e1,
-      .loadOp = vk::AttachmentLoadOp::eClear,
-      .storeOp = vk::AttachmentStoreOp::eDontCare,
-      .stencilLoadOp = vk::AttachmentLoadOp::eDontCare,
-      .stencilStoreOp = vk::AttachmentStoreOp::eDontCare,
-      .initialLayout = vk::ImageLayout::eUndefined,
-      .finalLayout = vk::ImageLayout::eDepthStencilAttachmentOptimal,
+      .samples = VK_SAMPLE_COUNT_1_BIT,
+      .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
+      .storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE,
+      .stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE,
+      .stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE,
+      .initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
+      .finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
   };
 
-  vk::AttachmentReference colorAttachmentRef{.attachment = 0, .layout = vk::ImageLayout::eColorAttachmentOptimal};
+  VkAttachmentReference colorAttachmentRef{.attachment = 0, .layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL};
 
-  vk::AttachmentReference depthAttachmentRef{.attachment = 1,
-                                             .layout = vk::ImageLayout::eDepthStencilAttachmentOptimal};
+  VkAttachmentReference depthAttachmentRef{.attachment = 1, .layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL};
 
-  vk::SubpassDescription subpass{.pipelineBindPoint = vk::PipelineBindPoint::eGraphics,
-                                 .colorAttachmentCount = 1,
-                                 .pColorAttachments = &colorAttachmentRef,
-                                 .pDepthStencilAttachment = &depthAttachmentRef};
+  VkSubpassDescription subpass{
+      .flags = 0,
+      .pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS,
+      .inputAttachmentCount = 0,
+      .pInputAttachments = nullptr,
+      .colorAttachmentCount = 1,
+      .pColorAttachments = &colorAttachmentRef,
+      .pResolveAttachments = nullptr,
+      .pDepthStencilAttachment = &depthAttachmentRef,
+      .preserveAttachmentCount = 0,
+      .pPreserveAttachments = nullptr,
+  };
 
-  vk::SubpassDependency dependency{
-      .srcSubpass = vk::SubpassExternal,
+  VkSubpassDependency dependency{
+      .dependencyFlags = 0,
+      .srcSubpass = VK_SUBPASS_EXTERNAL,
       .dstSubpass = 0,
-      .srcStageMask = vk::PipelineStageFlagBits::eColorAttachmentOutput,
-      .dstStageMask = vk::PipelineStageFlagBits::eColorAttachmentOutput,
-      .srcAccessMask = vk::AccessFlagBits::eNone,
-      .dstAccessMask = vk::AccessFlagBits::eColorAttachmentRead | vk::AccessFlagBits::eColorAttachmentWrite,
+      .srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+      .dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+      .srcAccessMask = VK_ACCESS_2_NONE,
+      .dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
   };
 
-  std::array<vk::AttachmentDescription, 2> attachments = {colorAttachment, depthAttachment};
+  std::array<VkAttachmentDescription, 2> attachments = {colorAttachment, depthAttachment};
 
-  vk::RenderPassCreateInfo renderPassCreateInfo{.attachmentCount = static_cast<uint32_t>(attachments.size()),
-                                                .pAttachments = attachments.data(),
-                                                .subpassCount = 1,
-                                                .pSubpasses = &subpass,
-                                                .dependencyCount = 1,
-                                                .pDependencies = &dependency};
+  VkRenderPassCreateInfo renderPassCreateInfo{
+      .sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO,
+      .pNext = nullptr,
+      .flags = 0,
+      .attachmentCount = static_cast<uint32_t>(attachments.size()),
+      .pAttachments = attachments.data(),
+      .subpassCount = 1,
+      .pSubpasses = &subpass,
+      .dependencyCount = 1,
+      .pDependencies = &dependency,
+  };
 
-  m_renderPass = m_device.getDevice().createRenderPass(renderPassCreateInfo);
+  vkCreateRenderPass(m_device.getDevice(), &renderPassCreateInfo, nullptr, &m_renderPass);
 }
 
 VulkanRenderPass::~VulkanRenderPass() {
   if (m_renderPass) {
-    m_device.getDevice().destroyRenderPass(m_renderPass);
+    vkDestroyRenderPass(m_device.getDevice(), m_renderPass, nullptr);
   }
 }

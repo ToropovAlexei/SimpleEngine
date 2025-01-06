@@ -1,10 +1,12 @@
 #include "vulkan_shader_module.hpp"
 #include "renderer/vulkan/vulkan_device.hpp"
+#include "renderer/vulkan/vulkan_utils.hpp"
 #include <core/exception.hpp>
 #include <fstream>
 #include <string_view>
+#include <vulkan/vulkan_core.h>
 
-VulkanShaderModule::VulkanShaderModule(VulkanDevice *device, std::string_view filePath, vk::ShaderStageFlagBits stage)
+VulkanShaderModule::VulkanShaderModule(VulkanDevice *device, std::string_view filePath, VkShaderStageFlagBits stage)
     : m_device(device), m_stage(stage) {
   auto code = readFile(filePath);
 
@@ -13,15 +15,19 @@ VulkanShaderModule::VulkanShaderModule(VulkanDevice *device, std::string_view fi
 
 VulkanShaderModule::~VulkanShaderModule() {
   if (m_shaderModule) {
-    m_device->getDevice().destroyShaderModule(m_shaderModule);
+    vkDestroyShaderModule(m_device->getDevice(), m_shaderModule, nullptr);
   }
 }
 
-vk::PipelineShaderStageCreateInfo VulkanShaderModule::getShaderStageInfo() const {
+VkPipelineShaderStageCreateInfo VulkanShaderModule::getShaderStageInfo() const {
   return {
+      .sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
+      .pNext = nullptr,
+      .flags = 0,
       .stage = m_stage,
       .module = m_shaderModule,
       .pName = "main",
+      .pSpecializationInfo = nullptr,
   };
 }
 
@@ -43,13 +49,13 @@ std::vector<char> VulkanShaderModule::readFile(std::string_view filename) {
 }
 
 void VulkanShaderModule::createShaderModule(const std::vector<char> &code) {
-  vk::ShaderModuleCreateInfo createInfo = {
+  VkShaderModuleCreateInfo createInfo = {
+      .sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO,
+      .pNext = nullptr,
+      .flags = 0,
       .codeSize = code.size(),
       .pCode = reinterpret_cast<const uint32_t *>(code.data()),
   };
 
-  m_shaderModule = m_device->getDevice().createShaderModule(createInfo);
-  if (!m_shaderModule) {
-    SE_THROW_ERROR("Failed to create shader module!");
-  }
+  VK_CHECK_RESULT(vkCreateShaderModule(m_device->getDevice(), &createInfo, nullptr, &m_shaderModule));
 }
