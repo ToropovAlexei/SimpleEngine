@@ -1,13 +1,10 @@
 #include "vulkan_backend.hpp"
 #include "SDL3/SDL_video.h"
-#include "core/logger.hpp"
-#include "renderer/vulkan/vulkan_swapchain.hpp"
-#include "renderer/vulkan/vulkan_utils.hpp"
 #include <core/assert.hpp>
 #include <core/exception.hpp>
-#include <cstdint>
-#include <vulkan/vulkan_core.h>
-#include <vulkan/vulkan_structs.hpp>
+#include <core/logger.hpp>
+#include <renderer/vulkan/vulkan_swapchain.hpp>
+#include <renderer/vulkan/vulkan_utils.hpp>
 
 VulkanBackend::VulkanBackend(SDL_Window *window) : m_window{window} {
   m_device = std::make_unique<VulkanDevice>(m_window);

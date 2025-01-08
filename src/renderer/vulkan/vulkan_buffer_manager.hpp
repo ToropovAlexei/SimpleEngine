@@ -1,11 +1,8 @@
 #pragma once
 
 #include "renderer/vulkan/vulkan_device.hpp"
-#include <cstddef>
 #include <queue>
-#include <string_view>
-#include <vector>
-#include <vulkan/vulkan_core.h>
+#include <string>
 
 typedef size_t BufferId;
 

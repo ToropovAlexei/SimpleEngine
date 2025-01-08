@@ -1,14 +1,6 @@
 #include "vulkan_swapchain.hpp"
 #include "renderer/vulkan/vulkan_utils.hpp"
-#include <algorithm>
-#include <array>
 #include <core/logger.hpp>
-#include <cstddef>
-#include <cstdint>
-#include <cstdlib>
-#include <cstring>
-#include <limits>
-#include <vulkan/vulkan_core.h>
 
 VulkanSwapchain::VulkanSwapchain(VulkanDevice *device, VkExtent2D extent) : m_device{device}, m_windowExtent{extent} {
   init();

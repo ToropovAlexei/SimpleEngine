@@ -1,6 +1,5 @@
 #include "vulkan_command_buffer.hpp"
 #include <core/assert.hpp>
-#include <vulkan/vulkan_core.h>
 
 VulkanCommandBuffer::VulkanCommandBuffer(VulkanDevice device, VkCommandPool commandPool)
     : m_device{device}, m_commandPool{commandPool} {

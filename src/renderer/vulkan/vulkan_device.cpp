@@ -1,19 +1,11 @@
-#include "renderer/vulkan/vulkan_utils.hpp"
-#include <cstddef>
-#include <cstdint>
-#include <map>
-#include <set>
-#include <vector>
-#include <vulkan/vulkan.hpp>
-#include <vulkan/vulkan_core.h>
 #define VMA_IMPLEMENTATION
 #include "vulkan_device.hpp"
 #include <SDL3/SDL_vulkan.h>
 #include <core/exception.hpp>
 #include <core/logger.hpp>
-#include <vulkan/vulkan_enums.hpp>
-#include <vulkan/vulkan_handles.hpp>
-#include <vulkan/vulkan_structs.hpp>
+#include <map>
+#include <renderer/vulkan/vulkan_utils.hpp>
+#include <set>
 
 const std::vector<const char *> validationLayers = {"VK_LAYER_KHRONOS_validation"};
 

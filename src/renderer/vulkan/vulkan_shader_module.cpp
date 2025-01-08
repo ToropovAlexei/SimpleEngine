@@ -1,10 +1,7 @@
 #include "vulkan_shader_module.hpp"
-#include "renderer/vulkan/vulkan_device.hpp"
 #include "renderer/vulkan/vulkan_utils.hpp"
 #include <core/exception.hpp>
 #include <fstream>
-#include <string_view>
-#include <vulkan/vulkan_core.h>
 
 VulkanShaderModule::VulkanShaderModule(VulkanDevice *device, std::string_view filePath, VkShaderStageFlagBits stage)
     : m_device(device), m_stage(stage) {

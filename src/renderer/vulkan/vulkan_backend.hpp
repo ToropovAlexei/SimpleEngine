@@ -1,5 +1,6 @@
 #pragma once
 
+#include <core/assert.hpp>
 #include <memory>
 #include <renderer/vulkan/vulkan_device.hpp>
 #include <renderer/vulkan/vulkan_swapchain.hpp>
@@ -20,11 +21,11 @@ public:
   inline float getAspectRatio() const { return m_swapChain->extentAspectRatio(); }
   inline VkRenderPass getSwapChainRenderPass() const { return m_swapChain->getRenderPass(); }
   inline size_t getFrameIndex() const {
-    assert(m_isFrameStarted && "Cannog get frame index when frame not in progress");
+    SE_ASSERT(m_isFrameStarted, "Can't get frame index when frame not in progress");
     return m_currentFrameIndex;
   }
   inline VkCommandBuffer getCurrentCommandBuffer() {
-    assert(m_isFrameStarted && "Cannog get command buffer when frame not in progress");
+    SE_ASSERT(m_isFrameStarted, "Can't get command buffer when frame not in progress");
     return m_commandBuffers[m_currentFrameIndex];
   }
 

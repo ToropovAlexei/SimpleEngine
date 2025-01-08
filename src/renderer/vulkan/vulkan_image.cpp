@@ -1,8 +1,6 @@
 #include "vulkan_image.hpp"
-#include "renderer/vulkan/vulkan_utils.hpp"
 #include <core/exception.hpp>
-#include <vulkan/vulkan.hpp>
-#include <vulkan/vulkan_core.h>
+#include <renderer/vulkan/vulkan_utils.hpp>
 
 VulkanImage::VulkanImage(VulkanDevice device, uint32_t width, uint32_t height, VkFormat format, VkImageUsageFlags usage)
     : m_device{device}, m_width{width}, m_height{height}, m_format{format}, m_usage{usage} {

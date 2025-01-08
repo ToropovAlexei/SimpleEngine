@@ -1,7 +1,5 @@
 #include "vulkan_pipeline.hpp"
-#include "renderer/vulkan/vulkan_utils.hpp"
-#include <vulkan/vulkan_core.h>
-#include <vulkan/vulkan_enums.hpp>
+#include <renderer/vulkan/vulkan_utils.hpp>
 
 VulkanPipeline::VulkanPipeline(VulkanDevice *device, const PipelineVkConfigInfo &configInfo) : m_device(device) {
   createPipelineVk(configInfo);

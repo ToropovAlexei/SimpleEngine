@@ -1,7 +1,6 @@
 #pragma once
 
 #include <renderer/vulkan/vulkan_device.hpp>
-#include <vulkan/vulkan.hpp>
 
 class VulkanRenderPass {
 public:

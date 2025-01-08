@@ -1,7 +1,7 @@
 #pragma once
 
-#include <memory>
 #include <renderer/vulkan/vulkan_device.hpp>
+#include <memory>
 
 class VulkanSwapchain {
 public:

@@ -1,6 +1,5 @@
 #include "vulkan_renderpass.hpp"
-#include <vulkan/vulkan.hpp>
-#include <vulkan/vulkan_core.h>
+#include <array>
 
 VulkanRenderPass::VulkanRenderPass(VulkanDevice device, VkFormat swapchainFormat, VkFormat depthFormat)
     : m_device(device) {

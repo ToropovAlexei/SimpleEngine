@@ -1,8 +1,6 @@
 #pragma once
 
-#include "renderer/vulkan/vulkan_device.hpp"
-#include <vector>
-#include <vulkan/vulkan_core.h>
+#include <renderer/vulkan/vulkan_device.hpp>
 
 struct PipelineVkConfigInfo {
   std::vector<VkPipelineShaderStageCreateInfo> shaderStages;

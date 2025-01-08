@@ -1,6 +1,7 @@
 #pragma once
 
 #include <core/exception.hpp>
+#include <vulkan/vulkan.hpp>
 
 #define VK_CHECK_RESULT(result)                                                                                        \
   do {                                                                                                                 \

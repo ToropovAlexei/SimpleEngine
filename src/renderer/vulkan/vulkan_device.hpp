@@ -1,11 +1,10 @@
 #pragma once
 
 #include <SDL3/SDL_video.h>
+#include <optional>
 #include <vector>
 #include <vk_mem_alloc.h>
-#include <vulkan/vulkan.hpp>
-#include <vulkan/vulkan_core.h>
-#include <vulkan/vulkan_handles.hpp>
+#include <vulkan/vulkan.h>
 
 struct SwapChainSupportDetails {
   VkSurfaceCapabilitiesKHR capabilities;

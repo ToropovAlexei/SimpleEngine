@@ -1,9 +1,5 @@
 #include "vulkan_buffer.hpp"
 
-#include <cassert>
-#include <cstring>
-#include <vulkan/vulkan_core.h>
-
 /**
  * Returns the minimum instance size required to be compatible with devices
  * minOffsetAlignment

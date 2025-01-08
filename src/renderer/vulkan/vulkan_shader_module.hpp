@@ -1,8 +1,7 @@
 #pragma once
 
 #include "vulkan_device.hpp"
-#include <vector>
-#include <vulkan/vulkan.hpp>
+#include <string_view>
 
 class VulkanShaderModule {
 public:
