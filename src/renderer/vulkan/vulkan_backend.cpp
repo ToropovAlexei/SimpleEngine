@@ -29,8 +29,8 @@ void VulkanBackend::beginSwapChainRenderPass(VkCommandBuffer commandBuffer) {
          "Can't call beginSwapChainRenderPass on a different command buffer");
 
   std::array<VkClearValue, 2> clearValues{};
-  clearValues[0] = vk::ClearValue(vk::ClearColorValue(std::array<float, 4>{0.0f, 0.0f, 0.0f, 1.0f}));
-  clearValues[1] = vk::ClearValue({.depthStencil = {1.0f, 0}});
+  clearValues[0] = VkClearValue({{{0.0f, 0.0f, 0.0f, 1.0f}}});
+  clearValues[1] = VkClearValue({.depthStencil = {1.0f, 0}});
 
   VkRenderPassBeginInfo renderPassInfo = {
       .sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO,

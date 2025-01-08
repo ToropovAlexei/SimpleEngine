@@ -134,9 +134,7 @@ void VulkanDevice::setupDebugMessenger() {
 }
 
 void VulkanDevice::createSurface() {
-  VkSurfaceKHR surface;
-  SDL_Vulkan_CreateSurface(m_window, m_instance, nullptr, &surface);
-  m_surface = vk::SurfaceKHR(surface);
+  SDL_Vulkan_CreateSurface(m_window, m_instance, nullptr, &m_surface);
   LOG_INFO("Vulkan surface created");
 }
 
@@ -148,7 +146,7 @@ void VulkanDevice::pickPhysicalDevice() {
   vkEnumeratePhysicalDevices(m_instance, &deviceCount, devices.data());
 
   // Use an ordered map to automatically sort candidates by increasing score
-  std::multimap<int, vk::PhysicalDevice> candidates;
+  std::multimap<int, VkPhysicalDevice> candidates;
 
   for (const auto &device : devices) {
     VkPhysicalDeviceProperties props;
@@ -324,7 +322,10 @@ void VulkanDevice::createCommandPool() {
 }
 
 void VulkanDevice::checkValidationLayerSupport() {
-  auto availableLayers = vk::enumerateInstanceLayerProperties();
+  uint32_t layerCount;
+  vkEnumerateInstanceLayerProperties(&layerCount, nullptr);
+  std::vector<VkLayerProperties> availableLayers(layerCount);
+  vkEnumerateInstanceLayerProperties(&layerCount, availableLayers.data());
 
   for (const char *layerName : validationLayers) {
     bool layerFound = false;
@@ -344,7 +345,10 @@ void VulkanDevice::checkValidationLayerSupport() {
 }
 
 bool VulkanDevice::checkInstanceExtensionSupport(std::vector<const char *> &requiredExtensions) {
-  auto extensions = vk::enumerateInstanceExtensionProperties();
+  uint32_t extensionCount = 0;
+  vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, nullptr);
+  std::vector<VkExtensionProperties> extensions(extensionCount);
+  vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, extensions.data());
 
   for (auto extension : extensions) {
     requiredExtensions.erase(std::remove_if(requiredExtensions.begin(), requiredExtensions.end(),
@@ -389,14 +393,15 @@ void VulkanDevice::populateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateI
 }
 #endif
 
-int VulkanDevice::rateDeviceSuitability(const vk::PhysicalDevice &device) {
-  vk::PhysicalDeviceProperties deviceProperties = device.getProperties();
+int VulkanDevice::rateDeviceSuitability(const VkPhysicalDevice &device) {
+  VkPhysicalDeviceProperties deviceProperties;
+  vkGetPhysicalDeviceProperties(device, &deviceProperties);
   // vk::PhysicalDeviceFeatures deviceFeatures = device.getFeatures();
 
   int score = 0;
 
   // Discrete GPUs have a significant performance advantage
-  if (deviceProperties.deviceType == vk::PhysicalDeviceType::eDiscreteGpu) {
+  if (deviceProperties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU) {
     score += 1000;
   }
 
@@ -412,8 +417,11 @@ int VulkanDevice::rateDeviceSuitability(const vk::PhysicalDevice &device) {
   return score;
 }
 
-bool VulkanDevice::checkDeviceExtensionSupport(const vk::PhysicalDevice &device) {
-  auto availableExtensions = device.enumerateDeviceExtensionProperties();
+bool VulkanDevice::checkDeviceExtensionSupport(const VkPhysicalDevice &device) {
+  uint32_t extensionCount;
+  vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionCount, nullptr);
+  std::vector<VkExtensionProperties> availableExtensions(extensionCount);
+  vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionCount, availableExtensions.data());
 
   std::set<std::string> requiredExtensions(deviceExtensions.begin(), deviceExtensions.end());
 
@@ -424,17 +432,20 @@ bool VulkanDevice::checkDeviceExtensionSupport(const vk::PhysicalDevice &device)
   return requiredExtensions.empty();
 }
 
-QueueFamilyIndices VulkanDevice::findQueueFamilies(const vk::PhysicalDevice device) {
+QueueFamilyIndices VulkanDevice::findQueueFamilies(const VkPhysicalDevice device) {
   QueueFamilyIndices indices;
 
-  auto queueFamilies = device.getQueueFamilyProperties();
+  uint32_t queueFamilyCount;
+  vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, nullptr);
+  std::vector<VkQueueFamilyProperties> queueFamilies(queueFamilyCount);
+  vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, queueFamilies.data());
 
-  vk::QueueFlags transferQueueFlags = vk::QueueFlagBits::eTransfer;
+  VkQueueFlags transferQueueFlags = VK_QUEUE_TRANSFER_BIT;
 
   uint32_t i = 0;
   for (const auto &queueFamily : queueFamilies) {
     // TODO Check this loop for correct queue families
-    if (queueFamily.queueCount > 0 && queueFamily.queueFlags & vk::QueueFlagBits::eGraphics) {
+    if (queueFamily.queueCount > 0 && queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT) {
       indices.graphicsFamily = i;
       indices.graphicsFamilySupportsTimeStamps = queueFamily.timestampValidBits > 0;
     }
@@ -444,12 +455,13 @@ QueueFamilyIndices VulkanDevice::findQueueFamilies(const vk::PhysicalDevice devi
       indices.transferFamilySupportsTimeStamps = queueFamily.timestampValidBits > 0;
     }
 
-    if (queueFamily.queueCount > 0 && queueFamily.queueFlags & vk::QueueFlagBits::eCompute) {
+    if (queueFamily.queueCount > 0 && queueFamily.queueFlags & VK_QUEUE_COMPUTE_BIT) {
       indices.computeFamily = i;
       indices.computeFamilySupportsTimeStamps = queueFamily.timestampValidBits > 0;
     }
 
-    vk::Bool32 presentSupport = device.getSurfaceSupportKHR(i, m_surface);
+    VkBool32 presentSupport = false;
+    vkGetPhysicalDeviceSurfaceSupportKHR(device, i, m_surface, &presentSupport);
 
     if (queueFamily.queueCount > 0 && presentSupport) {
       indices.presentFamily = i;
@@ -550,27 +562,32 @@ void VulkanDevice::endSingleTimeCommands(VkCommandBuffer commandBuffer) {
   vkFreeCommandBuffers(m_device, m_graphicsCommandPool, 1, &commandBuffer);
 }
 
-void VulkanDevice::createBuffer(vk::DeviceSize size, vk::BufferUsageFlags usage, VmaMemoryUsage memoryUsage,
-                                VmaAllocationCreateFlags flags, vk::Buffer &buffer, VmaAllocation &allocation,
+void VulkanDevice::createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VmaMemoryUsage memoryUsage,
+                                VmaAllocationCreateFlags flags, VkBuffer &buffer, VmaAllocation &allocation,
                                 VmaAllocationInfo &allocInfo) {
-  vk::BufferCreateInfo bufferInfo = {.size = size, .usage = usage, .sharingMode = vk::SharingMode::eExclusive};
+  VkBufferCreateInfo bufferInfo = {
+      .sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
+      .pNext = nullptr,
+      .flags = 0,
+      .size = size,
+      .usage = usage,
+      .sharingMode = VK_SHARING_MODE_EXCLUSIVE,
+      .queueFamilyIndexCount = 0,
+      .pQueueFamilyIndices = nullptr,
+  };
 
   VmaAllocationCreateInfo allocCreateInfo{};
   allocCreateInfo.usage = memoryUsage;
   allocCreateInfo.flags = flags;
 
-  VkBuffer bufferRaw;
-  VK_CHECK_RESULT(vmaCreateBuffer(m_allocator, reinterpret_cast<const VkBufferCreateInfo *>(&bufferInfo),
-                                  &allocCreateInfo, &bufferRaw, &allocation, &allocInfo));
-
-  buffer = vk::Buffer(bufferRaw);
+  VK_CHECK_RESULT(vmaCreateBuffer(m_allocator, &bufferInfo, &allocCreateInfo, &buffer, &allocation, &allocInfo));
 }
 
-void VulkanDevice::copyBuffer(vk::Buffer srcBuffer, vk::Buffer dstBuffer, vk::DeviceSize size) {
-  vk::CommandBuffer commandBuffer = beginSingleTimeCommands();
+void VulkanDevice::copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size) {
+  VkCommandBuffer commandBuffer = beginSingleTimeCommands();
 
-  vk::BufferCopy copyRegion = {.srcOffset = 0, .dstOffset = 0, .size = size};
-  commandBuffer.copyBuffer(srcBuffer, dstBuffer, copyRegion);
+  VkBufferCopy copyRegion = {.srcOffset = 0, .dstOffset = 0, .size = size};
+  vkCmdCopyBuffer(commandBuffer, srcBuffer, dstBuffer, 1, &copyRegion);
 
   endSingleTimeCommands(commandBuffer);
 }

@@ -2,6 +2,7 @@
 
 #include <cassert>
 #include <cstring>
+#include <vulkan/vulkan_core.h>
 
 /**
  * Returns the minimum instance size required to be compatible with devices
@@ -13,16 +14,16 @@
  *
  * @return VkResult of the buffer mapping call
  */
-vk::DeviceSize VulkanBuffer::getAlignment(vk::DeviceSize instanceSize, vk::DeviceSize minOffsetAlignment) {
+VkDeviceSize VulkanBuffer::getAlignment(VkDeviceSize instanceSize, VkDeviceSize minOffsetAlignment) {
   if (minOffsetAlignment > 0) {
     return (instanceSize + minOffsetAlignment - 1) & ~(minOffsetAlignment - 1);
   }
   return instanceSize;
 }
 
-VulkanBuffer::VulkanBuffer(VulkanDevice *device, vk::DeviceSize instanceSize, uint32_t instanceCount,
-                           vk::BufferUsageFlags usageFlags, VmaMemoryUsage memoryUsage, VmaAllocationCreateFlags flags,
-                           vk::DeviceSize minOffsetAlignment)
+VulkanBuffer::VulkanBuffer(VulkanDevice *device, VkDeviceSize instanceSize, uint32_t instanceCount,
+                           VkBufferUsageFlags usageFlags, VmaMemoryUsage memoryUsage, VmaAllocationCreateFlags flags,
+                           VkDeviceSize minOffsetAlignment)
     : m_device{device}, m_instanceCount{instanceCount}, m_instanceSize{instanceSize}, m_usageFlags{usageFlags},
       m_memoryUsage{memoryUsage} {
   m_alignmentSize = getAlignment(instanceSize, minOffsetAlignment);
@@ -44,7 +45,7 @@ VulkanBuffer::~VulkanBuffer() {
  * @param offset (Optional) Byte offset from beginning of mapped region
  *
  */
-void VulkanBuffer::writeToBuffer(void *data, vk::DeviceSize size, vk::DeviceSize offset) {
+void VulkanBuffer::writeToBuffer(void *data, VkDeviceSize size, VkDeviceSize offset) {
   vmaCopyMemoryToAllocation(m_device->getAllocator(), data, m_allocation, offset,
                             size == VK_WHOLE_SIZE ? m_bufferSize : size);
 }
@@ -60,13 +61,13 @@ void VulkanBuffer::writeToBuffer(void *data, vk::DeviceSize size, vk::DeviceSize
  *
  * @return VkResult of the flush call
  */
-vk::Result VulkanBuffer::flush(vk::DeviceSize size, vk::DeviceSize offset) {
+VkResult VulkanBuffer::flush(VkDeviceSize size, VkDeviceSize offset) {
   if (m_memoryUsage == VMA_MEMORY_USAGE_GPU_ONLY) {
-    return vk::Result::eSuccess; // GPU_ONLY memory doesn't need flush
+    return VK_SUCCESS; // GPU_ONLY memory doesn't need flush
   }
 
   vmaFlushAllocation(m_device->getAllocator(), m_allocation, offset, size);
-  return vk::Result::eSuccess;
+  return VK_SUCCESS;
 }
 
 /**
@@ -80,7 +81,7 @@ vk::Result VulkanBuffer::flush(vk::DeviceSize size, vk::DeviceSize offset) {
  *
  * @return VkResult of the invalidate call
  */
-void VulkanBuffer::invalidate(vk::DeviceSize size, vk::DeviceSize offset) {
+void VulkanBuffer::invalidate(VkDeviceSize size, VkDeviceSize offset) {
   if (m_memoryUsage == VMA_MEMORY_USAGE_GPU_ONLY) {
     return; // GPU_ONLY memory doesn't need invalidation
   }
@@ -96,8 +97,8 @@ void VulkanBuffer::invalidate(vk::DeviceSize size, vk::DeviceSize offset) {
  *
  * @return VkDescriptorBufferInfo of specified offset and range
  */
-vk::DescriptorBufferInfo VulkanBuffer::descriptorInfo(vk::DeviceSize size, vk::DeviceSize offset) {
-  return vk::DescriptorBufferInfo{
+VkDescriptorBufferInfo VulkanBuffer::descriptorInfo(VkDeviceSize size, VkDeviceSize offset) {
+  return VkDescriptorBufferInfo{
       m_buffer,
       offset,
       size,
@@ -112,7 +113,7 @@ vk::DescriptorBufferInfo VulkanBuffer::descriptorInfo(vk::DeviceSize size, vk::D
  * @param index Used in offset calculation
  *
  */
-void VulkanBuffer::writeToIndex(void *data, vk::DeviceSize index) {
+void VulkanBuffer::writeToIndex(void *data, VkDeviceSize index) {
   writeToBuffer(data, m_instanceSize, index * m_alignmentSize);
 }
 
@@ -123,7 +124,7 @@ void VulkanBuffer::writeToIndex(void *data, vk::DeviceSize index) {
  * @param index Used in offset calculation
  *
  */
-vk::Result VulkanBuffer::flushIndex(vk::DeviceSize index) { return flush(m_alignmentSize, index * m_alignmentSize); }
+VkResult VulkanBuffer::flushIndex(VkDeviceSize index) { return flush(m_alignmentSize, index * m_alignmentSize); }
 
 /**
  * Create a buffer info descriptor
@@ -132,7 +133,7 @@ vk::Result VulkanBuffer::flushIndex(vk::DeviceSize index) { return flush(m_align
  *
  * @return VkDescriptorBufferInfo for instance at index
  */
-vk::DescriptorBufferInfo VulkanBuffer::descriptorInfoForIndex(vk::DeviceSize index) {
+VkDescriptorBufferInfo VulkanBuffer::descriptorInfoForIndex(VkDeviceSize index) {
   return descriptorInfo(m_alignmentSize, index * m_alignmentSize);
 }
 
@@ -145,6 +146,4 @@ vk::DescriptorBufferInfo VulkanBuffer::descriptorInfoForIndex(vk::DeviceSize ind
  *
  * @return VkResult of the invalidate call
  */
-void VulkanBuffer::invalidateIndex(vk::DeviceSize index) {
-  return invalidate(m_alignmentSize, index * m_alignmentSize);
-}
+void VulkanBuffer::invalidateIndex(VkDeviceSize index) { return invalidate(m_alignmentSize, index * m_alignmentSize); }

@@ -5,7 +5,7 @@
 
 class VulkanCommandBuffer {
 public:
-  VulkanCommandBuffer(VulkanDevice device, vk::CommandPool commandPool);
+  VulkanCommandBuffer(VulkanDevice device, VkCommandPool commandPool);
   ~VulkanCommandBuffer();
 
   void begin(VkCommandBufferUsageFlags usage = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);

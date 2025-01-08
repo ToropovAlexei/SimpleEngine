@@ -4,44 +4,44 @@
 
 class VulkanBuffer {
 public:
-  VulkanBuffer(VulkanDevice *device, vk::DeviceSize instanceSize, uint32_t instanceCount,
-               vk::BufferUsageFlags usageFlags, VmaMemoryUsage memoryUsage, VmaAllocationCreateFlags flags = 0,
-               vk::DeviceSize minOffsetAlignment = 1);
+  VulkanBuffer(VulkanDevice *device, VkDeviceSize instanceSize, uint32_t instanceCount,
+               VkBufferUsageFlags usageFlags, VmaMemoryUsage memoryUsage, VmaAllocationCreateFlags flags = 0,
+               VkDeviceSize minOffsetAlignment = 1);
   ~VulkanBuffer();
 
   VulkanBuffer(const VulkanBuffer &) = delete;
   VulkanBuffer &operator=(const VulkanBuffer &) = delete;
 
-  void writeToBuffer(void *data, vk::DeviceSize size = VK_WHOLE_SIZE, vk::DeviceSize offset = 0);
-  vk::Result flush(vk::DeviceSize size = VK_WHOLE_SIZE, vk::DeviceSize offset = 0);
-  vk::DescriptorBufferInfo descriptorInfo(vk::DeviceSize size = VK_WHOLE_SIZE, vk::DeviceSize offset = 0);
-  void invalidate(vk::DeviceSize size = VK_WHOLE_SIZE, vk::DeviceSize offset = 0);
+  void writeToBuffer(void *data, VkDeviceSize size = VK_WHOLE_SIZE, VkDeviceSize offset = 0);
+  VkResult flush(VkDeviceSize size = VK_WHOLE_SIZE, VkDeviceSize offset = 0);
+  VkDescriptorBufferInfo descriptorInfo(VkDeviceSize size = VK_WHOLE_SIZE, VkDeviceSize offset = 0);
+  void invalidate(VkDeviceSize size = VK_WHOLE_SIZE, VkDeviceSize offset = 0);
 
-  void writeToIndex(void *data, vk::DeviceSize index);
-  vk::Result flushIndex(vk::DeviceSize index);
-  vk::DescriptorBufferInfo descriptorInfoForIndex(vk::DeviceSize index);
-  void invalidateIndex(vk::DeviceSize index);
+  void writeToIndex(void *data, VkDeviceSize index);
+  VkResult flushIndex(VkDeviceSize index);
+  VkDescriptorBufferInfo descriptorInfoForIndex(VkDeviceSize index);
+  void invalidateIndex(VkDeviceSize index);
 
-  inline vk::Buffer getBuffer() const noexcept { return m_buffer; }
+  inline VkBuffer getBuffer() const noexcept { return m_buffer; }
   inline uint32_t getInstanceCount() const noexcept { return m_instanceCount; }
-  inline vk::DeviceSize getInstanceSize() const noexcept { return m_instanceSize; }
-  inline vk::DeviceSize getAlignmentSize() const noexcept { return m_instanceSize; }
-  inline vk::BufferUsageFlags getUsageFlags() const noexcept { return m_usageFlags; }
+  inline VkDeviceSize getInstanceSize() const noexcept { return m_instanceSize; }
+  inline VkDeviceSize getAlignmentSize() const noexcept { return m_instanceSize; }
+  inline VkBufferUsageFlags getUsageFlags() const noexcept { return m_usageFlags; }
   inline VmaMemoryUsage getMemoryPropertyFlags() const noexcept { return m_memoryUsage; }
-  inline vk::DeviceSize getBufferSize() const noexcept { return m_bufferSize; }
+  inline VkDeviceSize getBufferSize() const noexcept { return m_bufferSize; }
 
 private:
-  static vk::DeviceSize getAlignment(vk::DeviceSize instanceSize, vk::DeviceSize minOffsetAlignment);
+  static VkDeviceSize getAlignment(VkDeviceSize instanceSize, VkDeviceSize minOffsetAlignment);
 
   VulkanDevice *m_device;
-  vk::Buffer m_buffer = VK_NULL_HANDLE;
+  VkBuffer m_buffer = VK_NULL_HANDLE;
   VmaAllocation m_allocation = VK_NULL_HANDLE;
   VmaAllocationInfo m_allocationInfo{};
 
-  vk::DeviceSize m_bufferSize;
+  VkDeviceSize m_bufferSize;
   uint32_t m_instanceCount;
-  vk::DeviceSize m_instanceSize;
-  vk::DeviceSize m_alignmentSize;
-  vk::BufferUsageFlags m_usageFlags;
+  VkDeviceSize m_instanceSize;
+  VkDeviceSize m_alignmentSize;
+  VkBufferUsageFlags m_usageFlags;
   VmaMemoryUsage m_memoryUsage;
 };

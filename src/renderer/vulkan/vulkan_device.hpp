@@ -37,7 +37,7 @@ public:
   VulkanDevice(SDL_Window *window);
   ~VulkanDevice();
 
-  QueueFamilyIndices findQueueFamilies(const vk::PhysicalDevice device);
+  QueueFamilyIndices findQueueFamilies(const VkPhysicalDevice device);
   inline QueueFamilyIndices findQueueFamilies() { return findQueueFamilies(m_physicalDevice); }
   SwapChainSupportDetails getSwapChainSupport();
 
@@ -57,10 +57,10 @@ public:
                                  VkFormatFeatureFlags features);
   VkCommandBuffer beginSingleTimeCommands();
   void endSingleTimeCommands(VkCommandBuffer commandBuffer);
-  void createBuffer(vk::DeviceSize size, vk::BufferUsageFlags usage, VmaMemoryUsage memoryUsage,
-                    VmaAllocationCreateFlags flags, vk::Buffer &buffer, VmaAllocation &allocation,
+  void createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VmaMemoryUsage memoryUsage,
+                    VmaAllocationCreateFlags flags, VkBuffer &buffer, VmaAllocation &allocation,
                     VmaAllocationInfo &allocInfo);
-  void copyBuffer(vk::Buffer srcBuffer, vk::Buffer dstBuffer, vk::DeviceSize size);
+  void copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
 
 private:
   void initVulkan();
@@ -77,8 +77,8 @@ private:
   void populateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT &createInfo);
 #endif
   std::vector<const char *> getRequiredExtensions();
-  int rateDeviceSuitability(const vk::PhysicalDevice &device);
-  bool checkDeviceExtensionSupport(const vk::PhysicalDevice &device);
+  int rateDeviceSuitability(const VkPhysicalDevice &device);
+  bool checkDeviceExtensionSupport(const VkPhysicalDevice &device);
 
 private:
   static const uint32_t VK_API_VERSION = VK_API_VERSION_1_3; // TODO Change to 1.4 when VMA supports it
@@ -100,6 +100,5 @@ private:
 
 #ifndef NDEBUG
   VkDebugUtilsMessengerEXT m_debugMessenger;
-  vk::detail::DispatchLoaderDynamic dldi;
 #endif
 };
