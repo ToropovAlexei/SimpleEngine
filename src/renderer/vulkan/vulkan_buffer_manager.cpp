@@ -3,7 +3,7 @@
 
 VulkanBufferManager::VulkanBufferManager(VulkanDevice *device) : m_device{device} {}
 
-BufferId VulkanBufferManager::createBuffer(BufferDesc &desc) {
+size_t VulkanBufferManager::createBuffer(BufferDesc &desc) {
   VkBufferUsageFlags usage = 0;
 
   if (desc.usage & BufferUsage::VERTEX_BUFFER) {
@@ -52,7 +52,7 @@ BufferId VulkanBufferManager::createBuffer(BufferDesc &desc) {
   VmaAllocationCreateInfo allocInfo = {};
   allocInfo.usage = memoryUsage;
 
-  const BufferId bufferId = getNewBufferId();
+  const size_t bufferId = getNewBufferId();
 
   Buffer &buffer = m_buffers[bufferId];
   buffer.size = descSize;
@@ -67,20 +67,20 @@ BufferId VulkanBufferManager::createBuffer(BufferDesc &desc) {
   return bufferId;
 }
 
-void VulkanBufferManager::destroyBuffer(BufferId bufferId) {
+void VulkanBufferManager::destroyBuffer(size_t bufferId) {
   Buffer &buffer = m_buffers[bufferId];
   vmaDestroyBuffer(m_device->getAllocator(), buffer.buffer, buffer.allocation);
   m_freeIds.push(bufferId);
 }
 
-BufferId VulkanBufferManager::getNewBufferId() {
+size_t VulkanBufferManager::getNewBufferId() {
   if (m_freeIds.empty()) {
-    BufferId bufferId = m_buffers.size();
+    size_t bufferId = m_buffers.size();
     m_buffers.emplace_back();
     return bufferId;
   }
 
-  BufferId bufferId = m_freeIds.front();
+  size_t bufferId = m_freeIds.front();
   m_freeIds.pop();
   return bufferId;
 }
