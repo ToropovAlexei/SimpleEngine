@@ -7,7 +7,7 @@
 #include <renderer/renderer_types.hpp>
 
 Application::Application(int width, int height, std::string_view name)
-    : m_width{width}, m_height{height}, m_window{width, height, name}, m_rendererFrontend{m_window.getWindow()} {
+    : m_width{width}, m_height{height}, m_window{width, height, name}, m_renderer{m_window.getWindow()} {
   // IMGUI_CHECKVERSION();
   // ImGui::CreateContext();
   // ImGuiIO &io = ImGui::GetIO();
@@ -47,7 +47,7 @@ void Application::handleEvents() {
     if (event.type == SDL_EVENT_WINDOW_RESIZED) {
       m_width = event.window.data1;
       m_height = event.window.data2;
-      m_rendererFrontend.onResize(m_width, m_height);
+      m_renderer.onResize(m_width, m_height);
     }
     m_keyboard.handleEvent(event);
     m_mouse.handleEvent(event);
@@ -58,7 +58,8 @@ void Application::update(double dt) {}
 
 void Application::render(double dt) {
   FrameData frameData{.deltaTime = dt};
-  m_rendererFrontend.drawFrame(frameData);
+  m_renderer.beginFrame();
+  m_renderer.endFrame();
   // ImGui_ImplSDLRenderer3_NewFrame();
   // ImGui_ImplSDL3_NewFrame();
   // ImGui::NewFrame();

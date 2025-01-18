@@ -13,7 +13,7 @@ VulkanBackend::VulkanBackend(SDL_Window *window) : m_window{window} {
 }
 
 VulkanBackend::~VulkanBackend() {
-  vkDeviceWaitIdle(m_device->getDevice());
+  m_device->flushGPU();
   vkFreeCommandBuffers(m_device->getDevice(), m_device->getCommandPool(),
                        static_cast<uint32_t>(m_commandBuffers.size()), m_commandBuffers.data());
   m_commandBuffers.clear();
@@ -117,7 +117,7 @@ void VulkanBackend::recreateSwapChain() {
   int height = 0;
   SDL_GetWindowSize(m_window, &width, &height);
   VkExtent2D extent = {static_cast<uint32_t>(width), static_cast<uint32_t>(height)};
-  vkDeviceWaitIdle(m_device->getDevice());
+  m_device->flushGPU();
 
   if (m_swapChain == nullptr) {
     m_swapChain = std::make_unique<VulkanSwapchain>(m_device.get(), extent);
@@ -149,6 +149,6 @@ void VulkanBackend::createCommandBuffers() {
 void VulkanBackend::onResize(int width, int height) {
   if (width == 0 || height == 0)
     return;
-  vkDeviceWaitIdle(m_device->getDevice());
+  m_device->flushGPU();
   recreateSwapChain();
 }

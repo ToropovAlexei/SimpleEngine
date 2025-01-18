@@ -58,7 +58,7 @@ size_t VulkanBufferManager::createBuffer(BufferDesc &desc) {
   buffer.size = descSize;
 
   VK_CHECK_RESULT(
-      vmaCreateBuffer(m_device->getAllocator(), &bufferInfo, &allocInfo, &buffer.buffer, &buffer.allocation, nullptr));
+      vmaCreateBuffer(m_device->m_allocator, &bufferInfo, &allocInfo, &buffer.buffer, &buffer.allocation, nullptr));
 
   buffer.name = desc.name;
 
@@ -69,7 +69,7 @@ size_t VulkanBufferManager::createBuffer(BufferDesc &desc) {
 
 void VulkanBufferManager::destroyBuffer(size_t bufferId) {
   Buffer &buffer = m_buffers[bufferId];
-  vmaDestroyBuffer(m_device->getAllocator(), buffer.buffer, buffer.allocation);
+  vmaDestroyBuffer(m_device->m_allocator, buffer.buffer, buffer.allocation);
   m_freeIds.push(bufferId);
 }
 

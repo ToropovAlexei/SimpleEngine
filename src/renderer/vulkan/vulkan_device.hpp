@@ -32,6 +32,8 @@ struct QueueFamilyIndices {
 };
 
 class VulkanDevice {
+  friend class VulkanBufferManager;
+
 public:
   VulkanDevice(SDL_Window *window);
   ~VulkanDevice();
@@ -40,6 +42,7 @@ public:
   inline QueueFamilyIndices findQueueFamilies() { return findQueueFamilies(m_physicalDevice); }
   SwapChainSupportDetails getSwapChainSupport();
 
+  inline void flushGPU() { vkDeviceWaitIdle(m_device); }
   inline VkDevice &getDevice() noexcept { return m_device; };
   inline VkPhysicalDevice &getPhysicalDevice() noexcept { return m_physicalDevice; };
   inline VkSurfaceKHR &getSurface() noexcept { return m_surface; };
@@ -53,13 +56,11 @@ public:
   void createImageWithInfo(const VkImageCreateInfo &imageInfo, VmaMemoryUsage memoryUsage, VkImage &image,
                            VmaAllocation &imageAllocation);
   VkFormat findSupportedFormat(const std::vector<VkFormat> &candidates, VkImageTiling tiling,
-                                 VkFormatFeatureFlags features);
+                               VkFormatFeatureFlags features);
   VkCommandBuffer beginSingleTimeCommands();
   void endSingleTimeCommands(VkCommandBuffer commandBuffer);
-  void createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VmaMemoryUsage memoryUsage,
-                    VmaAllocationCreateFlags flags, VkBuffer &buffer, VmaAllocation &allocation,
-                    VmaAllocationInfo &allocInfo);
-  void copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
+  void copyBuffer(VkBuffer dstBuffer, VkDeviceSize dstOffset, VkBuffer srcBuffer, VkDeviceSize srcOffset,
+                  VkDeviceSize size);
 
 private:
   void initVulkan();

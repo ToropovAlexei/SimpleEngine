@@ -5,7 +5,7 @@
 #include <core/input/mouse.hpp>
 #include <core/renderer.hpp>
 #include <core/window.hpp>
-#include <renderer/renderer_frontend.hpp>
+#include <renderer/renderer_backend.hpp>
 #include <string>
 #include <string_view>
 
@@ -30,7 +30,6 @@ private:
   Keyboard m_keyboard;
   Mouse m_mouse;
   Window m_window;
-  // Renderer m_renderer;
-  RendererFrontend m_rendererFrontend;
+  RendererBackend m_renderer;
   Clock m_clock;
 };

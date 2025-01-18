@@ -1,5 +1,6 @@
 #pragma once
 
+#include "renderer/vulkan/vulkan_buffer_manager.hpp"
 #include <core/assert.hpp>
 #include <memory>
 #include <renderer/vulkan/vulkan_device.hpp>
@@ -37,6 +38,7 @@ private:
   SDL_Window *m_window;
   std::unique_ptr<VulkanDevice> m_device;
   std::unique_ptr<VulkanSwapchain> m_swapChain;
+  std::unique_ptr<VulkanBufferManager> m_bufferManager;
   std::vector<VkCommandBuffer> m_commandBuffers;
 
   uint32_t m_currentImageIndex = 0;
