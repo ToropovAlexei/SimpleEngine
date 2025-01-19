@@ -1,15 +1,15 @@
 #pragma once
 
-#include "renderer/vulkan/vulkan_buffer_manager.hpp"
 #include <core/assert.hpp>
 #include <memory>
+#include <renderer/vulkan/vulkan_buffer_manager.hpp>
 #include <renderer/vulkan/vulkan_device.hpp>
 #include <renderer/vulkan/vulkan_swapchain.hpp>
 
-class VulkanBackend {
+class VulkanRenderer {
 public:
-  VulkanBackend(SDL_Window *window);
-  ~VulkanBackend();
+  VulkanRenderer(SDL_Window *window);
+  ~VulkanRenderer();
 
   void beginSwapChainRenderPass(VkCommandBuffer commandBuffer);
   void endSwapChainRenderPass(VkCommandBuffer commandBuffer);

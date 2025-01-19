@@ -1,4 +1,4 @@
-#include "vulkan_backend.hpp"
+#include "vulkan_renderer.hpp"
 #include "SDL3/SDL_video.h"
 #include <core/assert.hpp>
 #include <core/exception.hpp>
@@ -6,20 +6,20 @@
 #include <renderer/vulkan/vulkan_swapchain.hpp>
 #include <renderer/vulkan/vulkan_utils.hpp>
 
-VulkanBackend::VulkanBackend(SDL_Window *window) : m_window{window} {
+VulkanRenderer::VulkanRenderer(SDL_Window *window) : m_window{window} {
   m_device = std::make_unique<VulkanDevice>(m_window);
   recreateSwapChain();
   createCommandBuffers();
 }
 
-VulkanBackend::~VulkanBackend() {
+VulkanRenderer::~VulkanRenderer() {
   m_device->flushGPU();
   vkFreeCommandBuffers(m_device->getDevice(), m_device->getCommandPool(),
                        static_cast<uint32_t>(m_commandBuffers.size()), m_commandBuffers.data());
   m_commandBuffers.clear();
 }
 
-void VulkanBackend::beginSwapChainRenderPass(VkCommandBuffer commandBuffer) {
+void VulkanRenderer::beginSwapChainRenderPass(VkCommandBuffer commandBuffer) {
   assert(m_isFrameStarted && "Can't call beginSwapChainRenderPass "
                              "without first calling beginFrame");
   assert(commandBuffer == getCurrentCommandBuffer() &&
@@ -56,7 +56,7 @@ void VulkanBackend::beginSwapChainRenderPass(VkCommandBuffer commandBuffer) {
   vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
 }
 
-void VulkanBackend::endSwapChainRenderPass(VkCommandBuffer commandBuffer) {
+void VulkanRenderer::endSwapChainRenderPass(VkCommandBuffer commandBuffer) {
   assert(m_isFrameStarted && "Can't call endSwapChainRenderPass "
                              "without first calling beginFrame");
   assert(commandBuffer == getCurrentCommandBuffer() &&
@@ -65,7 +65,7 @@ void VulkanBackend::endSwapChainRenderPass(VkCommandBuffer commandBuffer) {
   vkCmdEndRenderPass(commandBuffer);
 }
 
-VkCommandBuffer VulkanBackend::beginFrame() {
+VkCommandBuffer VulkanRenderer::beginFrame() {
   SE_ASSERT(!m_isFrameStarted, "Can't call beginFrame while already in progress");
 
   auto result = m_swapChain->acquireNextImage(&m_currentImageIndex);
@@ -91,7 +91,7 @@ VkCommandBuffer VulkanBackend::beginFrame() {
   return commandBuffer;
 }
 
-void VulkanBackend::endFrame() {
+void VulkanRenderer::endFrame() {
   assert(m_isFrameStarted && "Can't call endFrame while frame not in progress");
 
   auto commandBuffer = getCurrentCommandBuffer();
@@ -112,7 +112,7 @@ void VulkanBackend::endFrame() {
   m_currentFrameIndex = (m_currentFrameIndex + 1) % VulkanSwapchain::MAX_FRAMES_IN_FLIGHT;
 }
 
-void VulkanBackend::recreateSwapChain() {
+void VulkanRenderer::recreateSwapChain() {
   int width = 0;
   int height = 0;
   SDL_GetWindowSize(m_window, &width, &height);
@@ -132,7 +132,7 @@ void VulkanBackend::recreateSwapChain() {
   LOG_INFO("Swap chain recreated");
 }
 
-void VulkanBackend::createCommandBuffers() {
+void VulkanRenderer::createCommandBuffers() {
   m_commandBuffers.resize(VulkanSwapchain::MAX_FRAMES_IN_FLIGHT);
 
   VkCommandBufferAllocateInfo allocInfo = {
@@ -146,7 +146,7 @@ void VulkanBackend::createCommandBuffers() {
   VK_CHECK_RESULT(vkAllocateCommandBuffers(m_device->getDevice(), &allocInfo, m_commandBuffers.data()));
 }
 
-void VulkanBackend::onResize(int width, int height) {
+void VulkanRenderer::onResize(int width, int height) {
   if (width == 0 || height == 0)
     return;
   m_device->flushGPU();

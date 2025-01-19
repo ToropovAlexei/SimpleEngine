@@ -58,7 +58,9 @@ void Application::update(double dt) {}
 
 void Application::render(double dt) {
   FrameData frameData{.deltaTime = dt};
-  m_renderer.beginFrame();
+  auto commandBuffer = m_renderer.beginFrame();
+  m_renderer.beginSwapChainRenderPass(commandBuffer);
+  m_renderer.endSwapChainRenderPass(commandBuffer);
   m_renderer.endFrame();
   // ImGui_ImplSDLRenderer3_NewFrame();
   // ImGui_ImplSDL3_NewFrame();

@@ -5,7 +5,7 @@
 #include <core/input/mouse.hpp>
 #include <core/renderer.hpp>
 #include <core/window.hpp>
-#include <renderer/renderer_backend.hpp>
+#include <renderer/vulkan_renderer.hpp>
 #include <string>
 #include <string_view>
 
@@ -30,6 +30,6 @@ private:
   Keyboard m_keyboard;
   Mouse m_mouse;
   Window m_window;
-  RendererBackend m_renderer;
+  VulkanRenderer m_renderer;
   Clock m_clock;
 };
