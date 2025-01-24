@@ -1,10 +1,14 @@
 #include "vulkan_renderer.hpp"
 #include "SDL3/SDL_video.h"
+#include "imgui.h"
+#include "imgui_impl_sdl3.h"
+#include "imgui_impl_vulkan.h"
 #include <engine/core/assert.hpp>
 #include <engine/core/exception.hpp>
 #include <engine/core/logger.hpp>
 #include <engine/renderer/vulkan/vulkan_swapchain.hpp>
 #include <engine/renderer/vulkan/vulkan_utils.hpp>
+#include <vulkan/vulkan_core.h>
 
 namespace engine {
 namespace renderer {
@@ -12,12 +16,17 @@ VulkanRenderer::VulkanRenderer(SDL_Window *window) : m_window{window} {
   m_device = std::make_unique<VulkanDevice>(m_window);
   recreateSwapChain();
   createCommandBuffers();
+  initImGui();
 }
 
 VulkanRenderer::~VulkanRenderer() {
   m_device->flushGPU();
+  ImGui_ImplVulkan_Shutdown();
+  ImGui_ImplSDL3_Shutdown();
+  ImGui::DestroyContext();
   vkFreeCommandBuffers(m_device->getDevice(), m_device->getCommandPool(),
                        static_cast<uint32_t>(m_commandBuffers.size()), m_commandBuffers.data());
+  vkDestroyDescriptorPool(m_device->getDevice(), m_imguiPool, nullptr);
   m_commandBuffers.clear();
 }
 
@@ -27,25 +36,47 @@ void VulkanRenderer::beginSwapChainRenderPass(VkCommandBuffer commandBuffer) {
   SE_ASSERT(commandBuffer == getCurrentCommandBuffer(),
             "Can't call beginSwapChainRenderPass on a different command buffer");
 
-  std::array<VkClearValue, 2> clearValues{};
-  clearValues[0] = VkClearValue({{{1.0f, 1.0f, 1.0f, 1.0f}}});
-  clearValues[1] = VkClearValue({.depthStencil = {1.0f, 0}});
+  m_device->transitionImageLayout(
+      commandBuffer, m_swapChain->getImage(m_currentImageIndex), 0, VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
+      VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+      VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+      VkImageSubresourceRange{VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1});
+  m_device->transitionImageLayout(
+      commandBuffer, m_swapChain->getDepthImage(m_currentImageIndex), 0, VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
+      VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
+      VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT,
+      VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT,
+      VkImageSubresourceRange{VK_IMAGE_ASPECT_DEPTH_BIT, 0, 1, 0, 1});
 
-  VkRenderPassBeginInfo renderPassInfo = {
-      .sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO,
-      .pNext = nullptr,
-      .renderPass = m_swapChain->getRenderPass(),
-      .framebuffer = m_swapChain->getFrameBuffer(m_currentImageIndex),
-      .renderArea =
-          {
-              .offset = {0, 0},
-              .extent = m_swapChain->getSwapChainExtent(),
-          },
-      .clearValueCount = static_cast<uint32_t>(clearValues.size()),
-      .pClearValues = clearValues.data(),
-  };
+  VkRenderingAttachmentInfoKHR colorAttachment{};
+  colorAttachment.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO_KHR;
+  colorAttachment.imageView = m_swapChain->getImageView(m_currentImageIndex);
+  colorAttachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+  colorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+  colorAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+  colorAttachment.clearValue.color = {{1.0f, 1.0f, 1.0f, 1.0f}};
 
-  vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+  // A single depth stencil attachment info can be used, but they can also be specified separately.
+  // When both are specified separately, the only requirement is that the image view is identical.
+  VkRenderingAttachmentInfoKHR depthStencilAttachment{};
+  depthStencilAttachment.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO_KHR;
+  depthStencilAttachment.imageView = m_swapChain->getDepthImageView(m_currentImageIndex);
+  depthStencilAttachment.imageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+  depthStencilAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+  depthStencilAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+  depthStencilAttachment.clearValue.depthStencil = {1.0f, 0};
+
+  VkRenderingInfoKHR renderingInfo{};
+  renderingInfo.sType = VK_STRUCTURE_TYPE_RENDERING_INFO_KHR;
+  renderingInfo.renderArea = {{0, 0},
+                              {m_swapChain->getSwapChainExtent().width, m_swapChain->getSwapChainExtent().height}};
+  renderingInfo.layerCount = 1;
+  renderingInfo.colorAttachmentCount = 1;
+  renderingInfo.pColorAttachments = &colorAttachment;
+  renderingInfo.pDepthAttachment = &depthStencilAttachment;
+  renderingInfo.pStencilAttachment = nullptr;
+
+  vkCmdBeginRendering(commandBuffer, &renderingInfo);
 
   VkViewport viewport{.x = 0.0f,
                       .y = 0.0f,
@@ -64,7 +95,13 @@ void VulkanRenderer::endSwapChainRenderPass(VkCommandBuffer commandBuffer) {
   SE_ASSERT(commandBuffer == getCurrentCommandBuffer(),
             "Can't call endSwapChainRenderPass on a different command buffer");
 
-  vkCmdEndRenderPass(commandBuffer);
+  vkCmdEndRendering(commandBuffer);
+
+  m_device->transitionImageLayout(commandBuffer, m_swapChain->getImage(m_currentImageIndex),
+                                  VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT, 0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+                                  VK_IMAGE_LAYOUT_PRESENT_SRC_KHR, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+                                  VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
+                                  VkImageSubresourceRange{VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1});
 }
 
 VkCommandBuffer VulkanRenderer::beginFrame() {
@@ -153,6 +190,59 @@ void VulkanRenderer::onResize(int width, int height) {
     return;
   m_device->flushGPU();
   recreateSwapChain();
+}
+
+void VulkanRenderer::initImGui() {
+  IMGUI_CHECKVERSION();
+  ImGui::CreateContext();
+  ImGuiIO &io = ImGui::GetIO();
+  io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
+  ImGui::StyleColorsDark();
+  VkDescriptorPoolSize poolSizes[] = {{VK_DESCRIPTOR_TYPE_SAMPLER, 1000},
+                                      {VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1000},
+                                      {VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1000},
+                                      {VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1000},
+                                      {VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER, 1000},
+                                      {VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, 1000},
+                                      {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1000},
+                                      {VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1000},
+                                      {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 1000},
+                                      {VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC, 1000},
+                                      {VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1000}};
+
+  VkDescriptorPoolCreateInfo poolInfo = {};
+  poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+  poolInfo.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
+  poolInfo.maxSets = 1000 * sizeof(poolSizes) / sizeof(poolSizes[0]);
+  poolInfo.poolSizeCount = static_cast<uint32_t>(sizeof(poolSizes) / sizeof(poolSizes[0]));
+  poolInfo.pPoolSizes = poolSizes;
+
+  vkCreateDescriptorPool(m_device->getDevice(), &poolInfo, nullptr, &m_imguiPool);
+
+  ImGui_ImplSDL3_InitForVulkan(m_window);
+
+  auto imageFormat = m_swapChain->getSwapChainImageFormat();
+  VkPipelineRenderingCreateInfoKHR pipelineRenderingCreateInfo = {
+      .sType = VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO,
+      .pNext = nullptr,
+      .viewMask = 0,
+      .colorAttachmentCount = 1,
+      .pColorAttachmentFormats = &imageFormat,
+      .depthAttachmentFormat = m_swapChain->findDepthFormat(),
+      .stencilAttachmentFormat = VK_FORMAT_UNDEFINED,
+  };
+  ImGui_ImplVulkan_InitInfo initInfo = {};
+  initInfo.Instance = m_device->getInstance();
+  initInfo.PhysicalDevice = m_device->getPhysicalDevice();
+  initInfo.Device = m_device->getDevice();
+  initInfo.Queue = m_device->getGraphicsQueue();
+  initInfo.DescriptorPool = m_imguiPool;
+  initInfo.UseDynamicRendering = true;
+  initInfo.MinImageCount = VulkanSwapchain::MAX_FRAMES_IN_FLIGHT;
+  initInfo.ImageCount = VulkanSwapchain::MAX_FRAMES_IN_FLIGHT;
+  initInfo.PipelineRenderingCreateInfo = pipelineRenderingCreateInfo;
+
+  ImGui_ImplVulkan_Init(&initInfo);
 }
 } // namespace renderer
 } // namespace engine

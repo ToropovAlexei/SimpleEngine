@@ -1,8 +1,11 @@
+#include <cstdint>
+#include <vulkan/vulkan_core.h>
 #define VMA_IMPLEMENTATION
 #include "vulkan_device.hpp"
 #include <SDL3/SDL_vulkan.h>
 #include <engine/core/exception.hpp>
 #include <engine/core/logger.hpp>
+#include <engine/renderer/vulkan/vulkan_swapchain.hpp>
 #include <engine/renderer/vulkan/vulkan_utils.hpp>
 #include <map>
 #include <set>
@@ -22,15 +25,15 @@ static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(VkDebugUtilsMessageSeverityF
                                                     const VkDebugUtilsMessengerCallbackDataEXT *pCallbackData,
                                                     [[maybe_unused]] void *pUserData) {
   if (messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT) {
-    LOG_ERROR("Validation Error: {}", pCallbackData->pMessage);
+    LOG_ERROR("Vulkan: {}", pCallbackData->pMessage);
   } else if (messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT) {
-    LOG_WARN("Validation Warning: {}", pCallbackData->pMessage);
+    LOG_WARN("Vulkan: {}", pCallbackData->pMessage);
   } else if (messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT) {
-    LOG_INFO("Validation Info: {}", pCallbackData->pMessage);
+    LOG_INFO("Vulkan: {}", pCallbackData->pMessage);
   } else if (messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT) {
-    LOG_TRACE("Validation Verbose: {}", pCallbackData->pMessage);
+    LOG_TRACE("Vulkan: {}", pCallbackData->pMessage);
   } else {
-    LOG_INFO("Validation Debug: {}", pCallbackData->pMessage);
+    LOG_INFO("Vulkan: {}", pCallbackData->pMessage);
   }
 
   return VK_FALSE;
@@ -185,9 +188,15 @@ void VulkanDevice::createLogicalDevice() {
                                 .pQueuePriorities = &queuePriority});
   }
 
+  VkPhysicalDeviceDynamicRenderingFeaturesKHR dynamicRenderingFeatures = {
+      .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DYNAMIC_RENDERING_FEATURES,
+      .pNext = nullptr,
+      .dynamicRendering = VK_TRUE,
+  };
+
   VkPhysicalDeviceHostQueryResetFeaturesEXT resetFeatures = {
       .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_HOST_QUERY_RESET_FEATURES,
-      .pNext = nullptr,
+      .pNext = &dynamicRenderingFeatures,
       .hostQueryReset = VK_TRUE,
   };
 
@@ -354,10 +363,10 @@ bool VulkanDevice::checkInstanceExtensionSupport(std::vector<const char *> &requ
 }
 
 std::vector<const char *> VulkanDevice::getRequiredExtensions() {
-  uint32_t glfwExtensionCount = 0;
-  const char *const *sdlExtensions = SDL_Vulkan_GetInstanceExtensions(&glfwExtensionCount);
+  uint32_t sdlExtensionCount = 0;
+  const char *const *sdlExtensions = SDL_Vulkan_GetInstanceExtensions(&sdlExtensionCount);
 
-  std::vector<const char *> extensions(sdlExtensions, sdlExtensions + glfwExtensionCount);
+  std::vector<const char *> extensions(sdlExtensions, sdlExtensions + sdlExtensionCount);
 
 #ifndef NDEBUG
   for (auto extension : extensions) {
@@ -562,4 +571,24 @@ void VulkanDevice::copyBuffer(VkBuffer dstBuffer, VkDeviceSize dstOffset, VkBuff
   vkCmdCopyBuffer(commandBuffer, srcBuffer, dstBuffer, 1, &copyRegion);
 
   endSingleTimeCommands(commandBuffer);
+}
+
+void VulkanDevice::transitionImageLayout(VkCommandBuffer cmdbuffer, VkImage image, VkAccessFlags srcAccessMask,
+                                         VkAccessFlags dstAccessMask, VkImageLayout oldImageLayout,
+                                         VkImageLayout newImageLayout, VkPipelineStageFlags srcStageMask,
+                                         VkPipelineStageFlags dstStageMask, VkImageSubresourceRange subresourceRange) {
+  VkImageMemoryBarrier imageBarrier = {
+      .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
+      .pNext = nullptr,
+      .srcAccessMask = srcAccessMask,
+      .dstAccessMask = dstAccessMask,
+      .oldLayout = oldImageLayout,
+      .newLayout = newImageLayout,
+      .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+      .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+      .image = image,
+      .subresourceRange = subresourceRange,
+  };
+
+  vkCmdPipelineBarrier(cmdbuffer, srcStageMask, dstStageMask, 0, 0, nullptr, 0, nullptr, 1, &imageBarrier);
 }

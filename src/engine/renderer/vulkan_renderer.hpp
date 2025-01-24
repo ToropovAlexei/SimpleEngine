@@ -22,7 +22,6 @@ public:
   void onResize(int width, int height);
 
   inline float getAspectRatio() const { return m_swapChain->extentAspectRatio(); }
-  inline VkRenderPass getSwapChainRenderPass() const { return m_swapChain->getRenderPass(); }
   inline size_t getFrameIndex() const {
     SE_ASSERT(m_isFrameStarted, "Can't get frame index when frame not in progress");
     return m_currentFrameIndex;
@@ -35,6 +34,8 @@ public:
 private:
   void recreateSwapChain();
   void createCommandBuffers();
+
+  void initImGui();
 
 private:
   SDL_Window *m_window;
@@ -49,6 +50,8 @@ private:
 #ifndef NDEBUG
   bool m_isFrameStarted = false;
 #endif
+
+  VkDescriptorPool m_imguiPool;
 };
 } // namespace renderer
 } // namespace engine

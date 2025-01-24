@@ -62,6 +62,11 @@ public:
   void copyBuffer(VkBuffer dstBuffer, VkDeviceSize dstOffset, VkBuffer srcBuffer, VkDeviceSize srcOffset,
                   VkDeviceSize size);
 
+  void transitionImageLayout(VkCommandBuffer cmdbuffer, VkImage image, VkAccessFlags srcAccessMask,
+                             VkAccessFlags dstAccessMask, VkImageLayout oldImageLayout, VkImageLayout newImageLayout,
+                             VkPipelineStageFlags srcStageMask, VkPipelineStageFlags dstStageMask,
+                             VkImageSubresourceRange subresourceRange);
+
 private:
   void initVulkan();
   void setupDebugMessenger();

@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstddef>
 #include <engine/renderer/vulkan/vulkan_device.hpp>
 #include <memory>
 
@@ -11,9 +12,10 @@ public:
   VulkanSwapchain(VulkanDevice *device, VkExtent2D windowExtent, std::shared_ptr<VulkanSwapchain> previousSwapChain);
   ~VulkanSwapchain();
 
-  inline VkFramebuffer getFrameBuffer(size_t index) noexcept { return m_swapChainFramebuffers[index]; }
-  inline VkRenderPass getRenderPass() noexcept { return m_renderPass; }
   inline VkImageView getImageView(size_t index) noexcept { return m_swapChainImageViews[index]; }
+  inline VkImage getImage(size_t index) noexcept { return m_swapChainImages[index]; }
+  inline VkImageView getDepthImageView(size_t index) noexcept { return m_depthImageViews[index]; }
+  inline VkImage getDepthImage(size_t index) noexcept { return m_depthImages[index]; }
   inline size_t imageCount() noexcept { return m_swapChainImages.size(); }
   inline VkFormat getSwapChainImageFormat() noexcept { return m_swapChainImageFormat; }
   inline VkExtent2D getSwapChainExtent() noexcept { return m_swapChainExtent; }
@@ -36,8 +38,6 @@ private:
   void createSwapChain();
   void createImageViews();
   void createDepthResources();
-  void createRenderPass();
-  void createFramebuffers();
   void createSyncObjects();
 
   VkSurfaceFormatKHR chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR> &availableFormats);
@@ -48,9 +48,6 @@ private:
   VkFormat m_swapChainDepthFormat;
   VkExtent2D m_swapChainExtent;
   float m_aspectRatio = 0.0f;
-
-  std::vector<VkFramebuffer> m_swapChainFramebuffers;
-  VkRenderPass m_renderPass;
 
   std::vector<VkImage> m_depthImages;
   std::vector<VmaAllocation> m_depthImageMemorys;

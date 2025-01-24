@@ -1,7 +1,7 @@
 #include "application.hpp"
 #include "imgui.h"
 #include "imgui_impl_sdl3.h"
-// #include "imgui_impl_sdlrenderer3.h"
+#include "imgui_impl_vulkan.h"
 #include <SDL3/SDL_events.h>
 #include <engine/core/assert.hpp>
 #include <engine/renderer/renderer_types.hpp>
@@ -19,9 +19,6 @@ Application::Application(int width, int height, std::string_view name)
 }
 
 Application::~Application() {
-  // ImGui_ImplSDLRenderer3_Shutdown();
-  // ImGui_ImplSDL3_Shutdown();
-  // ImGui::DestroyContext();
   // SDL_Quit();
 }
 
@@ -40,7 +37,7 @@ int Application::run() {
 void Application::handleEvents() {
   SDL_Event event;
   while (SDL_PollEvent(&event)) {
-    // ImGui_ImplSDL3_ProcessEvent(&event);
+    ImGui_ImplSDL3_ProcessEvent(&event);
     if (event.type == SDL_EVENT_QUIT) {
       m_running = false;
     }
@@ -58,17 +55,19 @@ void Application::update(double dt) {}
 
 void Application::render(double dt) {
   FrameData frameData{.deltaTime = dt};
+  ImGui_ImplVulkan_NewFrame();
+  ImGui_ImplSDL3_NewFrame();
+  ImGui::NewFrame();
+  ImGui::ShowDemoWindow();
+  ImGui::Render();
+  ImDrawData *draw_data = ImGui::GetDrawData();
   if (auto commandBuffer = m_renderer.beginFrame()) {
     m_renderer.beginSwapChainRenderPass(commandBuffer);
+    ImGui_ImplVulkan_RenderDrawData(draw_data, commandBuffer);
     m_renderer.endSwapChainRenderPass(commandBuffer);
     m_renderer.endFrame();
   }
 
-  // ImGui_ImplSDLRenderer3_NewFrame();
-  // ImGui_ImplSDL3_NewFrame();
-  // ImGui::NewFrame();
-  // ImGui::ShowDemoWindow();
-  // ImGui::Render();
   const double now = (static_cast<double>(m_clock.getElapsedTime()));
   const uint8_t red = static_cast<uint8_t>(255 * SDL_sin(now));
   const uint8_t green = static_cast<uint8_t>(255 * SDL_sin(now + SDL_PI_D * 2 / 3));

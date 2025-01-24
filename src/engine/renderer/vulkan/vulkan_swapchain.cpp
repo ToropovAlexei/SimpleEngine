@@ -1,4 +1,5 @@
 #include "vulkan_swapchain.hpp"
+#include <array>
 #include <engine/core/logger.hpp>
 #include <engine/renderer/vulkan/vulkan_utils.hpp>
 
@@ -18,9 +19,7 @@ VulkanSwapchain::VulkanSwapchain(VulkanDevice *device, VkExtent2D extent,
 void VulkanSwapchain::init() {
   createSwapChain();
   createImageViews();
-  createRenderPass();
   createDepthResources();
-  createFramebuffers();
   createSyncObjects();
 }
 
@@ -39,12 +38,6 @@ VulkanSwapchain::~VulkanSwapchain() {
     vkDestroyImageView(m_device->getDevice(), m_depthImageViews[i], nullptr);
     vmaDestroyImage(m_device->getAllocator(), m_depthImages[i], m_depthImageMemorys[i]);
   }
-
-  for (auto framebuffer : m_swapChainFramebuffers) {
-    vkDestroyFramebuffer(m_device->getDevice(), framebuffer, nullptr);
-  }
-
-  vkDestroyRenderPass(m_device->getDevice(), m_renderPass, nullptr);
 
   // cleanup synchronization objects
   for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
@@ -85,9 +78,9 @@ VkResult VulkanSwapchain::submitCommandBuffers(const VkCommandBuffer *buffers, u
   submitInfo.commandBufferCount = 1;
   submitInfo.pCommandBuffers = buffers;
 
-  VkSemaphore signalSemaphores[] = {m_renderFinishedSemaphores[m_currentFrame]};
-  submitInfo.signalSemaphoreCount = 1;
-  submitInfo.pSignalSemaphores = signalSemaphores;
+  auto signalSemaphores = std::to_array({m_renderFinishedSemaphores[m_currentFrame]});
+  submitInfo.signalSemaphoreCount = signalSemaphores.size();
+  submitInfo.pSignalSemaphores = signalSemaphores.data();
 
   VK_CHECK_RESULT(vkResetFences(m_device->getDevice(), 1, &m_inFlightFences[m_currentFrame]));
 
@@ -95,12 +88,12 @@ VkResult VulkanSwapchain::submitCommandBuffers(const VkCommandBuffer *buffers, u
 
   VkPresentInfoKHR presentInfo = {};
   presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
-  presentInfo.waitSemaphoreCount = 1;
-  presentInfo.pWaitSemaphores = signalSemaphores;
+  presentInfo.waitSemaphoreCount = signalSemaphores.size();
+  presentInfo.pWaitSemaphores = signalSemaphores.data();
 
-  VkSwapchainKHR swapChains[] = {m_swapChain};
-  presentInfo.swapchainCount = 1;
-  presentInfo.pSwapchains = swapChains;
+  auto swapChains = std::to_array({m_swapChain});
+  presentInfo.swapchainCount = swapChains.size();
+  presentInfo.pSwapchains = swapChains.data();
 
   presentInfo.pImageIndices = imageIndex;
 
@@ -186,87 +179,6 @@ void VulkanSwapchain::createImageViews() {
     viewInfo.subresourceRange.layerCount = 1;
 
     vkCreateImageView(m_device->getDevice(), &viewInfo, nullptr, &m_swapChainImageViews[i]);
-  }
-}
-
-void VulkanSwapchain::createRenderPass() {
-  VkAttachmentDescription depthAttachment = {
-      .flags = 0,
-      .format = findDepthFormat(),
-      .samples = VK_SAMPLE_COUNT_1_BIT,
-      .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
-      .storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE,
-      .stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE,
-      .stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE,
-      .initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
-      .finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
-  };
-
-  VkAttachmentReference depthAttachmentRef = {.attachment = 1,
-                                              .layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL};
-
-  VkAttachmentDescription colorAttachment = {.flags = 0,
-                                             .format = getSwapChainImageFormat(),
-                                             .samples = VK_SAMPLE_COUNT_1_BIT,
-                                             .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
-                                             .storeOp = VK_ATTACHMENT_STORE_OP_STORE,
-                                             .stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE,
-                                             .stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE,
-                                             .initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
-                                             .finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR};
-
-  VkAttachmentReference colorAttachmentRef = {.attachment = 0, .layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL};
-
-  VkSubpassDescription subpass = {};
-  subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
-  subpass.colorAttachmentCount = 1;
-  subpass.pColorAttachments = &colorAttachmentRef;
-  subpass.pDepthStencilAttachment = &depthAttachmentRef;
-
-  VkSubpassDependency dependency = {
-      .srcSubpass = VK_SUBPASS_EXTERNAL,
-      .dstSubpass = 0,
-      .srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT,
-      .dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT,
-      .srcAccessMask = VK_ACCESS_NONE,
-      .dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
-      .dependencyFlags = 0};
-
-  std::array<VkAttachmentDescription, 2> attachments = {colorAttachment, depthAttachment};
-  VkRenderPassCreateInfo renderPassInfo = {
-      .sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO,
-      .pNext = nullptr,
-      .flags = 0,
-      .attachmentCount = static_cast<uint32_t>(attachments.size()),
-      .pAttachments = attachments.data(),
-      .subpassCount = 1,
-      .pSubpasses = &subpass,
-      .dependencyCount = 1,
-      .pDependencies = &dependency,
-  };
-
-  vkCreateRenderPass(m_device->getDevice(), &renderPassInfo, nullptr, &m_renderPass);
-}
-
-void VulkanSwapchain::createFramebuffers() {
-  m_swapChainFramebuffers.resize(imageCount());
-  for (size_t i = 0; i < imageCount(); i++) {
-    std::array<VkImageView, 2> attachments = {m_swapChainImageViews[i], m_depthImageViews[i]};
-
-    VkExtent2D swapChainExtent = getSwapChainExtent();
-    VkFramebufferCreateInfo framebufferInfo = {
-        .sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO,
-        .pNext = nullptr,
-        .flags = 0,
-        .renderPass = m_renderPass,
-        .attachmentCount = static_cast<uint32_t>(attachments.size()),
-        .pAttachments = attachments.data(),
-        .width = swapChainExtent.width,
-        .height = swapChainExtent.height,
-        .layers = 1,
-    };
-
-    VK_CHECK_RESULT(vkCreateFramebuffer(m_device->getDevice(), &framebufferInfo, nullptr, &m_swapChainFramebuffers[i]));
   }
 }
 
