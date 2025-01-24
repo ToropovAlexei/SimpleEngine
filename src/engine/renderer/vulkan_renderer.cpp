@@ -22,13 +22,13 @@ VulkanRenderer::~VulkanRenderer() {
 }
 
 void VulkanRenderer::beginSwapChainRenderPass(VkCommandBuffer commandBuffer) {
-  assert(m_isFrameStarted && "Can't call beginSwapChainRenderPass "
-                             "without first calling beginFrame");
-  assert(commandBuffer == getCurrentCommandBuffer() &&
-         "Can't call beginSwapChainRenderPass on a different command buffer");
+  SE_ASSERT(m_isFrameStarted, "Can't call beginSwapChainRenderPass "
+                              "without first calling beginFrame");
+  SE_ASSERT(commandBuffer == getCurrentCommandBuffer(),
+            "Can't call beginSwapChainRenderPass on a different command buffer");
 
   std::array<VkClearValue, 2> clearValues{};
-  clearValues[0] = VkClearValue({{{0.0f, 0.0f, 0.0f, 1.0f}}});
+  clearValues[0] = VkClearValue({{{1.0f, 1.0f, 1.0f, 1.0f}}});
   clearValues[1] = VkClearValue({.depthStencil = {1.0f, 0}});
 
   VkRenderPassBeginInfo renderPassInfo = {
@@ -59,10 +59,10 @@ void VulkanRenderer::beginSwapChainRenderPass(VkCommandBuffer commandBuffer) {
 }
 
 void VulkanRenderer::endSwapChainRenderPass(VkCommandBuffer commandBuffer) {
-  assert(m_isFrameStarted && "Can't call endSwapChainRenderPass "
-                             "without first calling beginFrame");
-  assert(commandBuffer == getCurrentCommandBuffer() &&
-         "Can't call endSwapChainRenderPass on a different command buffer");
+  SE_ASSERT(m_isFrameStarted, "Can't call endSwapChainRenderPass "
+                              "without first calling beginFrame");
+  SE_ASSERT(commandBuffer == getCurrentCommandBuffer(),
+            "Can't call endSwapChainRenderPass on a different command buffer");
 
   vkCmdEndRenderPass(commandBuffer);
 }
@@ -94,7 +94,7 @@ VkCommandBuffer VulkanRenderer::beginFrame() {
 }
 
 void VulkanRenderer::endFrame() {
-  assert(m_isFrameStarted && "Can't call endFrame while frame not in progress");
+  SE_ASSERT(m_isFrameStarted, "Can't call endFrame while frame not in progress");
 
   auto commandBuffer = getCurrentCommandBuffer();
   vkEndCommandBuffer(commandBuffer);

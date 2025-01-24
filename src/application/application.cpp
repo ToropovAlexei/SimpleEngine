@@ -1,7 +1,7 @@
 #include "application.hpp"
 #include "imgui.h"
 #include "imgui_impl_sdl3.h"
-#include "imgui_impl_sdlrenderer3.h"
+// #include "imgui_impl_sdlrenderer3.h"
 #include <SDL3/SDL_events.h>
 #include <engine/core/assert.hpp>
 #include <engine/renderer/renderer_types.hpp>
@@ -58,10 +58,12 @@ void Application::update(double dt) {}
 
 void Application::render(double dt) {
   FrameData frameData{.deltaTime = dt};
-  auto commandBuffer = m_renderer.beginFrame();
-  m_renderer.beginSwapChainRenderPass(commandBuffer);
-  m_renderer.endSwapChainRenderPass(commandBuffer);
-  m_renderer.endFrame();
+  if (auto commandBuffer = m_renderer.beginFrame()) {
+    m_renderer.beginSwapChainRenderPass(commandBuffer);
+    m_renderer.endSwapChainRenderPass(commandBuffer);
+    m_renderer.endFrame();
+  }
+
   // ImGui_ImplSDLRenderer3_NewFrame();
   // ImGui_ImplSDL3_NewFrame();
   // ImGui::NewFrame();
