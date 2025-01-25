@@ -1,5 +1,6 @@
 #pragma once
 
+#include "application/rendering/game_renderer.hpp"
 #include <engine/core/input/keyboard.hpp>
 #include <engine/core/input/mouse.hpp>
 #include <engine/core/timer.hpp>
@@ -30,5 +31,5 @@ private:
   engine::core::Mouse m_mouse;
   engine::core::Window m_window;
   engine::core::Timer m_timer;
-  engine::renderer::VulkanRenderer m_renderer;
+  GameRenderer m_gameRenderer;
 };
