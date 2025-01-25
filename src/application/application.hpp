@@ -1,8 +1,8 @@
 #pragma once
 
-#include <engine/core/clock.hpp>
 #include <engine/core/input/keyboard.hpp>
 #include <engine/core/input/mouse.hpp>
+#include <engine/core/timer.hpp>
 #include <engine/core/window.hpp>
 #include <engine/renderer/vulkan_renderer.hpp>
 #include <string>
@@ -17,8 +17,8 @@ public:
 
 private:
   void handleEvents();
-  void update(double dt);
-  void render(double dt);
+  void update(float dt);
+  void render(float dt);
 
 private:
   int m_width;
@@ -29,6 +29,6 @@ private:
   engine::core::Keyboard m_keyboard;
   engine::core::Mouse m_mouse;
   engine::core::Window m_window;
+  engine::core::Timer m_timer;
   engine::renderer::VulkanRenderer m_renderer;
-  engine::core::Clock m_clock;
 };

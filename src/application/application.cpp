@@ -24,11 +24,11 @@ Application::~Application() {
 
 int Application::run() {
   while (m_running) {
-    m_clock.update();
-    double dt = m_clock.getDeltaTime();
+    float deltaTime = m_timer.getDeltaTime();
+    m_timer.tick();
     handleEvents();
-    update(dt);
-    render(dt);
+    update(deltaTime);
+    render(deltaTime);
   }
 
   return 0;
@@ -51,9 +51,9 @@ void Application::handleEvents() {
   }
 }
 
-void Application::update(double dt) {}
+void Application::update(float dt) {}
 
-void Application::render(double dt) {
+void Application::render(float dt) {
   FrameData frameData{.deltaTime = dt};
   ImGui_ImplVulkan_NewFrame();
   ImGui_ImplSDL3_NewFrame();
@@ -67,11 +67,6 @@ void Application::render(double dt) {
     m_renderer.endSwapChainRenderPass(commandBuffer);
     m_renderer.endFrame();
   }
-
-  const double now = (static_cast<double>(m_clock.getElapsedTime()));
-  const uint8_t red = static_cast<uint8_t>(255 * SDL_sin(now));
-  const uint8_t green = static_cast<uint8_t>(255 * SDL_sin(now + SDL_PI_D * 2 / 3));
-  const uint8_t blue = static_cast<uint8_t>(255 * SDL_sin(now + SDL_PI_D * 4 / 3));
   // m_renderer.setDrawColor(red, green, blue, SDL_ALPHA_OPAQUE);
   // m_renderer.clear();
   // m_renderer.setDrawColor(50 * m_keyboard.isKeyDown(SDL_SCANCODE_LSHIFT), 0, 0, SDL_ALPHA_OPAQUE);
