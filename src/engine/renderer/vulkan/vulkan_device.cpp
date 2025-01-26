@@ -17,7 +17,8 @@ const std::vector<const char *> deviceExtensions = {
     //"VK_KHR_get_physical_device_properties2",
     "VK_KHR_maintenance1", "VK_KHR_maintenance3", "VK_KHR_draw_indirect_count", "VK_KHR_shader_subgroup_extended_types",
     "VK_EXT_descriptor_indexing", "VK_EXT_sampler_filter_minmax", "VK_EXT_host_query_reset",
-    "VK_KHR_shader_float16_int8", "VK_KHR_shader_atomic_int64"};
+    "VK_KHR_shader_float16_int8", "VK_KHR_shader_atomic_int64", VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME,
+    VK_EXT_SHADER_OBJECT_EXTENSION_NAME};
 
 #ifndef NDEBUG
 static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
@@ -188,9 +189,15 @@ void VulkanDevice::createLogicalDevice() {
                                 .pQueuePriorities = &queuePriority});
   }
 
+  VkPhysicalDeviceShaderObjectFeaturesEXT enabledShaderObjectFeaturesEXT = {
+      .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_OBJECT_FEATURES_EXT,
+      .pNext = nullptr,
+      .shaderObject = VK_TRUE,
+  };
+
   VkPhysicalDeviceDynamicRenderingFeaturesKHR dynamicRenderingFeatures = {
       .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DYNAMIC_RENDERING_FEATURES,
-      .pNext = nullptr,
+      .pNext = &enabledShaderObjectFeaturesEXT,
       .dynamicRendering = VK_TRUE,
   };
 

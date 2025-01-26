@@ -30,7 +30,7 @@ VulkanRenderer::~VulkanRenderer() {
   m_commandBuffers.clear();
 }
 
-void VulkanRenderer::beginSwapChainRenderPass(VkCommandBuffer commandBuffer) {
+void VulkanRenderer::beginRendering(VkCommandBuffer commandBuffer) {
   SE_ASSERT(m_isFrameStarted, "Can't call beginSwapChainRenderPass "
                               "without first calling beginFrame");
   SE_ASSERT(commandBuffer == getCurrentCommandBuffer(),
@@ -89,7 +89,7 @@ void VulkanRenderer::beginSwapChainRenderPass(VkCommandBuffer commandBuffer) {
   vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
 }
 
-void VulkanRenderer::endSwapChainRenderPass(VkCommandBuffer commandBuffer) {
+void VulkanRenderer::endRendering(VkCommandBuffer commandBuffer) {
   SE_ASSERT(m_isFrameStarted, "Can't call endSwapChainRenderPass "
                               "without first calling beginFrame");
   SE_ASSERT(commandBuffer == getCurrentCommandBuffer(),

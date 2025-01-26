@@ -13,9 +13,9 @@ void GameRenderer::render(float dt) {
   ImGui::Render();
   ImDrawData *draw_data = ImGui::GetDrawData();
   if (auto commandBuffer = m_renderer.beginFrame()) {
-    m_renderer.beginSwapChainRenderPass(commandBuffer);
+    m_renderer.beginRendering(commandBuffer);
     ImGui_ImplVulkan_RenderDrawData(draw_data, commandBuffer);
-    m_renderer.endSwapChainRenderPass(commandBuffer);
+    m_renderer.endRendering(commandBuffer);
     m_renderer.endFrame();
   }
 }

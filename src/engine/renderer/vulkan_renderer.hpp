@@ -13,8 +13,8 @@ public:
   VulkanRenderer(SDL_Window *window);
   ~VulkanRenderer();
 
-  void beginSwapChainRenderPass(VkCommandBuffer commandBuffer);
-  void endSwapChainRenderPass(VkCommandBuffer commandBuffer);
+  void beginRendering(VkCommandBuffer commandBuffer);
+  void endRendering(VkCommandBuffer commandBuffer);
 
   VkCommandBuffer beginFrame();
   void endFrame();
