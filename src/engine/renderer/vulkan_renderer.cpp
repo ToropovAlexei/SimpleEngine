@@ -14,6 +14,8 @@ namespace engine {
 namespace renderer {
 VulkanRenderer::VulkanRenderer(SDL_Window *window) : m_window{window} {
   m_device = std::make_unique<VulkanDevice>(m_window);
+  m_shaderManager = new VulkanShaderManager(m_device.get());
+  m_pipelineManager = new VulkanPipelineManager(m_device.get(), m_shaderManager);
   recreateSwapChain();
   createCommandBuffers();
   initImGui();
@@ -24,6 +26,8 @@ VulkanRenderer::~VulkanRenderer() {
   ImGui_ImplVulkan_Shutdown();
   ImGui_ImplSDL3_Shutdown();
   ImGui::DestroyContext();
+  delete m_shaderManager;
+  delete m_pipelineManager;
   vkFreeCommandBuffers(m_device->getDevice(), m_device->getCommandPool(),
                        static_cast<uint32_t>(m_commandBuffers.size()), m_commandBuffers.data());
   vkDestroyDescriptorPool(m_device->getDevice(), m_imguiPool, nullptr);
@@ -244,5 +248,24 @@ void VulkanRenderer::initImGui() {
 
   ImGui_ImplVulkan_Init(&initInfo);
 }
+
+size_t VulkanRenderer::loadFragmentShader(std::string_view path) {
+  return m_shaderManager->loadShader(path, VulkanShaderManager::ShaderType::Fragment);
+}
+
+size_t VulkanRenderer::loadVertexShader(std::string_view path) {
+  return m_shaderManager->loadShader(path, VulkanShaderManager::ShaderType::Vertex);
+}
+
+void VulkanRenderer::flushGPU() { m_device->flushGPU(); }
+
+size_t VulkanRenderer::createGraphicsPipeline(GraphicsPipelineDesc &desc) {
+  return m_pipelineManager->createGraphicsPipeline(desc);
+}
+
+void VulkanRenderer::bindPipeline(VkCommandBuffer commandBuffer, size_t pipelineId) {
+  vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipelineManager->getGraphicsPipeline(pipelineId));
+}
+
 } // namespace renderer
 } // namespace engine

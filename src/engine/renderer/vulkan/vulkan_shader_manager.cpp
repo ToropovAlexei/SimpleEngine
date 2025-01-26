@@ -1,4 +1,6 @@
 #include "vulkan_shader_manager.hpp"
+#include "engine/core/filesystem.hpp"
+#include "engine/core/logger.hpp"
 #include "engine/renderer/vulkan/vulkan_utils.hpp"
 #include <algorithm>
 #include <engine/core/exception.hpp>
@@ -7,6 +9,15 @@
 namespace engine {
 namespace renderer {
 VulkanShaderManager::VulkanShaderManager(VulkanDevice *device) : m_device(device) {}
+
+VulkanShaderManager::~VulkanShaderManager() {
+  for (auto &shader : m_vertexShaders) {
+    vkDestroyShaderModule(m_device->getDevice(), shader.shader, nullptr);
+  }
+  for (auto &shader : m_fragmentShaders) {
+    vkDestroyShaderModule(m_device->getDevice(), shader.shader, nullptr);
+  }
+}
 
 std::vector<VulkanShaderManager::Shader> &VulkanShaderManager::getShaders(ShaderType type) {
   switch (type) {
@@ -18,13 +29,17 @@ std::vector<VulkanShaderManager::Shader> &VulkanShaderManager::getShaders(Shader
 }
 
 size_t VulkanShaderManager::loadShader(std::string_view path, ShaderType type) {
-  auto shaders = getShaders(type);
+  auto& shaders = getShaders(type);
   auto it = std::find_if(shaders.begin(), shaders.end(), [path](const Shader &shader) { return shader.path == path; });
   if (it != shaders.end()) {
     return static_cast<size_t>(it - shaders.begin());
   }
 
-  auto code = readFile(path);
+  const std::string filename = std::string(path) + (type == ShaderType::Vertex ? ".vert" : ".frag") + ".spv";
+  const std::filesystem::path relativePath = std::filesystem::path("shaders") / filename;
+  std::string absPathStr = core::getAbsolutePath(relativePath);
+
+  auto code = readFile(absPathStr);
 
   VkShaderModuleCreateInfo createInfo{};
   createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
@@ -42,6 +57,7 @@ std::vector<char> VulkanShaderManager::readFile(std::string_view filename) {
   std::ifstream file(filename.data(), std::ios::ate | std::ios::binary);
 
   if (!file.is_open()) {
+    LOG_FATAL("Path not found: {}", filename);
     SE_THROW_ERROR("Failed to open shader file!");
   }
 

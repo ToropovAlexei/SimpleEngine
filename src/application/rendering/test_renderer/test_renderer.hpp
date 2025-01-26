@@ -3,7 +3,6 @@
 #include <engine/renderer/vulkan/vulkan_pipeline.hpp>
 #include <engine/renderer/vulkan_renderer.hpp>
 #include <glm/glm.hpp>
-#include <memory>
 
 class TestRenderer {
   struct Vertex {
@@ -31,5 +30,9 @@ private:
 
 private:
   engine::renderer::VulkanRenderer *m_renderer;
-  std::unique_ptr<engine::renderer::VulkanPipeline> m_pipeline;
+
+  size_t m_pipelineId;
+
+  size_t m_vertexShaderId;
+  size_t m_fragmentShaderId;
 };

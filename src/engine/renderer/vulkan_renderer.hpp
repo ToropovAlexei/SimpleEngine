@@ -1,22 +1,16 @@
 #pragma once
 
+#include "engine/renderer/vulkan/vulkan_pipeline_manager.hpp"
+#include "engine/renderer/vulkan/vulkan_shader_manager.hpp"
 #include <engine/core/assert.hpp>
 #include <engine/renderer/vulkan/vulkan_buffer_manager.hpp>
 #include <engine/renderer/vulkan/vulkan_device.hpp>
 #include <engine/renderer/vulkan/vulkan_swapchain.hpp>
 #include <memory>
 
-// TODO remove this!
-class GameRenderer;
-class TestRenderer;
-
 namespace engine {
 namespace renderer {
 class VulkanRenderer {
-  // TODO remove this!
-  friend class ::GameRenderer;
-  friend class ::TestRenderer;
-
 public:
   VulkanRenderer(SDL_Window *window);
   ~VulkanRenderer();
@@ -24,7 +18,7 @@ public:
   void beginRendering(VkCommandBuffer commandBuffer);
   void endRendering(VkCommandBuffer commandBuffer);
 
-  VkCommandBuffer beginFrame();
+  [[nodiscard]] VkCommandBuffer beginFrame();
   void endFrame();
 
   void onResize(int width, int height);
@@ -39,6 +33,15 @@ public:
     return m_commandBuffers[m_currentFrameIndex];
   }
 
+  [[nodiscard]] size_t loadFragmentShader(std::string_view path);
+  [[nodiscard]] size_t loadVertexShader(std::string_view path);
+
+  [[nodiscard]] size_t createGraphicsPipeline(GraphicsPipelineDesc &desc);
+
+  void bindPipeline(VkCommandBuffer commandBuffer, size_t pipelineId);
+
+  void flushGPU();
+
 private:
   void recreateSwapChain();
   void createCommandBuffers();
@@ -50,6 +53,8 @@ private:
   std::unique_ptr<VulkanDevice> m_device;
   std::unique_ptr<VulkanSwapchain> m_swapChain;
   std::unique_ptr<VulkanBufferManager> m_bufferManager;
+  VulkanShaderManager *m_shaderManager;
+  VulkanPipelineManager *m_pipelineManager;
   std::vector<VkCommandBuffer> m_commandBuffers;
 
   uint32_t m_currentImageIndex = 0;

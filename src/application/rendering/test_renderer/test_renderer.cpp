@@ -4,19 +4,20 @@ TestRenderer::TestRenderer(engine::renderer::VulkanRenderer *renderer) : m_rende
 
 TestRenderer::~TestRenderer() {
   // TODO this is wrong
-  m_renderer->m_device->flushGPU();
+  m_renderer->flushGPU();
 }
 
 void TestRenderer::render(VkCommandBuffer commandBuffer) {
-  m_pipeline->bind(commandBuffer);
+  m_renderer->bindPipeline(commandBuffer, m_pipelineId);
   // TODO
 }
 
 void TestRenderer::createPipeline() {
-  engine::renderer::PipelineVkConfigInfo pipelineConfig = {};
-  engine::renderer::VulkanPipeline::defaultPipelineVkConfigInfo(pipelineConfig);
-
-  pipelineConfig.vertexInputAttributeDescriptions = Vertex::getAttributeDescriptions();
-  pipelineConfig.vertexInputBindingDescriptions = Vertex::getBindingDescriptions();
-  m_pipeline = std::make_unique<engine::renderer::VulkanPipeline>(m_renderer->m_device.get(), pipelineConfig);
+  // TODO paths
+  m_vertexShaderId = m_renderer->loadVertexShader("test");
+  m_fragmentShaderId = m_renderer->loadFragmentShader("test");
+  engine::renderer::GraphicsPipelineDesc desc{};
+  desc.fragmentShaderId = m_fragmentShaderId;
+  desc.vertexShaderId = m_vertexShaderId;
+  m_pipelineId = m_renderer->createGraphicsPipeline(desc);
 }

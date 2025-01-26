@@ -15,8 +15,12 @@ public:
 
 public:
   VulkanShaderManager(VulkanDevice *device);
+  ~VulkanShaderManager();
 
   size_t loadShader(std::string_view path, ShaderType type);
+
+  VkShaderModule getVertexShaderModule(size_t index) { return m_vertexShaders[index].shader; }
+  VkShaderModule getFragmentShaderModule(size_t index) { return m_fragmentShaders[index].shader; }
 
 private:
   static std::vector<char> readFile(std::string_view filename);
