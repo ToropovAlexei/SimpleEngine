@@ -2,6 +2,8 @@
 
 #include <engine/renderer/vulkan/vulkan_device.hpp>
 
+namespace engine {
+namespace renderer {
 class VulkanRenderPass {
 public:
   VulkanRenderPass(VulkanDevice device, VkFormat swapchainFormat, VkFormat depthFormat);
@@ -13,3 +15,5 @@ private:
   VulkanDevice m_device;
   VkRenderPass m_renderPass;
 };
+} // namespace renderer
+} // namespace engine

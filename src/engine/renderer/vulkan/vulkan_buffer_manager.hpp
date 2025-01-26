@@ -4,6 +4,8 @@
 #include <queue>
 #include <string>
 
+namespace engine {
+  namespace renderer {
 enum BufferUsage {
   INDIRECT_ARGUMENT_BUFFER = (1 << 0),
   STORAGE_BUFFER = (1 << 1),
@@ -57,3 +59,6 @@ private:
   std::vector<Buffer> m_buffers;
   std::queue<size_t> m_freeIds;
 };
+  }
+}
+

@@ -6,9 +6,17 @@
 #include <engine/renderer/vulkan/vulkan_swapchain.hpp>
 #include <memory>
 
+// TODO remove this!
+class GameRenderer;
+class TestRenderer;
+
 namespace engine {
 namespace renderer {
 class VulkanRenderer {
+  // TODO remove this!
+  friend class ::GameRenderer;
+  friend class ::TestRenderer;
+
 public:
   VulkanRenderer(SDL_Window *window);
   ~VulkanRenderer();

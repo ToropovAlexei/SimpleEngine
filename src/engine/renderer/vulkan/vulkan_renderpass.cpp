@@ -1,6 +1,8 @@
 #include "vulkan_renderpass.hpp"
 #include <array>
 
+namespace engine {
+namespace renderer {
 VulkanRenderPass::VulkanRenderPass(VulkanDevice device, VkFormat swapchainFormat, VkFormat depthFormat)
     : m_device(device) {
   VkAttachmentDescription colorAttachment{.flags = 0,
@@ -74,3 +76,5 @@ VulkanRenderPass::~VulkanRenderPass() {
     vkDestroyRenderPass(m_device.getDevice(), m_renderPass, nullptr);
   }
 }
+} // namespace renderer
+} // namespace engine

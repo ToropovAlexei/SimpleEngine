@@ -6,6 +6,8 @@
 #include <vk_mem_alloc.h>
 #include <vulkan/vulkan.h>
 
+namespace engine {
+namespace renderer {
 struct SwapChainSupportDetails {
   VkSurfaceCapabilitiesKHR capabilities;
   std::vector<VkSurfaceFormatKHR> formats;
@@ -107,3 +109,5 @@ private:
   VkDebugUtilsMessengerEXT m_debugMessenger;
 #endif
 };
+} // namespace renderer
+} // namespace engine

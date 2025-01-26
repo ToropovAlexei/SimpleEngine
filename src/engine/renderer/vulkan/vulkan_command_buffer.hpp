@@ -2,6 +2,8 @@
 
 #include <engine/renderer/vulkan/vulkan_device.hpp>
 
+namespace engine {
+namespace renderer {
 class VulkanCommandBuffer {
 public:
   VulkanCommandBuffer(VulkanDevice device, VkCommandPool commandPool);
@@ -21,3 +23,5 @@ private:
   bool isRecording = false;
 #endif
 };
+} // namespace renderer
+} // namespace engine

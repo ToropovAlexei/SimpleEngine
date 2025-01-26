@@ -4,6 +4,8 @@
 #include <engine/core/exception.hpp>
 #include <fstream>
 
+namespace engine {
+namespace renderer {
 VulkanShaderManager::VulkanShaderManager(VulkanDevice *device) : m_device(device) {}
 
 std::vector<VulkanShaderManager::Shader> &VulkanShaderManager::getShaders(ShaderType type) {
@@ -52,3 +54,5 @@ std::vector<char> VulkanShaderManager::readFile(std::string_view filename) {
   file.close();
   return buffer;
 }
+} // namespace renderer
+} // namespace engine

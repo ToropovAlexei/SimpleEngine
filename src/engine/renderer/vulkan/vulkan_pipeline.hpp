@@ -2,6 +2,8 @@
 
 #include <engine/renderer/vulkan/vulkan_device.hpp>
 
+namespace engine {
+namespace renderer {
 struct PipelineVkConfigInfo {
   std::vector<VkPipelineShaderStageCreateInfo> shaderStages;
   std::vector<VkDescriptorSetLayout> descriptorSetLayouts;
@@ -38,3 +40,5 @@ private:
   VkPipeline m_graphicsPipeline;
   VkPipelineLayout m_pipelineLayout;
 };
+} // namespace renderer
+} // namespace engine

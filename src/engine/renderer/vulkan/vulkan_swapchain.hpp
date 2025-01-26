@@ -4,6 +4,9 @@
 #include <engine/renderer/vulkan/vulkan_device.hpp>
 #include <memory>
 
+namespace engine {
+namespace renderer {
+
 class VulkanSwapchain {
 public:
   static constexpr int MAX_FRAMES_IN_FLIGHT = 2;
@@ -67,3 +70,5 @@ private:
   std::vector<VkFence> m_imagesInFlight;
   size_t m_currentFrame = 0;
 };
+} // namespace renderer
+} // namespace engine

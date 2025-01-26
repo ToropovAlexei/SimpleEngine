@@ -3,6 +3,8 @@
 #include <engine/renderer/vulkan/vulkan_utils.hpp>
 #include <fstream>
 
+namespace engine {
+namespace renderer {
 VulkanShaderModule::VulkanShaderModule(VulkanDevice *device, std::string_view filePath, VkShaderStageFlagBits stage)
     : m_device(device), m_stage(stage) {
   auto code = readFile(filePath);
@@ -56,3 +58,5 @@ void VulkanShaderModule::createShaderModule(const std::vector<char> &code) {
 
   VK_CHECK_RESULT(vkCreateShaderModule(m_device->getDevice(), &createInfo, nullptr, &m_shaderModule));
 }
+} // namespace renderer
+} // namespace engine

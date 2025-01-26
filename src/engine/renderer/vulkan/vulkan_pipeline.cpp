@@ -1,12 +1,14 @@
 #include "vulkan_pipeline.hpp"
 #include <engine/renderer/vulkan/vulkan_utils.hpp>
+#include <vulkan/vulkan_core.h>
 
+namespace engine {
+namespace renderer {
 VulkanPipeline::VulkanPipeline(VulkanDevice *device, const PipelineVkConfigInfo &configInfo) : m_device(device) {
   createPipelineVk(configInfo);
 }
 
 void VulkanPipeline::createPipelineVk(const PipelineVkConfigInfo &configInfo) {
-
   VkPipelineVertexInputStateCreateInfo vertexInputInfo = {};
   vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
   vertexInputInfo.vertexBindingDescriptionCount =
@@ -54,17 +56,23 @@ void VulkanPipeline::createPipelineVk(const PipelineVkConfigInfo &configInfo) {
       vkCreateGraphicsPipelines(m_device->getDevice(), nullptr, 1, &pipelineInfo, nullptr, &m_graphicsPipeline));
 }
 
-VulkanPipeline::~VulkanPipeline() { vkDestroyPipeline(m_device->getDevice(), m_graphicsPipeline, nullptr); }
+VulkanPipeline::~VulkanPipeline() {
+  vkDestroyPipeline(m_device->getDevice(), m_graphicsPipeline, nullptr);
+  vkDestroyPipelineLayout(m_device->getDevice(), m_pipelineLayout, nullptr);
+}
 
 void VulkanPipeline::defaultPipelineVkConfigInfo(PipelineVkConfigInfo &configInfo) {
+  configInfo.inputAssemblyInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
   configInfo.inputAssemblyInfo.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
   configInfo.inputAssemblyInfo.primitiveRestartEnable = VK_FALSE;
 
+  configInfo.viewportInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
   configInfo.viewportInfo.viewportCount = 1;
   configInfo.viewportInfo.pViewports = nullptr;
   configInfo.viewportInfo.scissorCount = 1;
   configInfo.viewportInfo.pScissors = nullptr;
 
+  configInfo.rasterizationInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
   configInfo.rasterizationInfo.depthClampEnable = VK_FALSE;
   configInfo.rasterizationInfo.rasterizerDiscardEnable = VK_FALSE;
   configInfo.rasterizationInfo.polygonMode = VK_POLYGON_MODE_FILL;
@@ -76,6 +84,7 @@ void VulkanPipeline::defaultPipelineVkConfigInfo(PipelineVkConfigInfo &configInf
   configInfo.rasterizationInfo.depthBiasClamp = 0.0f;
   configInfo.rasterizationInfo.depthBiasSlopeFactor = 0.0f;
 
+  configInfo.multisampleInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
   configInfo.multisampleInfo.sampleShadingEnable = VK_FALSE;
   configInfo.multisampleInfo.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
   configInfo.multisampleInfo.minSampleShading = 1.0f;          // Optional
@@ -93,6 +102,7 @@ void VulkanPipeline::defaultPipelineVkConfigInfo(PipelineVkConfigInfo &configInf
   configInfo.colorBlendAttachment.dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO; // Optional
   configInfo.colorBlendAttachment.alphaBlendOp = VK_BLEND_OP_ADD;             // Optional
 
+  configInfo.colorBlendInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
   configInfo.colorBlendInfo.logicOpEnable = VK_FALSE;
   configInfo.colorBlendInfo.logicOp = VK_LOGIC_OP_COPY; // Optional
   configInfo.colorBlendInfo.attachmentCount = 1;
@@ -102,6 +112,7 @@ void VulkanPipeline::defaultPipelineVkConfigInfo(PipelineVkConfigInfo &configInf
   configInfo.colorBlendInfo.blendConstants[2] = 0.0f; // Optional
   configInfo.colorBlendInfo.blendConstants[3] = 0.0f; // Optional
 
+  configInfo.depthStencilInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
   configInfo.depthStencilInfo.depthTestEnable = VK_TRUE;
   configInfo.depthStencilInfo.depthWriteEnable = VK_TRUE;
   configInfo.depthStencilInfo.depthCompareOp = VK_COMPARE_OP_LESS;
@@ -113,6 +124,7 @@ void VulkanPipeline::defaultPipelineVkConfigInfo(PipelineVkConfigInfo &configInf
   configInfo.depthStencilInfo.back = {};  // Optional
 
   configInfo.dynamicStateEnables = {VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR};
+  configInfo.dynamicStateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
   configInfo.dynamicStateInfo.pDynamicStates = configInfo.dynamicStateEnables.data();
   configInfo.dynamicStateInfo.dynamicStateCount = static_cast<uint32_t>(configInfo.dynamicStateEnables.size());
   configInfo.dynamicStateInfo.flags = {};
@@ -123,3 +135,5 @@ void VulkanPipeline::defaultPipelineVkConfigInfo(PipelineVkConfigInfo &configInf
 void VulkanPipeline::bind(VkCommandBuffer commandBuffer, VkPipelineBindPoint bindPoint) {
   vkCmdBindPipeline(commandBuffer, bindPoint, m_graphicsPipeline);
 }
+} // namespace renderer
+} // namespace engine

@@ -1,6 +1,8 @@
 #include "vulkan_command_buffer.hpp"
 #include <engine/core/assert.hpp>
 
+namespace engine {
+namespace renderer {
 VulkanCommandBuffer::VulkanCommandBuffer(VulkanDevice device, VkCommandPool commandPool)
     : m_device{device}, m_commandPool{commandPool} {
   VkCommandBufferAllocateInfo allocInfo{
@@ -45,3 +47,5 @@ void VulkanCommandBuffer::end() {
   isRecording = false;
 #endif
 }
+} // namespace renderer
+} // namespace engine

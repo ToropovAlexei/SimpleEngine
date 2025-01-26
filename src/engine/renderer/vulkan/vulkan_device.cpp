@@ -10,6 +10,8 @@
 #include <map>
 #include <set>
 
+namespace engine {
+namespace renderer {
 const std::vector<const char *> validationLayers = {"VK_LAYER_KHRONOS_validation"};
 
 const std::vector<const char *> deviceExtensions = {
@@ -599,3 +601,5 @@ void VulkanDevice::transitionImageLayout(VkCommandBuffer cmdbuffer, VkImage imag
 
   vkCmdPipelineBarrier(cmdbuffer, srcStageMask, dstStageMask, 0, 0, nullptr, 0, nullptr, 1, &imageBarrier);
 }
+} // namespace renderer
+} // namespace engine

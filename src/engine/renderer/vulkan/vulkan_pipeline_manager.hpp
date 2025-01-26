@@ -2,6 +2,8 @@
 
 #include <engine/renderer/vulkan/vulkan_device.hpp>
 
+namespace engine {
+namespace renderer {
 class VulkanPipelineManager {
 public:
   VulkanPipelineManager();
@@ -9,3 +11,5 @@ public:
 private:
   VulkanDevice *m_device;
 };
+} // namespace renderer
+} // namespace engine

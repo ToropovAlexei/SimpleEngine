@@ -2,6 +2,8 @@
 #include <engine/core/exception.hpp>
 #include <engine/renderer/vulkan/vulkan_utils.hpp>
 
+namespace engine {
+namespace renderer {
 VulkanImage::VulkanImage(VulkanDevice device, uint32_t width, uint32_t height, VkFormat format, VkImageUsageFlags usage)
     : m_device{device}, m_width{width}, m_height{height}, m_format{format}, m_usage{usage} {
   VkImageCreateInfo imageCreateInfo{
@@ -79,3 +81,5 @@ VulkanImage::~VulkanImage() {
     vmaDestroyImage(m_device.getAllocator(), m_image, m_allocationHandle);
   }
 }
+} // namespace renderer
+} // namespace engine

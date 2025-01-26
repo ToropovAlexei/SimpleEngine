@@ -3,6 +3,8 @@
 #include "vulkan_device.hpp"
 #include <string_view>
 
+namespace engine {
+namespace renderer {
 class VulkanShaderModule {
 public:
   VulkanShaderModule(VulkanDevice *device, std::string_view filePath, VkShaderStageFlagBits stage);
@@ -19,3 +21,5 @@ private:
   VkShaderModule m_shaderModule{};
   VkShaderStageFlagBits m_stage;
 };
+} // namespace renderer
+} // namespace engine

@@ -3,6 +3,8 @@
 #include <engine/renderer/vulkan/vulkan_device.hpp>
 #include <string>
 
+namespace engine {
+namespace renderer {
 class VulkanShaderManager {
 public:
   struct Shader {
@@ -26,3 +28,5 @@ private:
   std::vector<Shader> m_vertexShaders;
   std::vector<Shader> m_fragmentShaders;
 };
+} // namespace renderer
+} // namespace engine

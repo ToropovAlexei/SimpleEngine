@@ -1,6 +1,8 @@
 #include "vulkan_buffer_manager.hpp"
 #include "vulkan_utils.hpp"
 
+namespace engine {
+namespace renderer {
 VulkanBufferManager::VulkanBufferManager(VulkanDevice *device) : m_device{device} {}
 
 size_t VulkanBufferManager::createBuffer(BufferDesc &desc) {
@@ -84,3 +86,5 @@ size_t VulkanBufferManager::getNewBufferId() {
   m_freeIds.pop();
   return bufferId;
 }
+} // namespace renderer
+} // namespace engine

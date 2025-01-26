@@ -2,6 +2,8 @@
 
 #include <engine/renderer/vulkan/vulkan_device.hpp>
 
+namespace engine {
+namespace renderer {
 class VulkanImage {
 public:
   VulkanImage(VulkanDevice device, uint32_t width, uint32_t height, VkFormat format, VkImageUsageFlags usage);
@@ -24,3 +26,5 @@ private:
 
   VmaAllocation m_allocationHandle;
 };
+} // namespace renderer
+} // namespace engine
