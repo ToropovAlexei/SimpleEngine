@@ -1,5 +1,6 @@
 #pragma once
 
+#include "engine/renderer/vulkan/vulkan_swapchain.hpp"
 #include <engine/renderer/descriptors/pipeline_descriptors.hpp>
 #include <engine/renderer/vulkan/vulkan_device.hpp>
 #include <engine/renderer/vulkan/vulkan_shader_manager.hpp>
@@ -14,7 +15,7 @@ public:
   };
 
 public:
-  VulkanPipelineManager(VulkanDevice *device, VulkanShaderManager *shaderManager);
+  VulkanPipelineManager(VulkanDevice *device, VulkanShaderManager *shaderManager, VulkanSwapchain *swapchain);
   ~VulkanPipelineManager();
 
   size_t createGraphicsPipeline(GraphicsPipelineDesc &desc);
@@ -25,6 +26,7 @@ public:
 private:
   VulkanDevice *m_device;
   VulkanShaderManager *m_shaderManager;
+  VulkanSwapchain *m_swapchain;
 
   std::vector<GraphicsPipeline> m_graphicsPipelines;
 };

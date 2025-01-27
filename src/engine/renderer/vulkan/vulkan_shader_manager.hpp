@@ -5,12 +5,18 @@
 
 namespace engine {
 namespace renderer {
+struct BindReflection {
+  std::vector<VkVertexInputBindingDescription> bindingDescriptions;
+  std::vector<VkVertexInputAttributeDescription> attributeDescriptions;
+};
+struct Shader {
+  std::string path;
+  VkShaderModule shader;
+  BindReflection bindReflection;
+};
+
 class VulkanShaderManager {
 public:
-  struct Shader {
-    std::string path;
-    VkShaderModule shader;
-  };
   enum class ShaderType { Vertex, Fragment };
 
 public:
@@ -22,8 +28,12 @@ public:
   VkShaderModule getVertexShaderModule(size_t index) { return m_vertexShaders[index].shader; }
   VkShaderModule getFragmentShaderModule(size_t index) { return m_fragmentShaders[index].shader; }
 
+  const BindReflection &getVertexBindReflection(size_t index) { return m_vertexShaders[index].bindReflection; }
+  const BindReflection &getFragmentBindReflection(size_t index) { return m_fragmentShaders[index].bindReflection; }
+
 private:
   static std::vector<char> readFile(std::string_view filename);
+  static BindReflection reflectBind(std::vector<char> &code);
 
   std::vector<Shader> &getShaders(ShaderType type);
 

@@ -206,9 +206,18 @@ enum class InputFormat {
 
 enum class VertexInputRate { Vertex = VK_VERTEX_INPUT_RATE_VERTEX, Instance = VK_VERTEX_INPUT_RATE_INSTANCE };
 
-struct InputLayout {
-  InputFormat format = InputFormat::Undefined;
-  VertexInputRate inputClassification = VertexInputRate::Vertex;
+enum class DepthImageFormat {
+  Unknown = VK_FORMAT_UNDEFINED,
+  // 32-bit Z w/ Stencil
+  D32_FLOAT_S8X24_UINT = VK_FORMAT_D32_SFLOAT_S8_UINT,
+  // No Stencil
+  D32_FLOAT = VK_FORMAT_D32_SFLOAT,
+  R32_FLOAT = VK_FORMAT_R32_SFLOAT,
+  // 24-bit Z
+  D24_UNORM_S8_UINT = VK_FORMAT_D24_UNORM_S8_UINT,
+  // 16-bit Z w/o Stencil
+  D16_UNORM = VK_FORMAT_D16_UNORM,
+  R16_UNORM = VK_FORMAT_R16_UNORM
 };
 
 struct GraphicsPipelineDesc {
@@ -220,8 +229,7 @@ struct GraphicsPipelineDesc {
   RasterizerState rasterizerState;
   DepthStencilState depthStencilState;
   BlendState blendState;
-
-  InputLayout inputLayouts[MAX_INPUT_LAYOUTS];
+  DepthImageFormat depthImageFormat = DepthImageFormat::Unknown;
 };
 } // namespace renderer
 } // namespace engine

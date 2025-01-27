@@ -15,8 +15,8 @@ namespace renderer {
 VulkanRenderer::VulkanRenderer(SDL_Window *window) : m_window{window} {
   m_device = std::make_unique<VulkanDevice>(m_window);
   m_shaderManager = new VulkanShaderManager(m_device.get());
-  m_pipelineManager = new VulkanPipelineManager(m_device.get(), m_shaderManager);
   recreateSwapChain();
+  m_pipelineManager = new VulkanPipelineManager(m_device.get(), m_shaderManager, m_swapChain.get());
   createCommandBuffers();
   initImGui();
 }

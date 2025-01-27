@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <engine/core/exception.hpp>
 #include <fstream>
+#include <spirv_reflect.h>
 
 namespace engine {
 namespace renderer {
@@ -19,7 +20,7 @@ VulkanShaderManager::~VulkanShaderManager() {
   }
 }
 
-std::vector<VulkanShaderManager::Shader> &VulkanShaderManager::getShaders(ShaderType type) {
+std::vector<Shader> &VulkanShaderManager::getShaders(ShaderType type) {
   switch (type) {
   case ShaderType::Vertex:
     return m_vertexShaders;
@@ -29,7 +30,7 @@ std::vector<VulkanShaderManager::Shader> &VulkanShaderManager::getShaders(Shader
 }
 
 size_t VulkanShaderManager::loadShader(std::string_view path, ShaderType type) {
-  auto& shaders = getShaders(type);
+  auto &shaders = getShaders(type);
   auto it = std::find_if(shaders.begin(), shaders.end(), [path](const Shader &shader) { return shader.path == path; });
   if (it != shaders.end()) {
     return static_cast<size_t>(it - shaders.begin());
@@ -45,11 +46,15 @@ size_t VulkanShaderManager::loadShader(std::string_view path, ShaderType type) {
   createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
   createInfo.codeSize = code.size();
   createInfo.pCode = reinterpret_cast<const uint32_t *>(code.data());
-  VkShaderModule shaderModule;
 
-  VK_CHECK_RESULT(vkCreateShaderModule(m_device->getDevice(), &createInfo, nullptr, &shaderModule));
+  Shader shader;
+  shader.path = path;
 
-  shaders.push_back({std::string(path), shaderModule});
+  VK_CHECK_RESULT(vkCreateShaderModule(m_device->getDevice(), &createInfo, nullptr, &shader.shader));
+
+  shader.bindReflection = reflectBind(code);
+
+  shaders.push_back(shader);
   return shaders.size() - 1;
 }
 
@@ -70,5 +75,86 @@ std::vector<char> VulkanShaderManager::readFile(std::string_view filename) {
   file.close();
   return buffer;
 }
+
+BindReflection VulkanShaderManager::reflectBind(std::vector<char> &code) {
+  BindReflection reflection;
+  SpvReflectShaderModule reflectModule;
+  SpvReflectResult result = spvReflectCreateShaderModule(code.size(), code.data(), &reflectModule);
+
+  if (result != SPV_REFLECT_RESULT_SUCCESS) {
+    SE_THROW_ERROR("Spirv reflection failed!");
+  }
+
+  uint32_t inputCount = 0;
+  result = spvReflectEnumerateInputVariables(&reflectModule, &inputCount, NULL);
+
+  if (result != SPV_REFLECT_RESULT_SUCCESS) {
+    SE_THROW_ERROR("Spirv reflection failed!");
+  }
+
+  if (inputCount > 0) {
+    std::vector<SpvReflectInterfaceVariable *> inputVariables(inputCount);
+
+    result = spvReflectEnumerateInputVariables(&reflectModule, &inputCount, inputVariables.data());
+
+    if (result != SPV_REFLECT_RESULT_SUCCESS) {
+      SE_THROW_ERROR("Spirv reflection failed!");
+    }
+
+    VkVertexInputBindingDescription bindingDescription = {
+        .binding = 0,
+        .stride = 0, // computed below
+        .inputRate = VK_VERTEX_INPUT_RATE_VERTEX,
+    };
+    reflection.attributeDescriptions.reserve(inputVariables.size());
+    for (const SpvReflectInterfaceVariable *var : inputVariables) {
+      // ignore built-in variables
+      if (var->decoration_flags & SPV_REFLECT_DECORATION_BUILT_IN) {
+        continue;
+      }
+      reflection.attributeDescriptions.push_back({
+          .location = var->location,
+          .binding = bindingDescription.binding,
+          .format = static_cast<VkFormat>(var->format),
+          .offset = 0, // final offset computed below after sorting.
+      });
+    }
+    // Sort attributes by location
+    std::sort(std::begin(reflection.attributeDescriptions), std::end(reflection.attributeDescriptions),
+              [](const VkVertexInputAttributeDescription &a, const VkVertexInputAttributeDescription &b) {
+                return a.location < b.location;
+              });
+    // Compute final offsets of each attribute, and total vertex stride.
+    for (auto &attribute : reflection.attributeDescriptions) {
+      uint32_t format_size = VulkanUtils::getInputFormatSize(static_cast<InputFormat>(attribute.format));
+      attribute.offset = bindingDescription.stride;
+      bindingDescription.stride += format_size;
+    }
+    reflection.bindingDescriptions.push_back(bindingDescription);
+  }
+
+  uint32_t outputCount = 0;
+  result = spvReflectEnumerateOutputVariables(&reflectModule, &outputCount, NULL);
+
+  if (result != SPV_REFLECT_RESULT_SUCCESS) {
+    SE_THROW_ERROR("Spirv reflection failed!");
+  }
+
+  if (outputCount > 0) {
+    std::vector<SpvReflectInterfaceVariable *> outputVariables(outputCount);
+
+    result = spvReflectEnumerateOutputVariables(&reflectModule, &outputCount, outputVariables.data());
+
+    if (result != SPV_REFLECT_RESULT_SUCCESS) {
+      SE_THROW_ERROR("Spirv reflection failed!");
+    }
+
+    for (auto *outputVariable : outputVariables) {
+    }
+  }
+
+  return reflection;
+}
+
 } // namespace renderer
 } // namespace engine
