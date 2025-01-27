@@ -23,6 +23,14 @@ CPMAddPackage(
 )
 CPMAddPackage("gh:GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator#master")
 CPMAddPackage(
+    NAME spirv-reflect
+    GITHUB_REPOSITORY KhronosGroup/SPIRV-Reflect
+    GIT_TAG main
+    OPTIONS
+    "SPIRV_REFLECT_STATIC_LIB ON"
+    "SPIRV_REFLECT_EXECUTABLE OFF"
+)
+CPMAddPackage(
   NAME glm
   GIT_TAG master
   GITHUB_REPOSITORY g-truc/glm
@@ -51,7 +59,7 @@ target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_SOURCE_DIR}/src)
 target_include_directories(${PROJECT_NAME} PRIVATE ${IMGUI_DIR})
 
 find_program(GLSL_VALIDATOR NAMES glslangValidator)
-target_link_libraries(${PROJECT_NAME} PRIVATE ${Vulkan_LIBRARIES} SDL3::SDL3 GPUOpen::VulkanMemoryAllocator glm)
+target_link_libraries(${PROJECT_NAME} PRIVATE ${Vulkan_LIBRARIES} SDL3::SDL3 GPUOpen::VulkanMemoryAllocator glm spirv-reflect-static)
 target_compile_definitions(${PROJECT_NAME} PRIVATE
   STB_IMAGE_IMPLEMENTATION
   STB_IMAGE_RESIZE_IMPLEMENTATION

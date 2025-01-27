@@ -31,7 +31,7 @@ inline std::filesystem::path getExecutablePath() {
     if (len == -1) {
       throw std::runtime_error("Error getting executable path on Linux");
     }
-    buffer[len] = '\0';
+    buffer[static_cast<size_t>(len)] = '\0';
 #endif
 
     return std::filesystem::path(buffer.data());
