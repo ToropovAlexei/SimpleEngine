@@ -18,6 +18,8 @@ public:
   void beginRendering(VkCommandBuffer commandBuffer);
   void endRendering(VkCommandBuffer commandBuffer);
 
+  [[nodiscard]] size_t createBuffer(BufferDesc &desc);
+
   [[nodiscard]] VkCommandBuffer beginFrame();
   void endFrame();
 
@@ -41,6 +43,15 @@ public:
   void bindPipeline(VkCommandBuffer commandBuffer, size_t pipelineId);
 
   void flushGPU();
+
+  void draw(VkCommandBuffer commandBuffer, uint32_t numVertices, uint32_t numInstances, uint32_t vertexOffset,
+            uint32_t instanceOffset);
+
+  void setVertexBuffer(VkCommandBuffer commandBuffer, uint32_t slot, size_t bufferId);
+  void setIndexBuffer(VkCommandBuffer commandBuffer, size_t bufferId, IndexFormat indexFormat);
+
+  // Temporary
+  void writeToBuffer(VkCommandBuffer commandBuffer, size_t bufferId, void *data, VkDeviceSize size);
 
 private:
   void recreateSwapChain();

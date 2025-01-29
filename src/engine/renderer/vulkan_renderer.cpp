@@ -8,6 +8,7 @@
 #include <engine/core/logger.hpp>
 #include <engine/renderer/vulkan/vulkan_swapchain.hpp>
 #include <engine/renderer/vulkan/vulkan_utils.hpp>
+#include <memory>
 #include <vulkan/vulkan_core.h>
 
 namespace engine {
@@ -17,6 +18,7 @@ VulkanRenderer::VulkanRenderer(SDL_Window *window) : m_window{window} {
   m_shaderManager = new VulkanShaderManager(m_device.get());
   recreateSwapChain();
   m_pipelineManager = new VulkanPipelineManager(m_device.get(), m_shaderManager, m_swapChain.get());
+  m_bufferManager = std::make_unique<VulkanBufferManager>(m_device.get());
   createCommandBuffers();
   initImGui();
 }
@@ -265,6 +267,30 @@ size_t VulkanRenderer::createGraphicsPipeline(GraphicsPipelineDesc &desc) {
 
 void VulkanRenderer::bindPipeline(VkCommandBuffer commandBuffer, size_t pipelineId) {
   vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipelineManager->getGraphicsPipeline(pipelineId));
+}
+
+void VulkanRenderer::draw(VkCommandBuffer commandBuffer, uint32_t numVertices, uint32_t numInstances,
+                          uint32_t vertexOffset, uint32_t instanceOffset) {
+  vkCmdDraw(commandBuffer, numVertices, numInstances, vertexOffset, instanceOffset);
+}
+
+void VulkanRenderer::setVertexBuffer(VkCommandBuffer commandBuffer, uint32_t slot, size_t bufferId) {
+  VkBuffer vertexBuffer = m_bufferManager->getBuffer(bufferId);
+  VkDeviceSize offsets[] = {0};
+  vkCmdBindVertexBuffers(commandBuffer, slot, 1, &vertexBuffer, offsets);
+}
+
+void VulkanRenderer::setIndexBuffer(VkCommandBuffer commandBuffer, size_t bufferId, IndexFormat indexFormat) {
+  VkBuffer indexBuffer = m_bufferManager->getBuffer(bufferId);
+  vkCmdBindIndexBuffer(commandBuffer, indexBuffer, 0, static_cast<VkIndexType>(indexFormat));
+}
+
+size_t VulkanRenderer::createBuffer(BufferDesc &desc) { return m_bufferManager->createBuffer(desc); }
+
+// Temporary
+void VulkanRenderer::writeToBuffer(VkCommandBuffer commandBuffer, size_t bufferId, void *data, VkDeviceSize size) {
+  VkBuffer buffer = m_bufferManager->getBuffer(bufferId);
+  vkCmdUpdateBuffer(commandBuffer, buffer, 0, size, data);
 }
 
 } // namespace renderer

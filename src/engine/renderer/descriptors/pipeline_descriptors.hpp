@@ -8,6 +8,8 @@ namespace renderer {
 constexpr size_t INVALID_ID = std::numeric_limits<size_t>::max();
 constexpr int MAX_RENDER_TARGETS = 8;
 
+enum class IndexFormat { Uint16 = VK_INDEX_TYPE_UINT16, Uint32 = VK_INDEX_TYPE_UINT32 };
+
 enum class BlendMode {
   Zero = VK_BLEND_FACTOR_ZERO,
   One = VK_BLEND_FACTOR_ONE,
