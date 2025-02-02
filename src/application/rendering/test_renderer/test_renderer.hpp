@@ -5,20 +5,6 @@
 #include <glm/glm.hpp>
 
 class TestRenderer {
-  struct Vertex {
-    glm::vec3 pos;
-    glm::vec3 color;
-
-    static std::vector<VkVertexInputBindingDescription> getBindingDescriptions() {
-      return {{.binding = 0, .stride = sizeof(Vertex), .inputRate = VK_VERTEX_INPUT_RATE_VERTEX}};
-    }
-
-    static std::vector<VkVertexInputAttributeDescription> getAttributeDescriptions() {
-      return {{0, 0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(Vertex, pos)},
-              {1, 0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(Vertex, color)}};
-    }
-  };
-
 public:
   TestRenderer(engine::renderer::VulkanRenderer *device);
   ~TestRenderer();
@@ -32,6 +18,8 @@ private:
   engine::renderer::VulkanRenderer *m_renderer;
 
   size_t m_pipelineId;
+
+  size_t m_vertexBufferId;
 
   size_t m_vertexShaderId;
   size_t m_fragmentShaderId;

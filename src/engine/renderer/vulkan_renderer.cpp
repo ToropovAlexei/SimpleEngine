@@ -287,10 +287,35 @@ void VulkanRenderer::setIndexBuffer(VkCommandBuffer commandBuffer, size_t buffer
 
 size_t VulkanRenderer::createBuffer(BufferDesc &desc) { return m_bufferManager->createBuffer(desc); }
 
+void VulkanRenderer::copyBuffer(VkCommandBuffer commandBuffer, size_t dstBuffer, uint64_t dstOffset, size_t srcBuffer,
+                                uint64_t srcOffset, uint64_t range) {
+  VkBuffer vkDstBuffer = m_bufferManager->getBuffer(dstBuffer);
+  VkBuffer vkSrcBuffer = m_bufferManager->getBuffer(srcBuffer);
+
+  VkBufferCopy copyRegion = {
+      .srcOffset = srcOffset,
+      .dstOffset = dstOffset,
+      .size = range,
+  };
+
+  size_t srcBufferSize = m_bufferManager->getBufferSize(srcBuffer);
+  size_t dstBufferSize = m_bufferManager->getBufferSize(dstBuffer);
+
+  SE_ASSERT(srcOffset + range <= srcBufferSize, "Source Buffer out of bounds!");
+  SE_ASSERT(dstOffset + range <= dstBufferSize, "Destination Buffer out of bounds!");
+
+  vkCmdCopyBuffer(commandBuffer, vkSrcBuffer, vkDstBuffer, 1, &copyRegion);
+}
+
 // Temporary
-void VulkanRenderer::writeToBuffer(VkCommandBuffer commandBuffer, size_t bufferId, void *data, VkDeviceSize size) {
-  VkBuffer buffer = m_bufferManager->getBuffer(bufferId);
-  vkCmdUpdateBuffer(commandBuffer, buffer, 0, size, data);
+void VulkanRenderer::writeToBuffer(size_t bufferId, void *data, VkDeviceSize size) {
+  vmaCopyMemoryToAllocation(m_device->getAllocator(), data, m_bufferManager->getBufferAllocation(bufferId), 0, size);
+}
+// Temporary
+VkCommandBuffer VulkanRenderer::beginSingleTimeCommands() { return m_device->beginSingleTimeCommands(); }
+// Temporary
+void VulkanRenderer::endSingleTimeCommands(VkCommandBuffer commandBuffer) {
+  m_device->endSingleTimeCommands(commandBuffer);
 }
 
 } // namespace renderer

@@ -7,6 +7,8 @@ VulkanBufferManager::VulkanBufferManager(VulkanDevice *device) : m_device{device
 
 size_t VulkanBufferManager::createBuffer(BufferDesc &desc) {
   VkBufferUsageFlags usage = 0;
+  VmaAllocationCreateInfo allocInfo = {};
+  allocInfo.usage = VMA_MEMORY_USAGE_AUTO;
 
   if (desc.usage & BufferUsage::VERTEX_BUFFER) {
     usage |= VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
@@ -30,6 +32,7 @@ size_t VulkanBufferManager::createBuffer(BufferDesc &desc) {
 
   if (desc.usage & BufferUsage::TRANSFER_SOURCE) {
     usage |= VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
+    allocInfo.flags |= VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT;
   }
 
   if (desc.usage & BufferUsage::TRANSFER_DESTINATION) {
@@ -43,16 +46,6 @@ size_t VulkanBufferManager::createBuffer(BufferDesc &desc) {
   bufferInfo.size = descSize;
   bufferInfo.usage = usage;
   bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-
-  VmaMemoryUsage memoryUsage = VMA_MEMORY_USAGE_GPU_ONLY;
-  if (desc.cpuAccess == BufferCPUAccess::ReadOnly) {
-    memoryUsage = VMA_MEMORY_USAGE_GPU_TO_CPU;
-  } else if (desc.cpuAccess == BufferCPUAccess::WriteOnly) {
-    memoryUsage = VMA_MEMORY_USAGE_CPU_ONLY;
-  }
-
-  VmaAllocationCreateInfo allocInfo = {};
-  allocInfo.usage = memoryUsage;
 
   const size_t bufferId = getNewBufferId();
 
@@ -85,6 +78,12 @@ size_t VulkanBufferManager::getNewBufferId() {
   size_t bufferId = m_freeIds.front();
   m_freeIds.pop();
   return bufferId;
+}
+
+VulkanBufferManager::~VulkanBufferManager() {
+  for (auto &buffer : m_buffers) {
+    vmaDestroyBuffer(m_device->m_allocator, buffer.buffer, buffer.allocation);
+  }
 }
 } // namespace renderer
 } // namespace engine

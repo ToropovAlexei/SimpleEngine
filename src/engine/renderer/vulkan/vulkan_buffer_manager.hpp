@@ -31,7 +31,7 @@ struct Buffer {
 
 struct BufferDesc {
   std::string name = ""; // For debugging
-  BufferUsage usage;
+  uint8_t usage;
   BufferCPUAccess cpuAccess = BufferCPUAccess::AccessNone;
   size_t size = 0;
 };
@@ -39,6 +39,7 @@ struct BufferDesc {
 class VulkanBufferManager {
 public:
   VulkanBufferManager(VulkanDevice *device);
+  ~VulkanBufferManager();
 
   VkBuffer getBuffer(size_t bufferId) const { return m_buffers[bufferId].buffer; }
   VkDeviceSize getBufferSize(size_t bufferId) const { return m_buffers[bufferId].size; }

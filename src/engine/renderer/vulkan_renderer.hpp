@@ -47,11 +47,18 @@ public:
   void draw(VkCommandBuffer commandBuffer, uint32_t numVertices, uint32_t numInstances, uint32_t vertexOffset,
             uint32_t instanceOffset);
 
+  void copyBuffer(VkCommandBuffer commandBuffer, size_t dstBuffer, uint64_t dstOffset, size_t srcBuffer,
+                  uint64_t srcOffset, uint64_t range);
+
   void setVertexBuffer(VkCommandBuffer commandBuffer, uint32_t slot, size_t bufferId);
   void setIndexBuffer(VkCommandBuffer commandBuffer, size_t bufferId, IndexFormat indexFormat);
 
   // Temporary
-  void writeToBuffer(VkCommandBuffer commandBuffer, size_t bufferId, void *data, VkDeviceSize size);
+  void writeToBuffer(size_t bufferId, void *data, VkDeviceSize size);
+  // Temporary
+  VkCommandBuffer beginSingleTimeCommands();
+  // Temporary
+  void endSingleTimeCommands(VkCommandBuffer commandBuffer);
 
 private:
   void recreateSwapChain();
