@@ -153,6 +153,31 @@ BindReflection VulkanShaderManager::reflectBind(std::vector<char> &code) {
     }
   }
 
+  uint32_t pushConstantCount = 0;
+  result = spvReflectEnumeratePushConstantBlocks(&reflectModule, &pushConstantCount, NULL);
+
+  if (result != SPV_REFLECT_RESULT_SUCCESS) {
+    SE_THROW_ERROR("Spirv reflection failed!");
+  }
+
+  if (pushConstantCount > 0) {
+    std::vector<SpvReflectBlockVariable *> pushConstants(pushConstantCount);
+
+    result = spvReflectEnumeratePushConstantBlocks(&reflectModule, &pushConstantCount, pushConstants.data());
+
+    if (result != SPV_REFLECT_RESULT_SUCCESS) {
+      SE_THROW_ERROR("Spirv reflection failed!");
+    }
+
+    for (SpvReflectBlockVariable* variable : pushConstants)
+    {
+        BindInfoPushConstant& pushConstant = reflection.pushConstants.emplace_back();
+        pushConstant.offset = variable->offset;
+        pushConstant.size = variable->size;
+        pushConstant.stageFlags = static_cast<VkShaderStageFlagBits>(reflectModule.shader_stage);
+    }
+  }
+
   return reflection;
 }
 

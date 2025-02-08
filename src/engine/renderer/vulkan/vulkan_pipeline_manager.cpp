@@ -17,14 +17,32 @@ VulkanPipelineManager::~VulkanPipelineManager() {
 size_t VulkanPipelineManager::createGraphicsPipeline(GraphicsPipelineDesc &desc) {
   GraphicsPipeline pipeline;
 
+  std::vector<VkVertexInputBindingDescription> inputBindingDescriptions;
+  std::vector<VkVertexInputAttributeDescription> attributeDescriptions;
+
+  if (desc.vertexShaderId != INVALID_ID) {
+    auto bindReflection = m_shaderManager->getVertexBindReflection(desc.vertexShaderId);
+    inputBindingDescriptions.insert(inputBindingDescriptions.begin(), bindReflection.bindingDescriptions.begin(),
+                                    bindReflection.bindingDescriptions.end());
+    attributeDescriptions.insert(attributeDescriptions.begin(), bindReflection.attributeDescriptions.begin(),
+                                 bindReflection.attributeDescriptions.end());
+
+    for (BindInfoPushConstant &pushConstant : bindReflection.pushConstants) {
+      VkPushConstantRange &range = pipeline.pushConstantRanges.emplace_back();
+      range.offset = pushConstant.offset;
+      range.size = pushConstant.size;
+      range.stageFlags = pushConstant.stageFlags;
+    }
+  }
+
   VkPipelineLayoutCreateInfo pipelineLayoutInfo = {
       .sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
       .pNext = nullptr,
       .flags = 0,
-      .setLayoutCount = 0,            // TODO
-      .pSetLayouts = nullptr,         // TODO
-      .pushConstantRangeCount = 0,    // TODO
-      .pPushConstantRanges = nullptr, // TODO
+      .setLayoutCount = 0,    // TODO
+      .pSetLayouts = nullptr, // TODO
+      .pushConstantRangeCount = static_cast<uint32_t>(pipeline.pushConstantRanges.size()),
+      .pPushConstantRanges = pipeline.pushConstantRanges.data(),
   };
 
   std::vector<VkPipelineShaderStageCreateInfo> shaderStages;
@@ -88,17 +106,6 @@ size_t VulkanPipelineManager::createGraphicsPipeline(GraphicsPipelineDesc &desc)
       .scissorCount = 1,
       .pScissors = nullptr,
   };
-
-  std::vector<VkVertexInputBindingDescription> inputBindingDescriptions;
-  std::vector<VkVertexInputAttributeDescription> attributeDescriptions;
-
-  if (desc.vertexShaderId != INVALID_ID) {
-    auto bindReflection = m_shaderManager->getVertexBindReflection(desc.vertexShaderId);
-    inputBindingDescriptions.insert(inputBindingDescriptions.begin(), bindReflection.bindingDescriptions.begin(),
-                                    bindReflection.bindingDescriptions.end());
-    attributeDescriptions.insert(attributeDescriptions.begin(), bindReflection.attributeDescriptions.begin(),
-                                 bindReflection.attributeDescriptions.end());
-  }
 
   VkPipelineVertexInputStateCreateInfo vertexInputInfo = {};
   vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;

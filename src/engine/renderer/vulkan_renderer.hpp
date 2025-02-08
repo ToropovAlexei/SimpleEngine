@@ -53,6 +53,8 @@ public:
   void setVertexBuffer(VkCommandBuffer commandBuffer, uint32_t slot, size_t bufferId);
   void setIndexBuffer(VkCommandBuffer commandBuffer, size_t bufferId, IndexFormat indexFormat);
 
+  void pushConstant(VkCommandBuffer commandBuffer, size_t pipelineId, void *data, uint32_t offset, uint32_t size);
+
   // Temporary
   void writeToBuffer(size_t bufferId, void *data, VkDeviceSize size);
   // Temporary

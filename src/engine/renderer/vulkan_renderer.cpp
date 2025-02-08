@@ -307,6 +307,13 @@ void VulkanRenderer::copyBuffer(VkCommandBuffer commandBuffer, size_t dstBuffer,
   vkCmdCopyBuffer(commandBuffer, vkSrcBuffer, vkDstBuffer, 1, &copyRegion);
 }
 
+void VulkanRenderer::pushConstant(VkCommandBuffer commandBuffer, size_t pipelineId, void *data, uint32_t offset,
+                                  uint32_t size) {
+  auto layout = m_pipelineManager->getGraphicsPipelineLayout(pipelineId);
+  // TODO Stage Flags
+  vkCmdPushConstants(commandBuffer, layout, VK_SHADER_STAGE_VERTEX_BIT, offset, size, data);
+}
+
 // Temporary
 void VulkanRenderer::writeToBuffer(size_t bufferId, void *data, VkDeviceSize size) {
   vmaCopyMemoryToAllocation(m_device->getAllocator(), data, m_bufferManager->getBufferAllocation(bufferId), 0, size);

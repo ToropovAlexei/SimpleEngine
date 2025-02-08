@@ -10,12 +10,16 @@ public:
   ~TestRenderer();
 
   void render(VkCommandBuffer commandBuffer);
+  void update(float dt);
 
 private:
   void createPipeline();
 
 private:
   engine::renderer::VulkanRenderer *m_renderer;
+
+  float m_time = 0.0f;
+  glm::vec2 m_offset;
 
   size_t m_pipelineId;
 

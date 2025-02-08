@@ -1,10 +1,15 @@
 #include "test_renderer.hpp"
 #include "engine/renderer/descriptors/pipeline_descriptors.hpp"
 #include "engine/renderer/vulkan/vulkan_buffer_manager.hpp"
+#include "glm/fwd.hpp"
 
 struct Vertex {
   float pos[3];
   float color[3];
+};
+
+struct PushConstants {
+  glm::vec2 offset;
 };
 
 TestRenderer::TestRenderer(engine::renderer::VulkanRenderer *renderer) : m_renderer{renderer} {
@@ -45,7 +50,12 @@ void TestRenderer::render(VkCommandBuffer commandBuffer) {
   m_renderer->bindPipeline(commandBuffer, m_pipelineId);
   // TODO
 
+  PushConstants data = {
+      .offset = m_offset,
+  };
+
   m_renderer->setVertexBuffer(commandBuffer, 0, m_vertexBufferId);
+  m_renderer->pushConstant(commandBuffer, m_pipelineId, &data, 0, sizeof(PushConstants));
   vkCmdDraw(commandBuffer, 3, 1, 0, 0);
 }
 
@@ -58,4 +68,9 @@ void TestRenderer::createPipeline() {
   desc.fragmentShaderId = m_fragmentShaderId;
   desc.vertexShaderId = m_vertexShaderId;
   m_pipelineId = m_renderer->createGraphicsPipeline(desc);
+}
+
+void TestRenderer::update(float dt) {
+  m_time += dt;
+  m_offset = glm::vec2{std::sin(m_time) * 0.75f, std::cos(m_time) * 0.75f};
 }

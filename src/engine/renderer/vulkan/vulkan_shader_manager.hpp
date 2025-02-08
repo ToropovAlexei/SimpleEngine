@@ -5,9 +5,15 @@
 
 namespace engine {
 namespace renderer {
+struct BindInfoPushConstant {
+  uint32_t stageFlags;
+  uint32_t offset;
+  uint32_t size;
+};
 struct BindReflection {
   std::vector<VkVertexInputBindingDescription> bindingDescriptions;
   std::vector<VkVertexInputAttributeDescription> attributeDescriptions;
+  std::vector<BindInfoPushConstant> pushConstants;
 };
 struct Shader {
   std::string path;

@@ -12,6 +12,7 @@ public:
   struct GraphicsPipeline {
     VkPipelineLayout pipelineLayout;
     VkPipeline pipeline;
+    std::vector<VkPushConstantRange> pushConstantRanges;
   };
 
 public:
