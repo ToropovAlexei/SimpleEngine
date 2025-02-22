@@ -16,6 +16,7 @@ VulkanDescriptorSetLayout::Builder &VulkanDescriptorSetLayout::Builder::addBindi
       .descriptorType = descriptorType,
       .descriptorCount = count,
       .stageFlags = stageFlags,
+      .pImmutableSamplers = nullptr,
   };
 
   bindings[binding] = layoutBinding;
@@ -97,6 +98,8 @@ VulkanDescriptorPool::~VulkanDescriptorPool() {
 bool VulkanDescriptorPool::allocateDescriptor(const VkDescriptorSetLayout descriptorSetLayout,
                                               VkDescriptorSet &descriptor) const {
   VkDescriptorSetAllocateInfo allocInfo = {
+      .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO,
+      .pNext = nullptr,
       .descriptorPool = m_descriptorPool,
       .descriptorSetCount = 1,
       .pSetLayouts = &descriptorSetLayout,
