@@ -169,12 +169,49 @@ BindReflection VulkanShaderManager::reflectBind(std::vector<char> &code) {
       SE_THROW_ERROR("Spirv reflection failed!");
     }
 
-    for (SpvReflectBlockVariable* variable : pushConstants)
-    {
-        BindInfoPushConstant& pushConstant = reflection.pushConstants.emplace_back();
-        pushConstant.offset = variable->offset;
-        pushConstant.size = variable->size;
-        pushConstant.stageFlags = static_cast<VkShaderStageFlagBits>(reflectModule.shader_stage);
+    for (SpvReflectBlockVariable *variable : pushConstants) {
+      BindInfoPushConstant &pushConstant = reflection.pushConstants.emplace_back();
+      pushConstant.offset = variable->offset;
+      pushConstant.size = variable->size;
+      pushConstant.stageFlags = static_cast<VkShaderStageFlagBits>(reflectModule.shader_stage);
+    }
+  }
+
+  uint32_t descriptorSetCount = 0;
+  result = spvReflectEnumerateDescriptorSets(&reflectModule, &descriptorSetCount, NULL);
+
+  if (result != SPV_REFLECT_RESULT_SUCCESS) {
+    SE_THROW_ERROR("Spirv reflection failed!");
+  }
+
+  if (descriptorSetCount > 0) {
+    std::vector<SpvReflectDescriptorSet *> descriptorSets(descriptorSetCount);
+
+    result = spvReflectEnumerateDescriptorSets(&reflectModule, &descriptorSetCount, descriptorSets.data());
+
+    if (result != SPV_REFLECT_RESULT_SUCCESS) {
+      SE_THROW_ERROR("Spirv reflection failed!");
+    }
+
+    for (auto *descriptorSet : descriptorSets) {
+      for (uint32_t binding = 0; binding < descriptorSet->binding_count; binding++) {
+        const SpvReflectDescriptorBinding *reflectionBinding = descriptorSet->bindings[binding];
+        BindInfo bindInfo;
+        bindInfo.descriptorType = static_cast<VkDescriptorType>(reflectionBinding->descriptor_type);
+        bindInfo.set = descriptorSet->set;
+        bindInfo.binding = reflectionBinding->binding;
+        bindInfo.count = reflectionBinding->count;
+        bindInfo.stageFlags = static_cast<VkShaderStageFlagBits>(reflectModule.shader_stage);
+
+        if (bindInfo.descriptorType == VK_DESCRIPTOR_TYPE_STORAGE_BUFFER) {
+          bindInfo.isUsed = reflectionBinding->accessed;
+          bindInfo.isWrite = (reflectionBinding->resource_type & SPV_REFLECT_RESOURCE_FLAG_UAV);
+        }
+
+        bindInfo.name = reflectionBinding->name;
+
+        reflection.bindInfos.push_back(bindInfo);
+      }
     }
   }
 

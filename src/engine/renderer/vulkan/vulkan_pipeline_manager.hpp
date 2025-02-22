@@ -9,6 +9,11 @@ namespace engine {
 namespace renderer {
 class VulkanPipelineManager {
 public:
+  struct DescriptorSetLayoutData {
+    VkDescriptorSetLayoutCreateInfo createInfo;
+    std::vector<VkDescriptorSetLayoutBinding> bindings;
+  };
+
   struct GraphicsPipeline {
     VkPipelineLayout pipelineLayout;
     VkPipeline pipeline;

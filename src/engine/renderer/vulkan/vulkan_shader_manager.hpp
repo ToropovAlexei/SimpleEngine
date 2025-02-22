@@ -10,10 +10,23 @@ struct BindInfoPushConstant {
   uint32_t offset;
   uint32_t size;
 };
+struct BindInfo {
+  std::string name;
+
+  VkDescriptorType descriptorType;
+  uint32_t set;
+  uint32_t binding;
+  uint32_t count;
+  uint32_t stageFlags;
+
+  bool isUsed = false;
+  bool isWrite = false;
+};
 struct BindReflection {
   std::vector<VkVertexInputBindingDescription> bindingDescriptions;
   std::vector<VkVertexInputAttributeDescription> attributeDescriptions;
   std::vector<BindInfoPushConstant> pushConstants;
+  std::vector<BindInfo> bindInfos;
 };
 struct Shader {
   std::string path;
