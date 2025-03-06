@@ -10,5 +10,5 @@
     }                                                                                                                  \
   } while (false)
 #else
-#define SE_ASSERT(condition) (void)0
+#define SE_ASSERT(condition, msg) (void)0
 #endif
