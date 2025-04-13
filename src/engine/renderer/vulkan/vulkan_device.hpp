@@ -88,7 +88,7 @@ private:
   bool checkDeviceExtensionSupport(const VkPhysicalDevice &device);
 
 private:
-  static const uint32_t VK_API_VERSION = VK_API_VERSION_1_3; // TODO Change to 1.4 when VMA supports it
+  static const uint32_t VK_API_VERSION = VK_API_VERSION_1_4; // TODO Change to 1.4 when VMA supports it
 
 private:
   SDL_Window *m_window;
