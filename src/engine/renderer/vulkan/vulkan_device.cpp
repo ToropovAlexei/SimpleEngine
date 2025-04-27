@@ -288,26 +288,22 @@ void VulkanDevice::createCommandPool() {
 
   // Create graphics command pool
   {
-    VkCommandPoolCreateInfo poolInfo = {
-        .sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO,
-        .pNext = NULL,
-        .flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT, // Optional
+    vk::CommandPoolCreateInfo poolInfo = {
+        .flags = vk::CommandPoolCreateFlagBits::eResetCommandBuffer, // Optional
         .queueFamilyIndex = queueFamilyIndices.graphicsFamily.value(),
     };
 
-    VK_CHECK_RESULT(vkCreateCommandPool(m_device, &poolInfo, nullptr, &m_graphicsCommandPool));
+    m_graphicsCommandPool = m_device.createCommandPool(poolInfo).value;
   }
 
   // Create transfer command pool
   {
-    VkCommandPoolCreateInfo poolInfo = {
-        .sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO,
-        .pNext = NULL,
-        .flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT, // Optional
+    vk::CommandPoolCreateInfo poolInfo = {
+        .flags = vk::CommandPoolCreateFlagBits::eResetCommandBuffer, // Optional
         .queueFamilyIndex = queueFamilyIndices.transferFamily.value(),
     };
 
-    VK_CHECK_RESULT(vkCreateCommandPool(m_device, &poolInfo, nullptr, &m_transferCommandPool));
+    m_transferCommandPool = m_device.createCommandPool(poolInfo).value;
   }
   LOG_INFO("Vulkan command pools created");
 }
@@ -336,10 +332,7 @@ void VulkanDevice::checkValidationLayerSupport() {
 }
 
 bool VulkanDevice::checkInstanceExtensionSupport(std::vector<const char *> &requiredExtensions) {
-  uint32_t extensionCount = 0;
-  vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, nullptr);
-  std::vector<VkExtensionProperties> extensions(extensionCount);
-  vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, extensions.data());
+  auto extensions = vk::enumerateInstanceExtensionProperties().value;
 
   for (auto extension : extensions) {
     requiredExtensions.erase(std::remove_if(requiredExtensions.begin(), requiredExtensions.end(),
@@ -462,20 +455,9 @@ QueueFamilyIndices VulkanDevice::findQueueFamilies(const vk::PhysicalDevice devi
 }
 
 SwapChainSupportDetails VulkanDevice::getSwapChainSupport() {
-  VkSurfaceCapabilitiesKHR capabilities;
-  vkGetPhysicalDeviceSurfaceCapabilitiesKHR(m_physicalDevice, m_surface, &capabilities);
-
-  std::vector<VkSurfaceFormatKHR> formats;
-  uint32_t formatsSize;
-  vkGetPhysicalDeviceSurfaceFormatsKHR(m_physicalDevice, m_surface, &formatsSize, nullptr);
-  formats.resize(formatsSize);
-  vkGetPhysicalDeviceSurfaceFormatsKHR(m_physicalDevice, m_surface, &formatsSize, formats.data());
-
-  std::vector<VkPresentModeKHR> presentModes;
-  uint32_t presentModesSize;
-  vkGetPhysicalDeviceSurfacePresentModesKHR(m_physicalDevice, m_surface, &presentModesSize, nullptr);
-  presentModes.resize(presentModesSize);
-  vkGetPhysicalDeviceSurfacePresentModesKHR(m_physicalDevice, m_surface, &presentModesSize, presentModes.data());
+  auto capabilities = m_physicalDevice.getSurfaceCapabilitiesKHR(m_surface).value;
+  auto formats = m_physicalDevice.getSurfaceFormatsKHR(m_surface).value;
+  auto presentModes = m_physicalDevice.getSurfacePresentModesKHR(m_surface).value;
 
   return {
       .capabilities = capabilities,
@@ -484,31 +466,33 @@ SwapChainSupportDetails VulkanDevice::getSwapChainSupport() {
   };
 }
 
-void VulkanDevice::createImageWithInfo(const VkImageCreateInfo &imageInfo, VmaMemoryUsage memoryUsage, VkImage &image,
-                                       VmaAllocation &imageAllocation) {
+void VulkanDevice::createImageWithInfo(const vk::ImageCreateInfo &imageInfo, VmaMemoryUsage memoryUsage,
+                                       vk::Image &image, VmaAllocation &imageAllocation) {
 
   VmaAllocationCreateInfo allocCreateInfo{};
   allocCreateInfo.usage = memoryUsage;
+  VkImage rawImage = nullptr;
+  VkImageCreateInfo rawImageInfo = imageInfo;
 
-  VK_CHECK_RESULT(vmaCreateImage(m_allocator, &imageInfo, &allocCreateInfo, &image, &imageAllocation, nullptr));
+  VK_CHECK_RESULT(vmaCreateImage(m_allocator, &rawImageInfo, &allocCreateInfo, &rawImage, &imageAllocation, nullptr));
+  image = vk::Image(rawImage);
 }
 
-VkFormat VulkanDevice::findSupportedFormat(const std::vector<VkFormat> &candidates, VkImageTiling tiling,
-                                           VkFormatFeatureFlags features) {
-  for (VkFormat format : candidates) {
-    VkFormatProperties props;
-    vkGetPhysicalDeviceFormatProperties(m_physicalDevice, format, &props);
+vk::Format VulkanDevice::findSupportedFormat(const std::vector<vk::Format> &candidates, vk::ImageTiling tiling,
+                                             vk::FormatFeatureFlags features) {
+  for (vk::Format format : candidates) {
+    auto props = m_physicalDevice.getFormatProperties(format);
 
-    if (tiling == VK_IMAGE_TILING_LINEAR && (props.linearTilingFeatures & features) == features) {
+    if (tiling == vk::ImageTiling::eLinear && (props.linearTilingFeatures & features) == features) {
       return format;
-    } else if (tiling == VK_IMAGE_TILING_OPTIMAL && (props.optimalTilingFeatures & features) == features) {
+    } else if (tiling == vk::ImageTiling::eOptimal && (props.optimalTilingFeatures & features) == features) {
       return format;
     }
   }
   SE_THROW_ERROR("Failed to find supported format!");
 }
 
-VkCommandBuffer VulkanDevice::beginSingleTimeCommands() {
+vk::CommandBuffer VulkanDevice::beginSingleTimeCommands() {
   VkCommandBufferAllocateInfo allocInfo = {
       .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
       .pNext = nullptr,
@@ -531,18 +515,16 @@ VkCommandBuffer VulkanDevice::beginSingleTimeCommands() {
   return commandBuffer;
 }
 
-void VulkanDevice::endSingleTimeCommands(VkCommandBuffer commandBuffer) {
-  vkEndCommandBuffer(commandBuffer);
+void VulkanDevice::endSingleTimeCommands(vk::CommandBuffer commandBuffer) {
+  commandBuffer.end();
 
-  VkSubmitInfo submitInfo = {};
-  submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+  vk::SubmitInfo submitInfo = {};
   submitInfo.commandBufferCount = 1;
   submitInfo.pCommandBuffers = &commandBuffer;
 
-  vkQueueSubmit(m_graphicsQueue, 1, &submitInfo, VK_NULL_HANDLE);
-  vkQueueWaitIdle(m_graphicsQueue);
-
-  vkFreeCommandBuffers(m_device, m_graphicsCommandPool, 1, &commandBuffer);
+  m_graphicsQueue.submit(submitInfo);
+  m_graphicsQueue.waitIdle();
+  m_device.freeCommandBuffers(m_graphicsCommandPool, commandBuffer);
 }
 
 void VulkanDevice::copyBuffer(VkBuffer dstBuffer, VkDeviceSize dstOffset, VkBuffer srcBuffer, VkDeviceSize srcOffset,

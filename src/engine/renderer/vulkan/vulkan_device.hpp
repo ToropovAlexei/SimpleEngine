@@ -10,9 +10,9 @@
 namespace engine {
 namespace renderer {
 struct SwapChainSupportDetails {
-  VkSurfaceCapabilitiesKHR capabilities;
-  std::vector<VkSurfaceFormatKHR> formats;
-  std::vector<VkPresentModeKHR> presentModes;
+  vk::SurfaceCapabilitiesKHR capabilities;
+  std::vector<vk::SurfaceFormatKHR> formats;
+  std::vector<vk::PresentModeKHR> presentModes;
 };
 
 struct QueueFamilyIndices {
@@ -53,15 +53,15 @@ public:
   inline vk::Queue &getTransferQueue() noexcept { return m_transferQueue; };
   inline vk::Queue &getPresentQueue() noexcept { return m_presentQueue; };
   inline VmaAllocator &getAllocator() noexcept { return m_allocator; };
-  inline VkCommandPool &getCommandPool() noexcept { return m_graphicsCommandPool; };
+  inline vk::CommandPool &getCommandPool() noexcept { return m_graphicsCommandPool; };
   inline vk::Instance &getInstance() noexcept { return m_instance; };
 
-  void createImageWithInfo(const VkImageCreateInfo &imageInfo, VmaMemoryUsage memoryUsage, VkImage &image,
+  void createImageWithInfo(const vk::ImageCreateInfo &imageInfo, VmaMemoryUsage memoryUsage, vk::Image &image,
                            VmaAllocation &imageAllocation);
-  VkFormat findSupportedFormat(const std::vector<VkFormat> &candidates, VkImageTiling tiling,
-                               VkFormatFeatureFlags features);
-  VkCommandBuffer beginSingleTimeCommands();
-  void endSingleTimeCommands(VkCommandBuffer commandBuffer);
+  vk::Format findSupportedFormat(const std::vector<vk::Format> &candidates, vk::ImageTiling tiling,
+                                 vk::FormatFeatureFlags features);
+  vk::CommandBuffer beginSingleTimeCommands();
+  void endSingleTimeCommands(vk::CommandBuffer commandBuffer);
   void copyBuffer(VkBuffer dstBuffer, VkDeviceSize dstOffset, VkBuffer srcBuffer, VkDeviceSize srcOffset,
                   VkDeviceSize size);
 
@@ -103,8 +103,8 @@ private:
   vk::Queue m_transferQueue;
   vk::Queue m_presentQueue;
 
-  VkCommandPool m_graphicsCommandPool = VK_NULL_HANDLE;
-  VkCommandPool m_transferCommandPool = VK_NULL_HANDLE;
+  vk::CommandPool m_graphicsCommandPool = VK_NULL_HANDLE;
+  vk::CommandPool m_transferCommandPool = VK_NULL_HANDLE;
 
 #ifndef NDEBUG
   VkDebugUtilsMessengerEXT m_debugMessenger;

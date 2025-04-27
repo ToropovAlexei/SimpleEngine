@@ -195,7 +195,7 @@ size_t VulkanPipelineManager::createGraphicsPipeline(GraphicsPipelineDesc &desc)
       .blendConstants = {0.0f, 0.0f, 0.0f, 0.0f},
   };
 
-  VkFormat swapChainFormat = m_swapchain->getSwapChainImageFormat();
+  VkFormat swapChainFormat = VkFormat(m_swapchain->getSwapChainImageFormat());
   VkPipelineRenderingCreateInfoKHR pipelineRenderingCreateInfo = {
       .sType = VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO_KHR,
       .pNext = nullptr,
