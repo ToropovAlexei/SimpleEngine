@@ -10,7 +10,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 file(
   DOWNLOAD
-  https://github.com/cpm-cmake/CPM.cmake/releases/download/v0.40.2/CPM.cmake
+  https://github.com/cpm-cmake/CPM.cmake/releases/download/v0.40.8/CPM.cmake
   ${CMAKE_CURRENT_BINARY_DIR}/cmake/CPM.cmake
 )
 include(${CMAKE_CURRENT_BINARY_DIR}/cmake/CPM.cmake)
@@ -21,6 +21,7 @@ CPMAddPackage(
   OPTIONS
     "SDL_X11 ON"
 )
+CPMAddPackage("gh:KhronosGroup/Vulkan-Hpp#main")
 CPMAddPackage("gh:GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator#master")
 CPMAddPackage(
     NAME spirv-reflect
@@ -64,6 +65,7 @@ target_compile_definitions(${PROJECT_NAME} PRIVATE
   STB_IMAGE_IMPLEMENTATION
   STB_IMAGE_RESIZE_IMPLEMENTATION
   VULKAN_HPP_NO_CONSTRUCTORS
+  VULKAN_HPP_NO_EXCEPTIONS
   GLM_FORCE_DEPTH_ZERO_TO_ONE
   GLM_FORCE_RADIANS)
 

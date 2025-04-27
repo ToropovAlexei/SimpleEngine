@@ -81,8 +81,7 @@ void VulkanDevice::initVulkan() {
   checkValidationLayerSupport();
 #endif
 
-  VkApplicationInfo appInfo = {
-      .sType = VK_STRUCTURE_TYPE_APPLICATION_INFO,
+  vk::ApplicationInfo appInfo = {
       .pNext = nullptr,
       .pApplicationName = "SimpleEngine",
       .applicationVersion = VK_MAKE_VERSION(1, 0, 0),
@@ -91,9 +90,9 @@ void VulkanDevice::initVulkan() {
       .apiVersion = VulkanDevice::VK_API_VERSION,
   };
 
-  VkInstanceCreateInfo createInfo = {};
-  createInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
-  createInfo.pApplicationInfo = &appInfo;
+  vk::InstanceCreateInfo createInfo = {
+      .pApplicationInfo = &appInfo,
+  };
 
   auto requiredExtensions = getRequiredExtensions();
   auto remainingRequiredExtensions = requiredExtensions;
@@ -116,7 +115,7 @@ void VulkanDevice::initVulkan() {
   createInfo.pNext = &debugCreateInfo;
 #endif
 
-  VK_CHECK_RESULT(vkCreateInstance(&createInfo, nullptr, &m_instance));
+  m_instance = vk::createInstance(createInfo).value;
   LOG_INFO("Vulkan instance created");
 }
 
@@ -137,18 +136,13 @@ void VulkanDevice::createSurface() {
 }
 
 void VulkanDevice::pickPhysicalDevice() {
-  uint32_t deviceCount = 0;
-  std::vector<VkPhysicalDevice> devices;
-  vkEnumeratePhysicalDevices(m_instance, &deviceCount, nullptr);
-  devices.resize(deviceCount);
-  vkEnumeratePhysicalDevices(m_instance, &deviceCount, devices.data());
+  auto devices = m_instance.enumeratePhysicalDevices().value;
 
   // Use an ordered map to automatically sort candidates by increasing score
   std::multimap<int, VkPhysicalDevice> candidates;
 
   for (const auto &device : devices) {
-    VkPhysicalDeviceProperties props;
-    vkGetPhysicalDeviceProperties(device, &props);
+    auto props = device.getProperties();
     LOG_INFO("Found device: {}", std::string(props.deviceName));
     int score = rateDeviceSuitability(device);
     candidates.insert(std::make_pair(score, device));
@@ -157,8 +151,7 @@ void VulkanDevice::pickPhysicalDevice() {
   // Check if the best candidate is suitable at all
   if (candidates.rbegin()->first > 0) {
     m_physicalDevice = candidates.rbegin()->second;
-    VkPhysicalDeviceProperties props;
-    vkGetPhysicalDeviceProperties(m_physicalDevice, &props);
+    auto props = m_physicalDevice.getProperties();
     LOG_INFO("Selected device: {}", std::string(props.deviceName));
   } else {
     SE_THROW_ERROR("Failed to find a suitable GPU!");
@@ -403,15 +396,14 @@ void VulkanDevice::populateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateI
 }
 #endif
 
-int VulkanDevice::rateDeviceSuitability(const VkPhysicalDevice &device) {
-  VkPhysicalDeviceProperties deviceProperties;
-  vkGetPhysicalDeviceProperties(device, &deviceProperties);
+int VulkanDevice::rateDeviceSuitability(const vk::PhysicalDevice &device) {
+  auto deviceProperties = device.getProperties();
   // vk::PhysicalDeviceFeatures deviceFeatures = device.getFeatures();
 
   int score = 0;
 
   // Discrete GPUs have a significant performance advantage
-  if (deviceProperties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU) {
+  if (deviceProperties.deviceType == vk::PhysicalDeviceType::eDiscreteGpu) {
     score += 1000;
   }
 
@@ -427,11 +419,8 @@ int VulkanDevice::rateDeviceSuitability(const VkPhysicalDevice &device) {
   return score;
 }
 
-bool VulkanDevice::checkDeviceExtensionSupport(const VkPhysicalDevice &device) {
-  uint32_t extensionCount;
-  vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionCount, nullptr);
-  std::vector<VkExtensionProperties> availableExtensions(extensionCount);
-  vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionCount, availableExtensions.data());
+bool VulkanDevice::checkDeviceExtensionSupport(const vk::PhysicalDevice &device) {
+  auto availableExtensions = device.enumerateDeviceExtensionProperties().value;
 
   std::set<std::string> requiredExtensions(deviceExtensions.begin(), deviceExtensions.end());
 
@@ -442,20 +431,17 @@ bool VulkanDevice::checkDeviceExtensionSupport(const VkPhysicalDevice &device) {
   return requiredExtensions.empty();
 }
 
-QueueFamilyIndices VulkanDevice::findQueueFamilies(const VkPhysicalDevice device) {
+QueueFamilyIndices VulkanDevice::findQueueFamilies(const vk::PhysicalDevice device) {
   QueueFamilyIndices indices;
 
-  uint32_t queueFamilyCount;
-  vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, nullptr);
-  std::vector<VkQueueFamilyProperties> queueFamilies(queueFamilyCount);
-  vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, queueFamilies.data());
+  auto queueFamilies = device.getQueueFamilyProperties();
 
-  VkQueueFlags transferQueueFlags = VK_QUEUE_TRANSFER_BIT;
+  vk::QueueFlags transferQueueFlags = vk::QueueFlagBits::eTransfer;
 
   uint32_t i = 0;
   for (const auto &queueFamily : queueFamilies) {
     // TODO Check this loop for correct queue families
-    if (queueFamily.queueCount > 0 && queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT) {
+    if (queueFamily.queueCount > 0 && queueFamily.queueFlags & vk::QueueFlagBits::eGraphics) {
       indices.graphicsFamily = i;
       indices.graphicsFamilySupportsTimeStamps = queueFamily.timestampValidBits > 0;
     }
@@ -465,13 +451,12 @@ QueueFamilyIndices VulkanDevice::findQueueFamilies(const VkPhysicalDevice device
       indices.transferFamilySupportsTimeStamps = queueFamily.timestampValidBits > 0;
     }
 
-    if (queueFamily.queueCount > 0 && queueFamily.queueFlags & VK_QUEUE_COMPUTE_BIT) {
+    if (queueFamily.queueCount > 0 && queueFamily.queueFlags & vk::QueueFlagBits::eCompute) {
       indices.computeFamily = i;
       indices.computeFamilySupportsTimeStamps = queueFamily.timestampValidBits > 0;
     }
 
-    VkBool32 presentSupport = false;
-    vkGetPhysicalDeviceSurfaceSupportKHR(device, i, m_surface, &presentSupport);
+    auto presentSupport = device.getSurfaceSupportKHR(i, m_surface).value;
 
     if (queueFamily.queueCount > 0 && presentSupport) {
       indices.presentFamily = i;

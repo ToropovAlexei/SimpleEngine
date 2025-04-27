@@ -40,20 +40,20 @@ public:
   VulkanDevice(SDL_Window *window);
   ~VulkanDevice();
 
-  QueueFamilyIndices findQueueFamilies(const VkPhysicalDevice device);
+  QueueFamilyIndices findQueueFamilies(const vk::PhysicalDevice device);
   inline QueueFamilyIndices findQueueFamilies() { return findQueueFamilies(m_physicalDevice); }
   SwapChainSupportDetails getSwapChainSupport();
 
   inline void flushGPU() { vkDeviceWaitIdle(m_device); }
   inline VkDevice &getDevice() noexcept { return m_device; };
-  inline VkPhysicalDevice &getPhysicalDevice() noexcept { return m_physicalDevice; };
+  inline vk::PhysicalDevice &getPhysicalDevice() noexcept { return m_physicalDevice; };
   inline VkSurfaceKHR &getSurface() noexcept { return m_surface; };
   inline VkQueue &getGraphicsQueue() noexcept { return m_graphicsQueue; };
   inline VkQueue &getTransferQueue() noexcept { return m_transferQueue; };
   inline VkQueue &getPresentQueue() noexcept { return m_presentQueue; };
   inline VmaAllocator &getAllocator() noexcept { return m_allocator; };
   inline VkCommandPool &getCommandPool() noexcept { return m_graphicsCommandPool; };
-  inline VkInstance &getInstance() noexcept { return m_instance; };
+  inline vk::Instance &getInstance() noexcept { return m_instance; };
 
   void createImageWithInfo(const VkImageCreateInfo &imageInfo, VmaMemoryUsage memoryUsage, VkImage &image,
                            VmaAllocation &imageAllocation);
@@ -84,17 +84,17 @@ private:
   void populateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT &createInfo);
 #endif
   std::vector<const char *> getRequiredExtensions();
-  int rateDeviceSuitability(const VkPhysicalDevice &device);
-  bool checkDeviceExtensionSupport(const VkPhysicalDevice &device);
+  int rateDeviceSuitability(const vk::PhysicalDevice &device);
+  bool checkDeviceExtensionSupport(const vk::PhysicalDevice &device);
 
 private:
-  static const uint32_t VK_API_VERSION = VK_API_VERSION_1_4; // TODO Change to 1.4 when VMA supports it
+  static constexpr uint32_t VK_API_VERSION = VK_API_VERSION_1_4;
 
 private:
   SDL_Window *m_window;
   VkSurfaceKHR m_surface;
-  VkInstance m_instance;
-  VkPhysicalDevice m_physicalDevice;
+  vk::Instance m_instance;
+  vk::PhysicalDevice m_physicalDevice;
   VkDevice m_device;
   VmaAllocator m_allocator;
 
