@@ -131,7 +131,9 @@ void VulkanDevice::setupDebugMessenger() {
 }
 
 void VulkanDevice::createSurface() {
-  SDL_Vulkan_CreateSurface(m_window, m_instance, nullptr, &m_surface);
+  VkSurfaceKHR surface = nullptr;
+  SDL_Vulkan_CreateSurface(m_window, static_cast<VkInstance>(m_instance), nullptr, &surface);
+  m_surface = surface;
   LOG_INFO("Vulkan surface created");
 }
 
@@ -161,7 +163,7 @@ void VulkanDevice::pickPhysicalDevice() {
 void VulkanDevice::createLogicalDevice() {
   QueueFamilyIndices indices = findQueueFamilies(m_physicalDevice);
 
-  std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
+  std::vector<vk::DeviceQueueCreateInfo> queueCreateInfos;
   std::set<uint32_t> uniqueQueueFamilies = {indices.graphicsFamily.value(), indices.transferFamily.value(),
                                             indices.presentFamily.value(), indices.computeFamily.value()};
 
@@ -176,74 +178,59 @@ void VulkanDevice::createLogicalDevice() {
 
   float queuePriority = 1.0f;
   for (uint32_t queueFamily : uniqueQueueFamilies) {
-    queueCreateInfos.push_back({.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO,
-                                .pNext = nullptr,
-                                .flags = 0,
-                                .queueFamilyIndex = queueFamily,
-                                .queueCount = 1,
-                                .pQueuePriorities = &queuePriority});
+    queueCreateInfos.push_back({.queueFamilyIndex = queueFamily, .queueCount = 1, .pQueuePriorities = &queuePriority});
   }
 
-  VkPhysicalDeviceShaderObjectFeaturesEXT enabledShaderObjectFeaturesEXT = {
-      .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_OBJECT_FEATURES_EXT,
-      .pNext = nullptr,
-      .shaderObject = VK_TRUE,
+  vk::PhysicalDeviceShaderObjectFeaturesEXT enabledShaderObjectFeaturesEXT = {
+      .shaderObject = vk::True,
   };
 
-  VkPhysicalDeviceDynamicRenderingFeaturesKHR dynamicRenderingFeatures = {
-      .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DYNAMIC_RENDERING_FEATURES,
+  vk::PhysicalDeviceDynamicRenderingFeaturesKHR dynamicRenderingFeatures = {
       .pNext = &enabledShaderObjectFeaturesEXT,
-      .dynamicRendering = VK_TRUE,
+      .dynamicRendering = vk::True,
   };
 
-  VkPhysicalDeviceHostQueryResetFeaturesEXT resetFeatures = {
-      .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_HOST_QUERY_RESET_FEATURES,
+  vk::PhysicalDeviceHostQueryResetFeaturesEXT resetFeatures = {
       .pNext = &dynamicRenderingFeatures,
-      .hostQueryReset = VK_TRUE,
+      .hostQueryReset = vk::True,
   };
 
-  VkPhysicalDeviceShaderSubgroupExtendedTypesFeaturesKHR shaderSubgroupFeatures = {
-      .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_SUBGROUP_EXTENDED_TYPES_FEATURES_KHR,
+  vk::PhysicalDeviceShaderSubgroupExtendedTypesFeaturesKHR shaderSubgroupFeatures = {
       .pNext = &resetFeatures,
-      .shaderSubgroupExtendedTypes = VK_TRUE,
+      .shaderSubgroupExtendedTypes = vk::True,
   };
 
-  VkPhysicalDeviceDescriptorIndexingFeaturesEXT descriptorIndexingFeatures = {};
-  descriptorIndexingFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_FEATURES_EXT;
+  vk::PhysicalDeviceDescriptorIndexingFeaturesEXT descriptorIndexingFeatures = {};
   descriptorIndexingFeatures.pNext = &shaderSubgroupFeatures;
-  descriptorIndexingFeatures.shaderSampledImageArrayNonUniformIndexing = VK_TRUE;
-  descriptorIndexingFeatures.runtimeDescriptorArray = VK_TRUE;
+  descriptorIndexingFeatures.shaderSampledImageArrayNonUniformIndexing = vk::True;
+  descriptorIndexingFeatures.runtimeDescriptorArray = vk::True;
 
-  VkPhysicalDeviceShaderAtomicInt64FeaturesKHR atomicInt64Features = {};
-  atomicInt64Features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_ATOMIC_INT64_FEATURES_KHR;
+  vk::PhysicalDeviceShaderAtomicInt64FeaturesKHR atomicInt64Features = {};
   atomicInt64Features.pNext = &descriptorIndexingFeatures;
-  atomicInt64Features.shaderBufferInt64Atomics = VK_TRUE;
+  atomicInt64Features.shaderBufferInt64Atomics = vk::True;
 
-  VkPhysicalDeviceFloat16Int8FeaturesKHR float16Int8Features = {};
-  float16Int8Features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FLOAT16_INT8_FEATURES_KHR;
+  vk::PhysicalDeviceFloat16Int8FeaturesKHR float16Int8Features = {};
   float16Int8Features.pNext = &atomicInt64Features;
-  float16Int8Features.shaderFloat16 = VK_TRUE;
+  float16Int8Features.shaderFloat16 = vk::True;
 
-  VkPhysicalDeviceFeatures2 deviceFeatures = {};
-  deviceFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
+  vk::PhysicalDeviceFeatures2 deviceFeatures = {};
   deviceFeatures.pNext = &float16Int8Features;
-  deviceFeatures.features.independentBlend = VK_TRUE;
-  deviceFeatures.features.geometryShader = VK_TRUE;
-  deviceFeatures.features.multiDrawIndirect = VK_TRUE;
-  deviceFeatures.features.drawIndirectFirstInstance = VK_TRUE;
-  deviceFeatures.features.depthClamp = VK_TRUE;
-  deviceFeatures.features.fillModeNonSolid = VK_TRUE;
-  deviceFeatures.features.samplerAnisotropy = VK_TRUE;
-  deviceFeatures.features.vertexPipelineStoresAndAtomics = VK_TRUE;
-  deviceFeatures.features.fragmentStoresAndAtomics = VK_TRUE;
-  deviceFeatures.features.shaderImageGatherExtended = VK_TRUE;
-  deviceFeatures.features.shaderStorageImageReadWithoutFormat = VK_TRUE;
-  deviceFeatures.features.shaderInt64 = VK_TRUE;
+  deviceFeatures.features.independentBlend = vk::True;
+  deviceFeatures.features.geometryShader = vk::True;
+  deviceFeatures.features.multiDrawIndirect = vk::True;
+  deviceFeatures.features.drawIndirectFirstInstance = vk::True;
+  deviceFeatures.features.depthClamp = vk::True;
+  deviceFeatures.features.fillModeNonSolid = vk::True;
+  deviceFeatures.features.samplerAnisotropy = vk::True;
+  deviceFeatures.features.vertexPipelineStoresAndAtomics = vk::True;
+  deviceFeatures.features.fragmentStoresAndAtomics = vk::True;
+  deviceFeatures.features.shaderImageGatherExtended = vk::True;
+  deviceFeatures.features.shaderStorageImageReadWithoutFormat = vk::True;
+  deviceFeatures.features.shaderInt64 = vk::True;
   // TODO Check if device features are supported
   // checkDeviceFeatureSupport(m_physicalDevice, deviceFeatures);
 
-  VkDeviceCreateInfo createInfo = {};
-  createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
+  vk::DeviceCreateInfo createInfo = {};
   createInfo.pNext = &deviceFeatures;
   createInfo.queueCreateInfoCount = static_cast<uint32_t>(queueCreateInfos.size());
   createInfo.pQueueCreateInfos = queueCreateInfos.data();
@@ -268,10 +255,11 @@ void VulkanDevice::createLogicalDevice() {
   createInfo.enabledLayerCount = 0;
 #endif
 
-  VK_CHECK_RESULT(vkCreateDevice(m_physicalDevice, &createInfo, nullptr, &m_device));
-  vkGetDeviceQueue(m_device, indices.graphicsFamily.value(), 0, &m_graphicsQueue);
-  vkGetDeviceQueue(m_device, indices.transferFamily.value(), 0, &m_transferQueue);
-  vkGetDeviceQueue(m_device, indices.presentFamily.value(), 0, &m_presentQueue);
+  m_device = m_physicalDevice.createDevice(createInfo).value;
+  m_graphicsQueue = m_device.getQueue(indices.graphicsFamily.value(), 0);
+  m_transferQueue = m_device.getQueue(indices.transferFamily.value(), 0);
+  m_presentQueue = m_device.getQueue(indices.presentFamily.value(), 0);
+
   LOG_INFO("Vulkan logical device created");
 }
 

@@ -5,6 +5,7 @@
 #include <vector>
 #include <vk_mem_alloc.h>
 #include <vulkan/vulkan.h>
+#include <vulkan/vulkan.hpp>
 
 namespace engine {
 namespace renderer {
@@ -45,12 +46,12 @@ public:
   SwapChainSupportDetails getSwapChainSupport();
 
   inline void flushGPU() { vkDeviceWaitIdle(m_device); }
-  inline VkDevice &getDevice() noexcept { return m_device; };
+  inline vk::Device &getDevice() noexcept { return m_device; };
   inline vk::PhysicalDevice &getPhysicalDevice() noexcept { return m_physicalDevice; };
-  inline VkSurfaceKHR &getSurface() noexcept { return m_surface; };
-  inline VkQueue &getGraphicsQueue() noexcept { return m_graphicsQueue; };
-  inline VkQueue &getTransferQueue() noexcept { return m_transferQueue; };
-  inline VkQueue &getPresentQueue() noexcept { return m_presentQueue; };
+  inline vk::SurfaceKHR &getSurface() noexcept { return m_surface; };
+  inline vk::Queue &getGraphicsQueue() noexcept { return m_graphicsQueue; };
+  inline vk::Queue &getTransferQueue() noexcept { return m_transferQueue; };
+  inline vk::Queue &getPresentQueue() noexcept { return m_presentQueue; };
   inline VmaAllocator &getAllocator() noexcept { return m_allocator; };
   inline VkCommandPool &getCommandPool() noexcept { return m_graphicsCommandPool; };
   inline vk::Instance &getInstance() noexcept { return m_instance; };
@@ -92,15 +93,15 @@ private:
 
 private:
   SDL_Window *m_window;
-  VkSurfaceKHR m_surface;
+  vk::SurfaceKHR m_surface;
   vk::Instance m_instance;
   vk::PhysicalDevice m_physicalDevice;
-  VkDevice m_device;
+  vk::Device m_device;
   VmaAllocator m_allocator;
 
-  VkQueue m_graphicsQueue;
-  VkQueue m_transferQueue;
-  VkQueue m_presentQueue;
+  vk::Queue m_graphicsQueue;
+  vk::Queue m_transferQueue;
+  vk::Queue m_presentQueue;
 
   VkCommandPool m_graphicsCommandPool = VK_NULL_HANDLE;
   VkCommandPool m_transferCommandPool = VK_NULL_HANDLE;
