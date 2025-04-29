@@ -3,35 +3,30 @@
 
 namespace engine {
 namespace renderer {
-VulkanCommandBuffer::VulkanCommandBuffer(VulkanDevice device, VkCommandPool commandPool)
+VulkanCommandBuffer::VulkanCommandBuffer(VulkanDevice device, vk::CommandPool commandPool)
     : m_device{device}, m_commandPool{commandPool} {
-  VkCommandBufferAllocateInfo allocInfo{
-      .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
-      .pNext = nullptr,
+  vk::CommandBufferAllocateInfo allocInfo = {
       .commandPool = m_commandPool,
-      .level = VK_COMMAND_BUFFER_LEVEL_PRIMARY,
+      .level = vk::CommandBufferLevel::ePrimary,
       .commandBufferCount = 1,
   };
-  vkAllocateCommandBuffers(m_device.getDevice(), &allocInfo, &m_commandBuffer);
+  m_commandBuffer = m_device.getDevice().allocateCommandBuffers(allocInfo).value[0];
 }
 
 VulkanCommandBuffer::~VulkanCommandBuffer() {
   if (m_commandBuffer) {
-    vkFreeCommandBuffers(m_device.getDevice(), m_commandPool, 1, &m_commandBuffer);
+    m_device.getDevice().freeCommandBuffers(m_commandPool, {m_commandBuffer});
   }
 }
 
-void VulkanCommandBuffer::begin(VkCommandBufferUsageFlags usage) {
+void VulkanCommandBuffer::begin(vk::CommandBufferUsageFlags usage) {
   SE_ASSERT(!isRecording, "Command buffer is already recording.");
 
-  VkCommandBufferBeginInfo beginInfo{
-      .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
-      .pNext = nullptr,
+  vk::CommandBufferBeginInfo beginInfo = {
       .flags = usage,
-      .pInheritanceInfo = nullptr,
   };
 
-  vkBeginCommandBuffer(m_commandBuffer, &beginInfo);
+  m_commandBuffer.begin(beginInfo);
 
 #ifndef NDEBUG
   isRecording = true;
@@ -40,8 +35,7 @@ void VulkanCommandBuffer::begin(VkCommandBufferUsageFlags usage) {
 
 void VulkanCommandBuffer::end() {
   SE_ASSERT(isRecording, "Command buffer is not recording.");
-
-  vkEndCommandBuffer(m_commandBuffer);
+  m_commandBuffer.end();
 
 #ifndef NDEBUG
   isRecording = false;

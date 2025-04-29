@@ -6,18 +6,18 @@ namespace engine {
 namespace renderer {
 class VulkanCommandBuffer {
 public:
-  VulkanCommandBuffer(VulkanDevice device, VkCommandPool commandPool);
+  VulkanCommandBuffer(VulkanDevice device, vk::CommandPool commandPool);
   ~VulkanCommandBuffer();
 
-  void begin(VkCommandBufferUsageFlags usage = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
+  void begin(vk::CommandBufferUsageFlags usage = vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
   void end();
 
-  inline VkCommandBuffer getCommandBuffer() const noexcept { return m_commandBuffer; }
+  inline vk::CommandBuffer getCommandBuffer() const noexcept { return m_commandBuffer; }
 
 private:
   VulkanDevice m_device;
-  VkCommandPool m_commandPool;
-  VkCommandBuffer m_commandBuffer;
+  vk::CommandPool m_commandPool;
+  vk::CommandBuffer m_commandBuffer;
 
 #ifndef NDEBUG
   bool isRecording = false;
