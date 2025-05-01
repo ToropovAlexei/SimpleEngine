@@ -54,26 +54,23 @@ void VulkanRenderer::beginRendering(vk::CommandBuffer commandBuffer) {
       vk::PipelineStageFlagBits::eEarlyFragmentTests | vk::PipelineStageFlagBits::eLateFragmentTests,
       vk::ImageSubresourceRange{vk::ImageAspectFlagBits::eDepth, 0, 1, 0, 1});
 
-  VkRenderingAttachmentInfo colorAttachment{};
-  colorAttachment.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO;
+  vk::RenderingAttachmentInfo colorAttachment{};
   colorAttachment.imageView = m_swapChain->getImageView(m_currentImageIndex);
-  colorAttachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-  colorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-  colorAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-  colorAttachment.clearValue.color = {{1.0f, 1.0f, 1.0f, 1.0f}};
+  colorAttachment.imageLayout = vk::ImageLayout::eColorAttachmentOptimal;
+  colorAttachment.loadOp = vk::AttachmentLoadOp::eClear;
+  colorAttachment.storeOp = vk::AttachmentStoreOp::eStore;
+  colorAttachment.clearValue.color = {{{1.0f, 1.0f, 1.0f, 1.0f}}};
 
   // A single depth stencil attachment info can be used, but they can also be specified separately.
   // When both are specified separately, the only requirement is that the image view is identical.
-  VkRenderingAttachmentInfo depthStencilAttachment{};
-  depthStencilAttachment.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO;
+  vk::RenderingAttachmentInfo depthStencilAttachment{};
   depthStencilAttachment.imageView = m_swapChain->getDepthImageView(m_currentImageIndex);
-  depthStencilAttachment.imageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-  depthStencilAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-  depthStencilAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+  depthStencilAttachment.imageLayout = vk::ImageLayout::eDepthStencilAttachmentOptimal;
+  depthStencilAttachment.loadOp = vk::AttachmentLoadOp::eClear;
+  depthStencilAttachment.storeOp = vk::AttachmentStoreOp::eStore;
   depthStencilAttachment.clearValue.depthStencil = {1.0f, 0};
 
-  VkRenderingInfo renderingInfo{};
-  renderingInfo.sType = VK_STRUCTURE_TYPE_RENDERING_INFO;
+  vk::RenderingInfo renderingInfo = {};
   renderingInfo.renderArea = {{0, 0},
                               {m_swapChain->getSwapChainExtent().width, m_swapChain->getSwapChainExtent().height}};
   renderingInfo.layerCount = 1;
@@ -82,7 +79,7 @@ void VulkanRenderer::beginRendering(vk::CommandBuffer commandBuffer) {
   renderingInfo.pDepthAttachment = &depthStencilAttachment;
   renderingInfo.pStencilAttachment = nullptr;
 
-  vkCmdBeginRendering(commandBuffer, &renderingInfo);
+  commandBuffer.beginRendering(renderingInfo);
 
   vk::Viewport viewport{.x = 0.0f,
                         .y = 0.0f,
