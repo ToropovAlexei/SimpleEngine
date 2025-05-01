@@ -15,10 +15,10 @@ public:
   VulkanSwapchain(VulkanDevice *device, vk::Extent2D windowExtent, std::shared_ptr<VulkanSwapchain> previousSwapChain);
   ~VulkanSwapchain();
 
-  inline VkImageView getImageView(size_t index) noexcept { return m_swapChainImageViews[index]; }
-  inline VkImage getImage(size_t index) noexcept { return m_swapChainImages[index]; }
-  inline VkImageView getDepthImageView(size_t index) noexcept { return m_depthImageViews[index]; }
-  inline VkImage getDepthImage(size_t index) noexcept { return m_depthImages[index]; }
+  inline vk::ImageView getImageView(size_t index) noexcept { return m_swapChainImageViews[index]; }
+  inline vk::Image getImage(size_t index) noexcept { return m_swapChainImages[index]; }
+  inline vk::ImageView getDepthImageView(size_t index) noexcept { return m_depthImageViews[index]; }
+  inline vk::Image getDepthImage(size_t index) noexcept { return m_depthImages[index]; }
   inline size_t imageCount() noexcept { return m_swapChainImages.size(); }
   inline vk::Format getSwapChainImageFormat() noexcept { return m_swapChainImageFormat; }
   inline vk::Extent2D getSwapChainExtent() noexcept { return m_swapChainExtent; }

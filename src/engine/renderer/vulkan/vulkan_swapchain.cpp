@@ -1,7 +1,5 @@
 #include "vulkan_swapchain.hpp"
-#include <array>
 #include <engine/core/logger.hpp>
-#include <engine/renderer/vulkan/vulkan_utils.hpp>
 
 namespace engine {
 namespace renderer {
@@ -27,25 +25,25 @@ void VulkanSwapchain::init() {
 
 VulkanSwapchain::~VulkanSwapchain() {
   for (auto imageView : m_swapChainImageViews) {
-    vkDestroyImageView(m_device->getDevice(), imageView, nullptr);
+    m_device->getDevice().destroyImageView(imageView);
   }
   m_swapChainImageViews.clear();
 
   if (m_swapChain != nullptr) {
-    vkDestroySwapchainKHR(m_device->getDevice(), m_swapChain, nullptr);
+    m_device->getDevice().destroySwapchainKHR(m_swapChain);
     m_swapChain = nullptr;
   }
 
   for (size_t i = 0; i < m_depthImages.size(); i++) {
-    vkDestroyImageView(m_device->getDevice(), m_depthImageViews[i], nullptr);
+    m_device->getDevice().destroyImageView(m_depthImageViews[i]);
     vmaDestroyImage(m_device->getAllocator(), m_depthImages[i], m_depthImageMemorys[i]);
   }
 
   // cleanup synchronization objects
   for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-    vkDestroySemaphore(m_device->getDevice(), m_renderFinishedSemaphores[i], nullptr);
-    vkDestroySemaphore(m_device->getDevice(), m_imageAvailableSemaphores[i], nullptr);
-    vkDestroyFence(m_device->getDevice(), m_inFlightFences[i], nullptr);
+    m_device->getDevice().destroySemaphore(m_renderFinishedSemaphores[i]);
+    m_device->getDevice().destroySemaphore(m_imageAvailableSemaphores[i]);
+    m_device->getDevice().destroyFence(m_inFlightFences[i]);
   }
 
   LOG_INFO("Vulkan swapchain destroyed");
