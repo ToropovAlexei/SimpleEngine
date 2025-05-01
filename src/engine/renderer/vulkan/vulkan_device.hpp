@@ -65,10 +65,10 @@ public:
   void copyBuffer(vk::Buffer dstBuffer, vk::DeviceSize dstOffset, vk::Buffer srcBuffer, vk::DeviceSize srcOffset,
                   vk::DeviceSize size);
 
-  void transitionImageLayout(VkCommandBuffer cmdbuffer, VkImage image, VkAccessFlags srcAccessMask,
-                             VkAccessFlags dstAccessMask, VkImageLayout oldImageLayout, VkImageLayout newImageLayout,
-                             VkPipelineStageFlags srcStageMask, VkPipelineStageFlags dstStageMask,
-                             VkImageSubresourceRange subresourceRange);
+  void transitionImageLayout(vk::CommandBuffer cmdbuffer, vk::Image image, vk::AccessFlags srcAccessMask,
+                             vk::AccessFlags dstAccessMask, vk::ImageLayout oldImageLayout,
+                             vk::ImageLayout newImageLayout, vk::PipelineStageFlags srcStageMask,
+                             vk::PipelineStageFlags dstStageMask, vk::ImageSubresourceRange subresourceRange);
 
 private:
   void initVulkan();

@@ -493,24 +493,17 @@ vk::Format VulkanDevice::findSupportedFormat(const std::vector<vk::Format> &cand
 }
 
 vk::CommandBuffer VulkanDevice::beginSingleTimeCommands() {
-  VkCommandBufferAllocateInfo allocInfo = {
-      .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
-      .pNext = nullptr,
+  vk::CommandBufferAllocateInfo allocInfo = {
       .commandPool = m_graphicsCommandPool,
-      .level = VK_COMMAND_BUFFER_LEVEL_PRIMARY,
+      .level = vk::CommandBufferLevel::ePrimary,
       .commandBufferCount = 1,
   };
-  VkCommandBuffer commandBuffer;
-  VK_CHECK_RESULT(vkAllocateCommandBuffers(m_device, &allocInfo, &commandBuffer));
+  vk::CommandBuffer commandBuffer = m_device.allocateCommandBuffers(allocInfo).value[0];
 
-  VkCommandBufferBeginInfo beginInfo = {
-      .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
-      .pNext = nullptr,
-      .flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT,
-      .pInheritanceInfo = nullptr,
+  vk::CommandBufferBeginInfo beginInfo = {
+      .flags = vk::CommandBufferUsageFlagBits::eOneTimeSubmit,
   };
-
-  VK_CHECK_RESULT(vkBeginCommandBuffer(commandBuffer, &beginInfo));
+  commandBuffer.begin(beginInfo);
 
   return commandBuffer;
 }
@@ -537,24 +530,22 @@ void VulkanDevice::copyBuffer(vk::Buffer dstBuffer, vk::DeviceSize dstOffset, vk
   endSingleTimeCommands(commandBuffer);
 }
 
-void VulkanDevice::transitionImageLayout(VkCommandBuffer cmdbuffer, VkImage image, VkAccessFlags srcAccessMask,
-                                         VkAccessFlags dstAccessMask, VkImageLayout oldImageLayout,
-                                         VkImageLayout newImageLayout, VkPipelineStageFlags srcStageMask,
-                                         VkPipelineStageFlags dstStageMask, VkImageSubresourceRange subresourceRange) {
-  VkImageMemoryBarrier imageBarrier = {
-      .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
-      .pNext = nullptr,
+void VulkanDevice::transitionImageLayout(vk::CommandBuffer cmdbuffer, vk::Image image, vk::AccessFlags srcAccessMask,
+                                         vk::AccessFlags dstAccessMask, vk::ImageLayout oldImageLayout,
+                                         vk::ImageLayout newImageLayout, vk::PipelineStageFlags srcStageMask,
+                                         vk::PipelineStageFlags dstStageMask,
+                                         vk::ImageSubresourceRange subresourceRange) {
+  vk::ImageMemoryBarrier imageBarrier = {
       .srcAccessMask = srcAccessMask,
       .dstAccessMask = dstAccessMask,
       .oldLayout = oldImageLayout,
       .newLayout = newImageLayout,
-      .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
-      .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+      .srcQueueFamilyIndex = vk::QueueFamilyIgnored,
+      .dstQueueFamilyIndex = vk::QueueFamilyIgnored,
       .image = image,
       .subresourceRange = subresourceRange,
   };
-
-  vkCmdPipelineBarrier(cmdbuffer, srcStageMask, dstStageMask, 0, 0, nullptr, 0, nullptr, 1, &imageBarrier);
+  cmdbuffer.pipelineBarrier(srcStageMask, dstStageMask, vk::DependencyFlags(), nullptr, nullptr, imageBarrier);
 }
 } // namespace renderer
 } // namespace engine
