@@ -527,12 +527,12 @@ void VulkanDevice::endSingleTimeCommands(vk::CommandBuffer commandBuffer) {
   m_device.freeCommandBuffers(m_graphicsCommandPool, commandBuffer);
 }
 
-void VulkanDevice::copyBuffer(VkBuffer dstBuffer, VkDeviceSize dstOffset, VkBuffer srcBuffer, VkDeviceSize srcOffset,
-                              VkDeviceSize size) {
-  VkCommandBuffer commandBuffer = beginSingleTimeCommands();
+void VulkanDevice::copyBuffer(vk::Buffer dstBuffer, vk::DeviceSize dstOffset, vk::Buffer srcBuffer,
+                              vk::DeviceSize srcOffset, vk::DeviceSize size) {
+  auto commandBuffer = beginSingleTimeCommands();
 
-  VkBufferCopy copyRegion = {.srcOffset = srcOffset, .dstOffset = dstOffset, .size = size};
-  vkCmdCopyBuffer(commandBuffer, srcBuffer, dstBuffer, 1, &copyRegion);
+  vk::BufferCopy copyRegion = {.srcOffset = srcOffset, .dstOffset = dstOffset, .size = size};
+  commandBuffer.copyBuffer(srcBuffer, dstBuffer, copyRegion);
 
   endSingleTimeCommands(commandBuffer);
 }

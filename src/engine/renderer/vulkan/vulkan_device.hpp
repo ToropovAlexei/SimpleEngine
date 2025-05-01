@@ -1,11 +1,11 @@
 #pragma once
 
-#include <SDL3/SDL_video.h>
 #include <optional>
 #include <vector>
 #include <vk_mem_alloc.h>
-#include <vulkan/vulkan.h>
 #include <vulkan/vulkan.hpp>
+
+struct SDL_Window;
 
 namespace engine {
 namespace renderer {
@@ -45,7 +45,7 @@ public:
   inline QueueFamilyIndices findQueueFamilies() { return findQueueFamilies(m_physicalDevice); }
   SwapChainSupportDetails getSwapChainSupport();
 
-  inline void flushGPU() { vkDeviceWaitIdle(m_device); }
+  inline void flushGPU() { m_device.waitIdle(); }
   inline vk::Device &getDevice() noexcept { return m_device; };
   inline vk::PhysicalDevice &getPhysicalDevice() noexcept { return m_physicalDevice; };
   inline vk::SurfaceKHR &getSurface() noexcept { return m_surface; };
@@ -62,8 +62,8 @@ public:
                                  vk::FormatFeatureFlags features);
   vk::CommandBuffer beginSingleTimeCommands();
   void endSingleTimeCommands(vk::CommandBuffer commandBuffer);
-  void copyBuffer(VkBuffer dstBuffer, VkDeviceSize dstOffset, VkBuffer srcBuffer, VkDeviceSize srcOffset,
-                  VkDeviceSize size);
+  void copyBuffer(vk::Buffer dstBuffer, vk::DeviceSize dstOffset, vk::Buffer srcBuffer, vk::DeviceSize srcOffset,
+                  vk::DeviceSize size);
 
   void transitionImageLayout(VkCommandBuffer cmdbuffer, VkImage image, VkAccessFlags srcAccessMask,
                              VkAccessFlags dstAccessMask, VkImageLayout oldImageLayout, VkImageLayout newImageLayout,
@@ -89,7 +89,7 @@ private:
   bool checkDeviceExtensionSupport(const vk::PhysicalDevice &device);
 
 private:
-  static constexpr uint32_t VK_API_VERSION = VK_API_VERSION_1_4;
+  static constexpr auto VK_API_VERSION = VK_API_VERSION_1_4;
 
 private:
   SDL_Window *m_window;

@@ -179,7 +179,6 @@ void VulkanRenderer::createCommandBuffers() {
   m_commandBuffers.resize(VulkanSwapchain::MAX_FRAMES_IN_FLIGHT);
 
   vk::CommandBufferAllocateInfo allocInfo = {
-      .pNext = nullptr,
       .commandPool = m_device->getCommandPool(),
       .level = vk::CommandBufferLevel::ePrimary,
       .commandBufferCount = static_cast<uint32_t>(m_commandBuffers.size()),
