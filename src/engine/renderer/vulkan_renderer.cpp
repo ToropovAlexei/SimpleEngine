@@ -52,7 +52,7 @@ void VulkanRenderer::beginRendering(vk::CommandBuffer commandBuffer) {
       vk::ImageLayout::eDepthStencilAttachmentOptimal,
       vk::PipelineStageFlagBits::eEarlyFragmentTests | vk::PipelineStageFlagBits::eLateFragmentTests,
       vk::PipelineStageFlagBits::eEarlyFragmentTests | vk::PipelineStageFlagBits::eLateFragmentTests,
-      vk::ImageSubresourceRange{vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1});
+      vk::ImageSubresourceRange{vk::ImageAspectFlagBits::eDepth, 0, 1, 0, 1});
 
   VkRenderingAttachmentInfo colorAttachment{};
   colorAttachment.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO;

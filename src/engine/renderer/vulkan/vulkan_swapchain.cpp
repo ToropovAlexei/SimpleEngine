@@ -53,14 +53,10 @@ vk::Result VulkanSwapchain::acquireNextImage(uint32_t *imageIndex) {
   m_device->getDevice().waitForFences({m_inFlightFences[m_currentFrame]}, vk::True,
                                       std::numeric_limits<uint64_t>::max());
 
-  auto result = m_device->getDevice().acquireNextImageKHR(m_swapChain, std::numeric_limits<uint64_t>::max(),
-                                                          m_imageAvailableSemaphores[m_currentFrame]);
+  auto result = vkAcquireNextImageKHR(m_device->getDevice(), m_swapChain, std::numeric_limits<uint64_t>::max(),
+                                      m_imageAvailableSemaphores[m_currentFrame], VK_NULL_HANDLE, imageIndex);
 
-  if (result.result == vk::Result::eSuccess) {
-    *imageIndex = result.value;
-  }
-
-  return result.result;
+  return vk::Result(result);
 }
 
 vk::Result VulkanSwapchain::submitCommandBuffers(const vk::CommandBuffer *buffers, uint32_t *imageIndex) {
@@ -97,12 +93,12 @@ vk::Result VulkanSwapchain::submitCommandBuffers(const vk::CommandBuffer *buffer
   presentInfo.pSwapchains = swapChains.data();
 
   presentInfo.pImageIndices = imageIndex;
-
-  auto result = m_device->getPresentQueue().presentKHR(presentInfo);
+  VkPresentInfoKHR rawPresentInfo = presentInfo;
+  auto result = vkQueuePresentKHR(m_device->getPresentQueue(), &rawPresentInfo);
 
   m_currentFrame = (m_currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
 
-  return result;
+  return vk::Result(result);
 }
 
 void VulkanSwapchain::createSwapChain() {
