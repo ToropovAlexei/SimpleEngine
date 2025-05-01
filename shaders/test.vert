@@ -14,6 +14,6 @@ layout(set = 0, binding = 0) uniform GlobalUbo {
 } ubo;
 
 void main() {
-    gl_Position = vec4(pos + vec3(push.offset, 0.0), 1.0);
+    gl_Position = ubo.worldToClip * vec4(pos + vec3(push.offset, 0.0), 1.0);
     outColor = vec3(color);
 }

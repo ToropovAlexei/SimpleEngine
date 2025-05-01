@@ -46,7 +46,7 @@ TestRenderer::~TestRenderer() {
   m_renderer->flushGPU();
 }
 
-void TestRenderer::render(VkCommandBuffer commandBuffer) {
+void TestRenderer::render(vk::CommandBuffer commandBuffer) {
   m_renderer->bindPipeline(commandBuffer, m_pipelineId);
   // TODO
 

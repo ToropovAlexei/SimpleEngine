@@ -9,7 +9,7 @@ public:
   TestRenderer(engine::renderer::VulkanRenderer *device);
   ~TestRenderer();
 
-  void render(VkCommandBuffer commandBuffer);
+  void render(vk::CommandBuffer commandBuffer);
   void update(float dt);
 
 private:

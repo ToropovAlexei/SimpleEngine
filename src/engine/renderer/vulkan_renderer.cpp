@@ -30,13 +30,12 @@ VulkanRenderer::~VulkanRenderer() {
   ImGui::DestroyContext();
   delete m_shaderManager;
   delete m_pipelineManager;
-  vkFreeCommandBuffers(m_device->getDevice(), m_device->getCommandPool(),
-                       static_cast<uint32_t>(m_commandBuffers.size()), m_commandBuffers.data());
+  m_device->getDevice().freeCommandBuffers(m_device->getCommandPool(), m_commandBuffers);
   vkDestroyDescriptorPool(m_device->getDevice(), m_imguiPool, nullptr);
   m_commandBuffers.clear();
 }
 
-void VulkanRenderer::beginRendering(VkCommandBuffer commandBuffer) {
+void VulkanRenderer::beginRendering(vk::CommandBuffer commandBuffer) {
   SE_ASSERT(m_isFrameStarted, "Can't call beginSwapChainRenderPass "
                               "without first calling beginFrame");
   SE_ASSERT(commandBuffer == getCurrentCommandBuffer(),
@@ -54,8 +53,8 @@ void VulkanRenderer::beginRendering(VkCommandBuffer commandBuffer) {
       VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT,
       VkImageSubresourceRange{VK_IMAGE_ASPECT_DEPTH_BIT, 0, 1, 0, 1});
 
-  VkRenderingAttachmentInfoKHR colorAttachment{};
-  colorAttachment.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO_KHR;
+  VkRenderingAttachmentInfo colorAttachment{};
+  colorAttachment.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO;
   colorAttachment.imageView = m_swapChain->getImageView(m_currentImageIndex);
   colorAttachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
   colorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
@@ -64,16 +63,16 @@ void VulkanRenderer::beginRendering(VkCommandBuffer commandBuffer) {
 
   // A single depth stencil attachment info can be used, but they can also be specified separately.
   // When both are specified separately, the only requirement is that the image view is identical.
-  VkRenderingAttachmentInfoKHR depthStencilAttachment{};
-  depthStencilAttachment.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO_KHR;
+  VkRenderingAttachmentInfo depthStencilAttachment{};
+  depthStencilAttachment.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO;
   depthStencilAttachment.imageView = m_swapChain->getDepthImageView(m_currentImageIndex);
   depthStencilAttachment.imageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
   depthStencilAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
   depthStencilAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
   depthStencilAttachment.clearValue.depthStencil = {1.0f, 0};
 
-  VkRenderingInfoKHR renderingInfo{};
-  renderingInfo.sType = VK_STRUCTURE_TYPE_RENDERING_INFO_KHR;
+  VkRenderingInfo renderingInfo{};
+  renderingInfo.sType = VK_STRUCTURE_TYPE_RENDERING_INFO;
   renderingInfo.renderArea = {{0, 0},
                               {m_swapChain->getSwapChainExtent().width, m_swapChain->getSwapChainExtent().height}};
   renderingInfo.layerCount = 1;
@@ -84,24 +83,24 @@ void VulkanRenderer::beginRendering(VkCommandBuffer commandBuffer) {
 
   vkCmdBeginRendering(commandBuffer, &renderingInfo);
 
-  VkViewport viewport{.x = 0.0f,
-                      .y = 0.0f,
-                      .width = static_cast<float>(m_swapChain->getSwapChainExtent().width),
-                      .height = static_cast<float>(m_swapChain->getSwapChainExtent().height),
-                      .minDepth = 0.0f,
-                      .maxDepth = 1.0f};
-  VkRect2D scissor{{0, 0}, m_swapChain->getSwapChainExtent()};
-  vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
-  vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
+  vk::Viewport viewport{.x = 0.0f,
+                        .y = 0.0f,
+                        .width = static_cast<float>(m_swapChain->getSwapChainExtent().width),
+                        .height = static_cast<float>(m_swapChain->getSwapChainExtent().height),
+                        .minDepth = 0.0f,
+                        .maxDepth = 1.0f};
+  vk::Rect2D scissor{{0, 0}, m_swapChain->getSwapChainExtent()};
+  commandBuffer.setViewport(0, viewport);
+  commandBuffer.setScissor(0, scissor);
 }
 
-void VulkanRenderer::endRendering(VkCommandBuffer commandBuffer) {
+void VulkanRenderer::endRendering(vk::CommandBuffer commandBuffer) {
   SE_ASSERT(m_isFrameStarted, "Can't call endSwapChainRenderPass "
                               "without first calling beginFrame");
   SE_ASSERT(commandBuffer == getCurrentCommandBuffer(),
             "Can't call endSwapChainRenderPass on a different command buffer");
 
-  vkCmdEndRendering(commandBuffer);
+  commandBuffer.endRendering();
 
   m_device->transitionImageLayout(commandBuffer, m_swapChain->getImage(m_currentImageIndex),
                                   VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT, 0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
@@ -110,17 +109,17 @@ void VulkanRenderer::endRendering(VkCommandBuffer commandBuffer) {
                                   VkImageSubresourceRange{VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1});
 }
 
-VkCommandBuffer VulkanRenderer::beginFrame() {
+vk::CommandBuffer VulkanRenderer::beginFrame() {
   SE_ASSERT(!m_isFrameStarted, "Can't call beginFrame while already in progress");
 
   auto result = m_swapChain->acquireNextImage(&m_currentImageIndex);
 
-  if (result == VK_ERROR_OUT_OF_DATE_KHR) {
+  if (result == vk::Result::eErrorOutOfDateKHR) {
     recreateSwapChain();
     return nullptr;
   }
 
-  if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR) {
+  if (result != vk::Result::eSuccess && result != vk::Result::eSuboptimalKHR) {
     SE_THROW_ERROR("Failed to acquire swap chain image!");
   }
 
@@ -129,9 +128,8 @@ VkCommandBuffer VulkanRenderer::beginFrame() {
 #endif
 
   auto commandBuffer = getCurrentCommandBuffer();
-  VkCommandBufferBeginInfo beginInfo{};
-  beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-  VK_CHECK_RESULT(vkBeginCommandBuffer(commandBuffer, &beginInfo));
+  auto biginInfo = vk::CommandBufferBeginInfo{};
+  commandBuffer.begin(biginInfo);
 
   return commandBuffer;
 }
@@ -140,13 +138,13 @@ void VulkanRenderer::endFrame() {
   SE_ASSERT(m_isFrameStarted, "Can't call endFrame while frame not in progress");
 
   auto commandBuffer = getCurrentCommandBuffer();
-  vkEndCommandBuffer(commandBuffer);
+  commandBuffer.end();
 
   auto result = m_swapChain->submitCommandBuffers(&commandBuffer, &m_currentImageIndex);
 
-  if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR) {
+  if (result == vk::Result::eErrorOutOfDateKHR || result == vk::Result::eSuboptimalKHR) {
     recreateSwapChain();
-  } else if (result != VK_SUCCESS) {
+  } else if (result != vk::Result::eSuccess) {
     SE_THROW_ERROR("Failed to present swap chain image!");
   }
 
@@ -161,7 +159,7 @@ void VulkanRenderer::recreateSwapChain() {
   int width = 0;
   int height = 0;
   SDL_GetWindowSize(m_window, &width, &height);
-  VkExtent2D extent = {static_cast<uint32_t>(width), static_cast<uint32_t>(height)};
+  vk::Extent2D extent = {static_cast<uint32_t>(width), static_cast<uint32_t>(height)};
   m_device->flushGPU();
 
   if (m_swapChain == nullptr) {
@@ -180,15 +178,14 @@ void VulkanRenderer::recreateSwapChain() {
 void VulkanRenderer::createCommandBuffers() {
   m_commandBuffers.resize(VulkanSwapchain::MAX_FRAMES_IN_FLIGHT);
 
-  VkCommandBufferAllocateInfo allocInfo = {
-      .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
+  vk::CommandBufferAllocateInfo allocInfo = {
       .pNext = nullptr,
       .commandPool = m_device->getCommandPool(),
-      .level = VK_COMMAND_BUFFER_LEVEL_PRIMARY,
+      .level = vk::CommandBufferLevel::ePrimary,
       .commandBufferCount = static_cast<uint32_t>(m_commandBuffers.size()),
   };
 
-  VK_CHECK_RESULT(vkAllocateCommandBuffers(m_device->getDevice(), &allocInfo, m_commandBuffers.data()));
+  m_commandBuffers = m_device->getDevice().allocateCommandBuffers(allocInfo).value;
 }
 
 void VulkanRenderer::onResize(int width, int height) {
@@ -228,14 +225,12 @@ void VulkanRenderer::initImGui() {
   ImGui_ImplSDL3_InitForVulkan(m_window);
 
   auto imageFormat = m_swapChain->getSwapChainImageFormat();
-  VkPipelineRenderingCreateInfoKHR pipelineRenderingCreateInfo = {
-      .sType = VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO,
-      .pNext = nullptr,
+  vk::PipelineRenderingCreateInfoKHR pipelineRenderingCreateInfo = {
       .viewMask = 0,
       .colorAttachmentCount = 1,
       .pColorAttachmentFormats = &imageFormat,
       .depthAttachmentFormat = m_swapChain->findDepthFormat(),
-      .stencilAttachmentFormat = VK_FORMAT_UNDEFINED,
+      .stencilAttachmentFormat = vk::Format::eUndefined,
   };
   ImGui_ImplVulkan_InitInfo initInfo = {};
   initInfo.Instance = m_device->getInstance();

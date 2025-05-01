@@ -8,19 +8,22 @@
 #include <engine/renderer/vulkan/vulkan_swapchain.hpp>
 #include <memory>
 
+class GameRenderer;
+
 namespace engine {
 namespace renderer {
 class VulkanRenderer {
+  friend class ::GameRenderer; // TODO For testing only
 public:
   VulkanRenderer(SDL_Window *window);
   ~VulkanRenderer();
 
-  void beginRendering(VkCommandBuffer commandBuffer);
-  void endRendering(VkCommandBuffer commandBuffer);
+  void beginRendering(vk::CommandBuffer commandBuffer);
+  void endRendering(vk::CommandBuffer commandBuffer);
 
   [[nodiscard]] size_t createBuffer(BufferDesc &desc);
 
-  [[nodiscard]] VkCommandBuffer beginFrame();
+  [[nodiscard]] vk::CommandBuffer beginFrame();
   void endFrame();
 
   void onResize(int width, int height);
@@ -30,7 +33,7 @@ public:
     SE_ASSERT(m_isFrameStarted, "Can't get frame index when frame not in progress");
     return m_currentFrameIndex;
   }
-  inline VkCommandBuffer getCurrentCommandBuffer() {
+  inline vk::CommandBuffer getCurrentCommandBuffer() {
     SE_ASSERT(m_isFrameStarted, "Can't get command buffer when frame not in progress");
     return m_commandBuffers[m_currentFrameIndex];
   }
@@ -75,7 +78,7 @@ private:
   std::unique_ptr<VulkanBufferManager> m_bufferManager;
   VulkanShaderManager *m_shaderManager;
   VulkanPipelineManager *m_pipelineManager;
-  std::vector<VkCommandBuffer> m_commandBuffers;
+  std::vector<vk::CommandBuffer> m_commandBuffers;
 
   uint32_t m_currentImageIndex = 0;
   size_t m_currentFrameIndex = 0;
