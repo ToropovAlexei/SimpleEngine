@@ -3,6 +3,7 @@
     "optional": "cpp",
     "limits": "cpp",
     "chrono": "cpp",
-    "array": "cpp"
+    "array": "cpp",
+    "bitset": "cpp"
   }
 }

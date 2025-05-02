@@ -3,13 +3,11 @@
 #include "imgui.h"
 #include "imgui_impl_sdl3.h"
 #include "imgui_impl_vulkan.h"
-#include <engine/core/assert.hpp>
 #include <engine/core/exception.hpp>
 #include <engine/core/logger.hpp>
 #include <engine/renderer/vulkan/vulkan_swapchain.hpp>
 #include <engine/renderer/vulkan/vulkan_utils.hpp>
 #include <memory>
-#include <vulkan/vulkan_core.h>
 
 namespace engine {
 namespace renderer {
