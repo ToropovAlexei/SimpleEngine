@@ -6,31 +6,31 @@
 namespace engine {
 namespace renderer {
 struct BindInfoPushConstant {
-  uint32_t stageFlags;
+  vk::ShaderStageFlagBits stageFlags;
   uint32_t offset;
   uint32_t size;
 };
 struct BindInfo {
   std::string name;
 
-  VkDescriptorType descriptorType;
+  vk::DescriptorType descriptorType;
   uint32_t set;
   uint32_t binding;
   uint32_t count;
-  uint32_t stageFlags;
+  vk::ShaderStageFlagBits stageFlags;
 
   bool isUsed = false;
   bool isWrite = false;
 };
 struct BindReflection {
-  std::vector<VkVertexInputBindingDescription> bindingDescriptions;
-  std::vector<VkVertexInputAttributeDescription> attributeDescriptions;
+  std::vector<vk::VertexInputBindingDescription> bindingDescriptions;
+  std::vector<vk::VertexInputAttributeDescription> attributeDescriptions;
   std::vector<BindInfoPushConstant> pushConstants;
   std::vector<BindInfo> bindInfos;
 };
 struct Shader {
   std::string path;
-  VkShaderModule shader;
+  vk::ShaderModule shader;
   BindReflection bindReflection;
 };
 

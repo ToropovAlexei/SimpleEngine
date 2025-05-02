@@ -1,7 +1,8 @@
 
 #pragma once
 #include <limits>
-#include <vulkan/vulkan_core.h>
+#include <vulkan/vulkan.hpp>
+#include <vulkan/vulkan_enums.hpp>
 
 namespace engine {
 namespace renderer {

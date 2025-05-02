@@ -1,5 +1,5 @@
 #include "vulkan_pipeline_manager.hpp"
-#include "engine/renderer/vulkan/vulkan_utils.hpp"
+#include <vulkan/vulkan_enums.hpp>
 
 namespace engine {
 namespace renderer {
@@ -17,8 +17,8 @@ VulkanPipelineManager::~VulkanPipelineManager() {
 size_t VulkanPipelineManager::createGraphicsPipeline(GraphicsPipelineDesc &desc) {
   GraphicsPipeline pipeline;
 
-  std::vector<VkVertexInputBindingDescription> inputBindingDescriptions;
-  std::vector<VkVertexInputAttributeDescription> attributeDescriptions;
+  std::vector<vk::VertexInputBindingDescription> inputBindingDescriptions;
+  std::vector<vk::VertexInputAttributeDescription> attributeDescriptions;
 
   if (desc.vertexShaderId != INVALID_ID) {
     auto bindReflection = m_shaderManager->getVertexBindReflection(desc.vertexShaderId);
@@ -28,28 +28,24 @@ size_t VulkanPipelineManager::createGraphicsPipeline(GraphicsPipelineDesc &desc)
                                  bindReflection.attributeDescriptions.end());
 
     for (BindInfoPushConstant &pushConstant : bindReflection.pushConstants) {
-      VkPushConstantRange &range = pipeline.pushConstantRanges.emplace_back();
+      vk::PushConstantRange &range = pipeline.pushConstantRanges.emplace_back();
       range.offset = pushConstant.offset;
       range.size = pushConstant.size;
       range.stageFlags = pushConstant.stageFlags;
     }
   }
 
-  VkPipelineLayoutCreateInfo pipelineLayoutInfo = {
-      .sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
-      .pNext = nullptr,
-      .flags = 0,
+  vk::PipelineLayoutCreateInfo pipelineLayoutInfo = {
       .setLayoutCount = 0,    // TODO
       .pSetLayouts = nullptr, // TODO
       .pushConstantRangeCount = static_cast<uint32_t>(pipeline.pushConstantRanges.size()),
       .pPushConstantRanges = pipeline.pushConstantRanges.data(),
   };
 
-  std::vector<VkPipelineShaderStageCreateInfo> shaderStages;
+  std::vector<vk::PipelineShaderStageCreateInfo> shaderStages;
   if (desc.vertexShaderId != INVALID_ID) {
-    VkPipelineShaderStageCreateInfo vertShaderStageInfo = {};
-    vertShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-    vertShaderStageInfo.stage = VK_SHADER_STAGE_VERTEX_BIT;
+    vk::PipelineShaderStageCreateInfo vertShaderStageInfo = {};
+    vertShaderStageInfo.stage = vk::ShaderStageFlagBits::eVertex;
 
     vertShaderStageInfo.module = m_shaderManager->getVertexShaderModule(desc.vertexShaderId);
     vertShaderStageInfo.pName = "main";
@@ -57,9 +53,8 @@ size_t VulkanPipelineManager::createGraphicsPipeline(GraphicsPipelineDesc &desc)
     shaderStages.push_back(vertShaderStageInfo);
   }
   if (desc.fragmentShaderId != INVALID_ID) {
-    VkPipelineShaderStageCreateInfo fragShaderStageInfo = {};
-    fragShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-    fragShaderStageInfo.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
+    vk::PipelineShaderStageCreateInfo fragShaderStageInfo = {};
+    fragShaderStageInfo.stage = vk::ShaderStageFlagBits::eFragment;
 
     fragShaderStageInfo.module = m_shaderManager->getFragmentShaderModule(desc.fragmentShaderId);
     fragShaderStageInfo.pName = "main";
@@ -67,84 +62,68 @@ size_t VulkanPipelineManager::createGraphicsPipeline(GraphicsPipelineDesc &desc)
     shaderStages.push_back(fragShaderStageInfo);
   }
 
-  vkCreatePipelineLayout(m_device->getDevice(), &pipelineLayoutInfo, nullptr, &pipeline.pipelineLayout);
+  pipeline.pipelineLayout = m_device->getDevice().createPipelineLayout(pipelineLayoutInfo).value;
 
-  VkPipelineDepthStencilStateCreateInfo depthStencil = {};
-  depthStencil.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
+  vk::PipelineDepthStencilStateCreateInfo depthStencil = {};
   depthStencil.depthTestEnable = desc.depthStencilState.depthEnable;
   depthStencil.depthWriteEnable = desc.depthStencilState.depthWriteEnable;
-  depthStencil.depthCompareOp = static_cast<VkCompareOp>(desc.depthStencilState.depthFunc);
+  depthStencil.depthCompareOp = static_cast<vk::CompareOp>(desc.depthStencilState.depthFunc);
   // depthStencil.depthBoundsTestEnable = desc.states.depthStencilState;
   // depthStencil.minDepthBounds = 0.0f;
   // depthStencil.maxDepthBounds = 1.0f;
   depthStencil.stencilTestEnable = desc.depthStencilState.stencilEnable;
 
   depthStencil.front = {};
-  depthStencil.front.failOp = static_cast<VkStencilOp>(desc.depthStencilState.frontFace.stencilFailOp);
-  depthStencil.front.passOp = static_cast<VkStencilOp>(desc.depthStencilState.frontFace.stencilPassOp);
-  depthStencil.front.depthFailOp = static_cast<VkStencilOp>(desc.depthStencilState.frontFace.stencilDepthFailOp);
-  depthStencil.front.compareOp = static_cast<VkCompareOp>(desc.depthStencilState.frontFace.stencilFunc);
+  depthStencil.front.failOp = static_cast<vk::StencilOp>(desc.depthStencilState.frontFace.stencilFailOp);
+  depthStencil.front.passOp = static_cast<vk::StencilOp>(desc.depthStencilState.frontFace.stencilPassOp);
+  depthStencil.front.depthFailOp = static_cast<vk::StencilOp>(desc.depthStencilState.frontFace.stencilDepthFailOp);
+  depthStencil.front.compareOp = static_cast<vk::CompareOp>(desc.depthStencilState.frontFace.stencilFunc);
   // depthStencil.front.compareMask;
   // depthStencil.front.writeMask;
   // depthStencil.front.reference;
 
   depthStencil.back = {};
-  depthStencil.back.failOp = static_cast<VkStencilOp>(desc.depthStencilState.backFace.stencilFailOp);
-  depthStencil.back.passOp = static_cast<VkStencilOp>(desc.depthStencilState.backFace.stencilPassOp);
-  depthStencil.back.depthFailOp = static_cast<VkStencilOp>(desc.depthStencilState.backFace.stencilDepthFailOp);
-  depthStencil.back.compareOp = static_cast<VkCompareOp>(desc.depthStencilState.backFace.stencilFunc);
+  depthStencil.back.failOp = static_cast<vk::StencilOp>(desc.depthStencilState.backFace.stencilFailOp);
+  depthStencil.back.passOp = static_cast<vk::StencilOp>(desc.depthStencilState.backFace.stencilPassOp);
+  depthStencil.back.depthFailOp = static_cast<vk::StencilOp>(desc.depthStencilState.backFace.stencilDepthFailOp);
+  depthStencil.back.compareOp = static_cast<vk::CompareOp>(desc.depthStencilState.backFace.stencilFunc);
   // depthStencil.back.compareMask;
   // depthStencil.back.writeMask;
   // depthStencil.back.reference;
 
-  VkPipelineViewportStateCreateInfo viewportState = {
-      .sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO,
-      .pNext = nullptr,
-      .flags = 0,
+  vk::PipelineViewportStateCreateInfo viewportState = {
       .viewportCount = 1,
       .pViewports = nullptr,
       .scissorCount = 1,
       .pScissors = nullptr,
   };
 
-  VkPipelineVertexInputStateCreateInfo vertexInputInfo = {};
-  vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
+  vk::PipelineVertexInputStateCreateInfo vertexInputInfo = {};
   vertexInputInfo.vertexBindingDescriptionCount = static_cast<uint32_t>(inputBindingDescriptions.size());
   vertexInputInfo.pVertexBindingDescriptions = inputBindingDescriptions.data();
   vertexInputInfo.vertexAttributeDescriptionCount = static_cast<uint32_t>(attributeDescriptions.size());
   vertexInputInfo.pVertexAttributeDescriptions = attributeDescriptions.data();
 
-  VkPipelineInputAssemblyStateCreateInfo inputAssembly = {
-      .sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO,
-      .pNext = nullptr,
-      .flags = 0,
-      .topology = static_cast<VkPrimitiveTopology>(desc.primitiveTopology),
-      .primitiveRestartEnable = VK_FALSE,
+  vk::PipelineInputAssemblyStateCreateInfo inputAssembly = {
+      .topology = static_cast<vk::PrimitiveTopology>(desc.primitiveTopology),
+      .primitiveRestartEnable = vk::False,
   };
 
   auto dynamicStates = std::to_array({
-      VK_DYNAMIC_STATE_VIEWPORT,
-      VK_DYNAMIC_STATE_SCISSOR,
-      VK_DYNAMIC_STATE_DEPTH_BIAS,
+      vk::DynamicState::eViewport,
+      vk::DynamicState::eScissor,
+      vk::DynamicState::eDepthBias,
   });
 
-  VkPipelineDynamicStateCreateInfo dynamicStateCreateInfo = {
-      .sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO,
-      .pNext = nullptr,
-      .flags = 0,
-      .dynamicStateCount = static_cast<uint32_t>(dynamicStates.size()),
-      .pDynamicStates = dynamicStates.data(),
-  };
+  vk::PipelineDynamicStateCreateInfo dynamicStateCreateInfo = {};
+  dynamicStateCreateInfo.setDynamicStates(dynamicStates);
 
-  VkPipelineRasterizationStateCreateInfo rasterizerState = {
-      .sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO,
-      .pNext = nullptr,
-      .flags = 0,
+  vk::PipelineRasterizationStateCreateInfo rasterizerState = {
       .depthClampEnable = desc.rasterizerState.depthClampEnabled,
       .rasterizerDiscardEnable = VK_FALSE,
-      .polygonMode = static_cast<VkPolygonMode>(desc.rasterizerState.fillMode),
-      .cullMode = static_cast<VkCullModeFlags>(desc.rasterizerState.cullMode),
-      .frontFace = static_cast<VkFrontFace>(desc.rasterizerState.frontFaceMode),
+      .polygonMode = static_cast<vk::PolygonMode>(desc.rasterizerState.fillMode),
+      .cullMode = static_cast<vk::CullModeFlagBits>(desc.rasterizerState.cullMode),
+      .frontFace = static_cast<vk::FrontFace>(desc.rasterizerState.frontFaceMode),
       .depthBiasEnable = desc.rasterizerState.depthBiasEnabled,
       .depthBiasConstantFactor = desc.rasterizerState.depthBias,
       .depthBiasClamp = desc.rasterizerState.depthBiasClamp,
@@ -152,11 +131,8 @@ size_t VulkanPipelineManager::createGraphicsPipeline(GraphicsPipelineDesc &desc)
       .lineWidth = 1.0f,
   };
 
-  VkPipelineMultisampleStateCreateInfo multisamplingState = {
-      .sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO,
-      .pNext = nullptr,
-      .flags = 0,
-      .rasterizationSamples = static_cast<VkSampleCountFlagBits>(desc.rasterizerState.sampleCount),
+  vk::PipelineMultisampleStateCreateInfo multisamplingState = {
+      .rasterizationSamples = static_cast<vk::SampleCountFlagBits>(desc.rasterizerState.sampleCount),
       .sampleShadingEnable = VK_FALSE,
       .minSampleShading = 1.0f,          // Optional
       .pSampleMask = nullptr,            // Optional
@@ -166,50 +142,43 @@ size_t VulkanPipelineManager::createGraphicsPipeline(GraphicsPipelineDesc &desc)
 
   uint32_t numRenderTargets = 1; // TODO : support multiple render targets
 
-  std::vector<VkPipelineColorBlendAttachmentState> colorBlendAttachments(numRenderTargets);
+  std::vector<vk::PipelineColorBlendAttachmentState> colorBlendAttachments(numRenderTargets);
 
   for (uint32_t i = 0; i < numRenderTargets; i++) {
     colorBlendAttachments[i].blendEnable = desc.blendState.renderTargets[i].blendEnable;
     colorBlendAttachments[i].srcColorBlendFactor =
-        static_cast<VkBlendFactor>(desc.blendState.renderTargets[i].srcBlend);
+        static_cast<vk::BlendFactor>(desc.blendState.renderTargets[i].srcBlend);
     colorBlendAttachments[i].dstColorBlendFactor =
-        static_cast<VkBlendFactor>(desc.blendState.renderTargets[i].destBlend);
-    colorBlendAttachments[i].colorBlendOp = static_cast<VkBlendOp>(desc.blendState.renderTargets[i].blendOp);
+        static_cast<vk::BlendFactor>(desc.blendState.renderTargets[i].destBlend);
+    colorBlendAttachments[i].colorBlendOp = static_cast<vk::BlendOp>(desc.blendState.renderTargets[i].blendOp);
     colorBlendAttachments[i].srcAlphaBlendFactor =
-        static_cast<VkBlendFactor>(desc.blendState.renderTargets[i].srcBlendAlpha);
+        static_cast<vk::BlendFactor>(desc.blendState.renderTargets[i].srcBlendAlpha);
     colorBlendAttachments[i].dstAlphaBlendFactor =
-        static_cast<VkBlendFactor>(desc.blendState.renderTargets[i].destBlendAlpha);
-    colorBlendAttachments[i].alphaBlendOp = static_cast<VkBlendOp>(desc.blendState.renderTargets[i].blendOpAlpha);
+        static_cast<vk::BlendFactor>(desc.blendState.renderTargets[i].destBlendAlpha);
+    colorBlendAttachments[i].alphaBlendOp = static_cast<vk::BlendOp>(desc.blendState.renderTargets[i].blendOpAlpha);
     colorBlendAttachments[i].colorWriteMask =
-        static_cast<VkColorComponentFlags>(desc.blendState.renderTargets[i].renderTargetWriteMask);
+        static_cast<vk::ColorComponentFlags>(desc.blendState.renderTargets[i].renderTargetWriteMask);
   }
 
-  VkPipelineColorBlendStateCreateInfo colorBlending = {
-      .sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO,
-      .pNext = nullptr,
-      .flags = 0,
+  vk::PipelineColorBlendStateCreateInfo colorBlending = {
       .logicOpEnable = desc.blendState.renderTargets[0].logicOpEnable,
-      .logicOp = static_cast<VkLogicOp>(desc.blendState.renderTargets[0].logicOp),
+      .logicOp = static_cast<vk::LogicOp>(desc.blendState.renderTargets[0].logicOp),
       .attachmentCount = numRenderTargets,
       .pAttachments = colorBlendAttachments.data(),
-      .blendConstants = {0.0f, 0.0f, 0.0f, 0.0f},
+      .blendConstants = std::array{0.0f, 0.0f, 0.0f, 0.0f},
   };
 
-  VkFormat swapChainFormat = VkFormat(m_swapchain->getSwapChainImageFormat());
-  VkPipelineRenderingCreateInfoKHR pipelineRenderingCreateInfo = {
-      .sType = VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO_KHR,
-      .pNext = nullptr,
+  vk::Format swapChainFormat = vk::Format(m_swapchain->getSwapChainImageFormat());
+  vk::PipelineRenderingCreateInfoKHR pipelineRenderingCreateInfo = {
       .viewMask = 0,
       .colorAttachmentCount = 1,
       .pColorAttachmentFormats = &swapChainFormat,
-      .depthAttachmentFormat = static_cast<VkFormat>(desc.depthImageFormat),
-      .stencilAttachmentFormat = VK_FORMAT_UNDEFINED,
+      .depthAttachmentFormat = static_cast<vk::Format>(desc.depthImageFormat),
+      .stencilAttachmentFormat = vk::Format::eUndefined,
   };
 
-  VkGraphicsPipelineCreateInfo pipelineInfo = {
-      .sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO,
+  vk::GraphicsPipelineCreateInfo pipelineInfo = {
       .pNext = &pipelineRenderingCreateInfo,
-      .flags = 0,
       .stageCount = static_cast<uint32_t>(shaderStages.size()),
       .pStages = shaderStages.data(),
       .pVertexInputState = &vertexInputInfo,
@@ -228,8 +197,7 @@ size_t VulkanPipelineManager::createGraphicsPipeline(GraphicsPipelineDesc &desc)
       .basePipelineIndex = -1,
   };
 
-  VK_CHECK_RESULT(
-      vkCreateGraphicsPipelines(m_device->getDevice(), nullptr, 1, &pipelineInfo, nullptr, &pipeline.pipeline));
+  pipeline.pipeline = m_device->getDevice().createGraphicsPipeline(nullptr, pipelineInfo).value;
   m_graphicsPipelines.push_back(pipeline);
 
   return m_graphicsPipelines.size() - 1;

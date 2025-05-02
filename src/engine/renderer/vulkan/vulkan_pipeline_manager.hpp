@@ -10,14 +10,14 @@ namespace renderer {
 class VulkanPipelineManager {
 public:
   struct DescriptorSetLayoutData {
-    VkDescriptorSetLayoutCreateInfo createInfo;
-    std::vector<VkDescriptorSetLayoutBinding> bindings;
+    vk::DescriptorSetLayoutCreateInfo createInfo;
+    std::vector<vk::DescriptorSetLayoutBinding> bindings;
   };
 
   struct GraphicsPipeline {
-    VkPipelineLayout pipelineLayout;
-    VkPipeline pipeline;
-    std::vector<VkPushConstantRange> pushConstantRanges;
+    vk::PipelineLayout pipelineLayout;
+    vk::Pipeline pipeline;
+    std::vector<vk::PushConstantRange> pushConstantRanges;
   };
 
 public:
@@ -26,8 +26,8 @@ public:
 
   size_t createGraphicsPipeline(GraphicsPipelineDesc &desc);
 
-  VkPipeline getGraphicsPipeline(size_t index) { return m_graphicsPipelines[index].pipeline; }
-  VkPipelineLayout getGraphicsPipelineLayout(size_t index) { return m_graphicsPipelines[index].pipelineLayout; }
+  vk::Pipeline getGraphicsPipeline(size_t index) { return m_graphicsPipelines[index].pipeline; }
+  vk::PipelineLayout getGraphicsPipelineLayout(size_t index) { return m_graphicsPipelines[index].pipelineLayout; }
 
 private:
   VulkanDevice *m_device;

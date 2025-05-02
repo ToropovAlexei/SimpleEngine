@@ -42,15 +42,13 @@ size_t VulkanShaderManager::loadShader(std::string_view path, ShaderType type) {
 
   auto code = readFile(absPathStr);
 
-  VkShaderModuleCreateInfo createInfo{};
-  createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
+  vk::ShaderModuleCreateInfo createInfo{};
   createInfo.codeSize = code.size();
   createInfo.pCode = reinterpret_cast<const uint32_t *>(code.data());
 
   Shader shader;
   shader.path = path;
-
-  VK_CHECK_RESULT(vkCreateShaderModule(m_device->getDevice(), &createInfo, nullptr, &shader.shader));
+  shader.shader = m_device->getDevice().createShaderModule(createInfo).value;
 
   shader.bindReflection = reflectBind(code);
 
@@ -101,10 +99,10 @@ BindReflection VulkanShaderManager::reflectBind(std::vector<char> &code) {
       SE_THROW_ERROR("Spirv reflection failed!");
     }
 
-    VkVertexInputBindingDescription bindingDescription = {
+    vk::VertexInputBindingDescription bindingDescription = {
         .binding = 0,
         .stride = 0, // computed below
-        .inputRate = VK_VERTEX_INPUT_RATE_VERTEX,
+        .inputRate = vk::VertexInputRate::eVertex,
     };
     reflection.attributeDescriptions.reserve(inputVariables.size());
     for (const SpvReflectInterfaceVariable *var : inputVariables) {
@@ -115,13 +113,13 @@ BindReflection VulkanShaderManager::reflectBind(std::vector<char> &code) {
       reflection.attributeDescriptions.push_back({
           .location = var->location,
           .binding = bindingDescription.binding,
-          .format = static_cast<VkFormat>(var->format),
+          .format = static_cast<vk::Format>(var->format),
           .offset = 0, // final offset computed below after sorting.
       });
     }
     // Sort attributes by location
     std::sort(std::begin(reflection.attributeDescriptions), std::end(reflection.attributeDescriptions),
-              [](const VkVertexInputAttributeDescription &a, const VkVertexInputAttributeDescription &b) {
+              [](const vk::VertexInputAttributeDescription &a, const vk::VertexInputAttributeDescription &b) {
                 return a.location < b.location;
               });
     // Compute final offsets of each attribute, and total vertex stride.
@@ -173,7 +171,7 @@ BindReflection VulkanShaderManager::reflectBind(std::vector<char> &code) {
       BindInfoPushConstant &pushConstant = reflection.pushConstants.emplace_back();
       pushConstant.offset = variable->offset;
       pushConstant.size = variable->size;
-      pushConstant.stageFlags = static_cast<VkShaderStageFlagBits>(reflectModule.shader_stage);
+      pushConstant.stageFlags = static_cast<vk::ShaderStageFlagBits>(reflectModule.shader_stage);
     }
   }
 
@@ -197,13 +195,13 @@ BindReflection VulkanShaderManager::reflectBind(std::vector<char> &code) {
       for (uint32_t binding = 0; binding < descriptorSet->binding_count; binding++) {
         const SpvReflectDescriptorBinding *reflectionBinding = descriptorSet->bindings[binding];
         BindInfo bindInfo;
-        bindInfo.descriptorType = static_cast<VkDescriptorType>(reflectionBinding->descriptor_type);
+        bindInfo.descriptorType = static_cast<vk::DescriptorType>(reflectionBinding->descriptor_type);
         bindInfo.set = descriptorSet->set;
         bindInfo.binding = reflectionBinding->binding;
         bindInfo.count = reflectionBinding->count;
-        bindInfo.stageFlags = static_cast<VkShaderStageFlagBits>(reflectModule.shader_stage);
+        bindInfo.stageFlags = static_cast<vk::ShaderStageFlagBits>(reflectModule.shader_stage);
 
-        if (bindInfo.descriptorType == VK_DESCRIPTOR_TYPE_STORAGE_BUFFER) {
+        if (bindInfo.descriptorType == vk::DescriptorType::eStorageBuffer) {
           bindInfo.isUsed = reflectionBinding->accessed;
           bindInfo.isWrite = (reflectionBinding->resource_type & SPV_REFLECT_RESOURCE_FLAG_UAV);
         }
