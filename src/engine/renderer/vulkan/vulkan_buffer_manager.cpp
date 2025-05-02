@@ -6,54 +6,57 @@ namespace renderer {
 VulkanBufferManager::VulkanBufferManager(VulkanDevice *device) : m_device{device} {}
 
 size_t VulkanBufferManager::createBuffer(BufferDesc &desc) {
-  VkBufferUsageFlags usage = 0;
+  vk::BufferUsageFlags usage;
   VmaAllocationCreateInfo allocInfo = {};
   allocInfo.usage = VMA_MEMORY_USAGE_AUTO;
 
   if (desc.usage & BufferUsage::VERTEX_BUFFER) {
-    usage |= VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
+    usage |= vk::BufferUsageFlagBits::eVertexBuffer;
   }
 
   if (desc.usage & BufferUsage::INDEX_BUFFER) {
-    usage |= VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
+    usage |= vk::BufferUsageFlagBits::eIndexBuffer;
   }
 
   if (desc.usage & BufferUsage::UNIFORM_BUFFER) {
-    usage |= VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
+    usage |= vk::BufferUsageFlagBits::eUniformBuffer;
   }
 
   if (desc.usage & BufferUsage::STORAGE_BUFFER) {
-    usage |= VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
+    usage |= vk::BufferUsageFlagBits::eStorageBuffer;
   }
 
   if (desc.usage & BufferUsage::INDIRECT_ARGUMENT_BUFFER) {
-    usage |= VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT;
+    usage |= vk::BufferUsageFlagBits::eIndirectBuffer;
   }
 
   if (desc.usage & BufferUsage::TRANSFER_SOURCE) {
-    usage |= VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
+    usage |= vk::BufferUsageFlagBits::eTransferSrc;
     allocInfo.flags |= VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT;
   }
 
   if (desc.usage & BufferUsage::TRANSFER_DESTINATION) {
-    usage |= VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+    usage |= vk::BufferUsageFlagBits::eTransferDst;
   }
 
   VkDeviceSize descSize = std::max(desc.size, 1ul);
 
-  VkBufferCreateInfo bufferInfo = {};
-  bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+  vk::BufferCreateInfo bufferInfo = {};
   bufferInfo.size = descSize;
   bufferInfo.usage = usage;
-  bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+  bufferInfo.sharingMode = vk::SharingMode::eExclusive;
 
   const size_t bufferId = getNewBufferId();
 
   Buffer &buffer = m_buffers[bufferId];
   buffer.size = descSize;
 
+  VkBufferCreateInfo rawInfo = bufferInfo;
+
+  VkBuffer rawBuffer;
   VK_CHECK_RESULT(
-      vmaCreateBuffer(m_device->m_allocator, &bufferInfo, &allocInfo, &buffer.buffer, &buffer.allocation, nullptr));
+      vmaCreateBuffer(m_device->m_allocator, &rawInfo, &allocInfo, &rawBuffer, &buffer.allocation, nullptr));
+  buffer.buffer = rawBuffer;
 
   buffer.name = desc.name;
 

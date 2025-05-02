@@ -25,8 +25,8 @@ enum class BufferCPUAccess {
 struct Buffer {
   std::string name; // For debugging
   VmaAllocation allocation;
-  VkBuffer buffer;
-  VkDeviceSize size;
+  vk::Buffer buffer;
+  vk::DeviceSize size;
 };
 
 struct BufferDesc {
@@ -41,8 +41,8 @@ public:
   VulkanBufferManager(VulkanDevice *device);
   ~VulkanBufferManager();
 
-  VkBuffer getBuffer(size_t bufferId) const { return m_buffers[bufferId].buffer; }
-  VkDeviceSize getBufferSize(size_t bufferId) const { return m_buffers[bufferId].size; }
+  vk::Buffer getBuffer(size_t bufferId) const { return m_buffers[bufferId].buffer; }
+  vk::DeviceSize getBufferSize(size_t bufferId) const { return m_buffers[bufferId].size; }
   VmaAllocation getBufferAllocation(size_t bufferId) const { return m_buffers[bufferId].allocation; }
   std::string_view getBufferName(size_t bufferId) const { return m_buffers[bufferId].name; }
 
