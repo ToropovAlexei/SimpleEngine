@@ -10,6 +10,8 @@
 #include <map>
 #include <set>
 
+VULKAN_HPP_DEFAULT_DISPATCH_LOADER_DYNAMIC_STORAGE
+
 namespace engine {
 namespace renderer {
 const std::vector<const char *> validationLayers = {"VK_LAYER_KHRONOS_validation"};
@@ -44,11 +46,14 @@ static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(VkDebugUtilsMessageSeverityF
 #endif
 
 VulkanDevice::VulkanDevice(SDL_Window *window) : m_window{window} {
+  VULKAN_HPP_DEFAULT_DISPATCHER.init();
   initVulkan();
+  VULKAN_HPP_DEFAULT_DISPATCHER.init(m_instance);
   setupDebugMessenger();
   createSurface();
   pickPhysicalDevice();
   createLogicalDevice();
+  VULKAN_HPP_DEFAULT_DISPATCHER.init(m_device);
   createAllocator();
   createCommandPool();
 }
