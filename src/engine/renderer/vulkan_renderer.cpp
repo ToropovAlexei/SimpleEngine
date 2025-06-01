@@ -315,14 +315,8 @@ void VulkanRenderer::pushConstant(vk::CommandBuffer commandBuffer, ShaderProgram
   // auto layout = m_pipelineManager->getGraphicsPipelineLayout(pipelineId);
   // TODO Stage Flags
   // vkCmdPushConstants(commandBuffer, layout, VK_SHADER_STAGE_VERTEX_BIT, offset, size, data);
-  vk::PushConstantsInfo info = {};
-  info.pNext = nullptr;
-  info.layout = m_shaderProgramManager->getShaderProgram(shaderId)->getPipelineLayout();
-  info.stageFlags = vk::ShaderStageFlagBits::eVertex;
-  info.offset = offset;
-  info.size = size;
-  info.pValues = data;
-  commandBuffer.pushConstants2(info);
+  commandBuffer.pushConstants(m_shaderProgramManager->getShaderProgram(shaderId)->getPipelineLayout(),
+                              vk::ShaderStageFlagBits::eVertex, offset, size, data);
 }
 
 // Temporary

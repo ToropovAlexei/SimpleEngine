@@ -57,7 +57,7 @@ void TestRenderer::render(vk::CommandBuffer commandBuffer) {
 
   m_renderer->setVertexBuffer(commandBuffer, 0, m_vertexBufferId);
   m_renderer->pushConstant(commandBuffer, m_shaderProgram, &data, 0, sizeof(PushConstants));
-  vkCmdDraw(commandBuffer, 6, 1, 0, 0);
+  commandBuffer.draw(3, 1, 0, 0);
 }
 
 void TestRenderer::createPipeline() {

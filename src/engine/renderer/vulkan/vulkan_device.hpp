@@ -89,7 +89,7 @@ private:
   bool checkDeviceExtensionSupport(const vk::PhysicalDevice &device);
 
 private:
-  static constexpr auto VK_API_VERSION = VK_API_VERSION_1_4;
+  static constexpr auto VK_API_VERSION = VK_API_VERSION_1_3;
 
 private:
   SDL_Window *m_window;
