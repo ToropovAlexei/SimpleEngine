@@ -3,7 +3,7 @@
 #include "engine/core/logger.hpp"
 #include "engine/renderer/vulkan/vulkan_utils.hpp"
 #include <algorithm>
-#include <engine/core/exception.hpp>
+#include <engine/core/assert.hpp>
 #include <fstream>
 #include <spirv_reflect.h>
 
@@ -49,6 +49,7 @@ size_t VulkanShaderManager::loadShader(std::string_view path, ShaderType type) {
   Shader shader;
   shader.path = path;
   shader.shader = m_device->getDevice().createShaderModule(createInfo).value;
+  shader.spirv = code;
 
   shader.bindReflection = reflectBind(code);
 
@@ -79,31 +80,25 @@ BindReflection VulkanShaderManager::reflectBind(std::vector<char> &code) {
   SpvReflectShaderModule reflectModule;
   SpvReflectResult result = spvReflectCreateShaderModule(code.size(), code.data(), &reflectModule);
 
-  if (result != SPV_REFLECT_RESULT_SUCCESS) {
-    SE_THROW_ERROR("Spirv reflection failed!");
-  }
+  SE_ASSERT(result == SPV_REFLECT_RESULT_SUCCESS, "Spirv reflection failed!");
 
   uint32_t inputCount = 0;
   result = spvReflectEnumerateInputVariables(&reflectModule, &inputCount, NULL);
 
-  if (result != SPV_REFLECT_RESULT_SUCCESS) {
-    SE_THROW_ERROR("Spirv reflection failed!");
-  }
+  SE_ASSERT(result == SPV_REFLECT_RESULT_SUCCESS, "Spirv reflection failed!");
 
   if (inputCount > 0) {
     std::vector<SpvReflectInterfaceVariable *> inputVariables(inputCount);
 
     result = spvReflectEnumerateInputVariables(&reflectModule, &inputCount, inputVariables.data());
 
-    if (result != SPV_REFLECT_RESULT_SUCCESS) {
-      SE_THROW_ERROR("Spirv reflection failed!");
-    }
+    SE_ASSERT(result == SPV_REFLECT_RESULT_SUCCESS, "Spirv reflection failed!");
 
-    vk::VertexInputBindingDescription bindingDescription = {
-        .binding = 0,
-        .stride = 0, // computed below
-        .inputRate = vk::VertexInputRate::eVertex,
-    };
+    vk::VertexInputBindingDescription2EXT bindingDescription = {};
+    bindingDescription.binding = 0;
+    bindingDescription.stride = 0; // computed below
+    bindingDescription.inputRate = vk::VertexInputRate::eVertex;
+    bindingDescription.divisor = 1;
     reflection.attributeDescriptions.reserve(inputVariables.size());
     for (const SpvReflectInterfaceVariable *var : inputVariables) {
       // ignore built-in variables
@@ -119,7 +114,7 @@ BindReflection VulkanShaderManager::reflectBind(std::vector<char> &code) {
     }
     // Sort attributes by location
     std::sort(std::begin(reflection.attributeDescriptions), std::end(reflection.attributeDescriptions),
-              [](const vk::VertexInputAttributeDescription &a, const vk::VertexInputAttributeDescription &b) {
+              [](const vk::VertexInputAttributeDescription2EXT &a, const vk::VertexInputAttributeDescription2EXT &b) {
                 return a.location < b.location;
               });
     // Compute final offsets of each attribute, and total vertex stride.

@@ -221,7 +221,7 @@ void VulkanDevice::createLogicalDevice() {
   vk::PhysicalDeviceFeatures2 deviceFeatures = {};
   deviceFeatures.pNext = &float16Int8Features;
   deviceFeatures.features.independentBlend = vk::True;
-  deviceFeatures.features.geometryShader = vk::True;
+  deviceFeatures.features.geometryShader = vk::False; // TODO I don't need it right now
   deviceFeatures.features.multiDrawIndirect = vk::True;
   deviceFeatures.features.drawIndirectFirstInstance = vk::True;
   deviceFeatures.features.depthClamp = vk::True;

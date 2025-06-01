@@ -1,5 +1,5 @@
 #include "test_renderer.hpp"
-#include "engine/renderer/descriptors/pipeline_descriptors.hpp"
+#include "engine/renderer/descriptors/shader_program_descriptors.hpp"
 #include "engine/renderer/vulkan/vulkan_buffer_manager.hpp"
 #include "glm/fwd.hpp"
 
@@ -47,7 +47,8 @@ TestRenderer::~TestRenderer() {
 }
 
 void TestRenderer::render(vk::CommandBuffer commandBuffer) {
-  m_renderer->bindPipeline(commandBuffer, m_pipelineId);
+  // m_renderer->bindPipeline(commandBuffer, m_pipelineId);
+  m_renderer->bindShaderProgram(commandBuffer, m_shaderProgram);
   // TODO
 
   PushConstants data = {
@@ -55,19 +56,19 @@ void TestRenderer::render(vk::CommandBuffer commandBuffer) {
   };
 
   m_renderer->setVertexBuffer(commandBuffer, 0, m_vertexBufferId);
-  m_renderer->pushConstant(commandBuffer, m_pipelineId, &data, 0, sizeof(PushConstants));
-  vkCmdDraw(commandBuffer, 3, 1, 0, 0);
+  m_renderer->pushConstant(commandBuffer, m_shaderProgram, &data, 0, sizeof(PushConstants));
+  vkCmdDraw(commandBuffer, 6, 1, 0, 0);
 }
 
 void TestRenderer::createPipeline() {
   // TODO paths
   m_vertexShaderId = m_renderer->loadVertexShader("test");
   m_fragmentShaderId = m_renderer->loadFragmentShader("test");
-  engine::renderer::GraphicsPipelineDesc desc{};
-  desc.depthImageFormat = engine::renderer::DepthImageFormat::D32_FLOAT;
-  desc.fragmentShaderId = m_fragmentShaderId;
-  desc.vertexShaderId = m_vertexShaderId;
-  m_pipelineId = m_renderer->createGraphicsPipeline(desc);
+  engine::renderer::ShaderProgramDesc shaderProgramDesc = {
+      .vertexShaderId = m_vertexShaderId,
+      .fragmentShaderId = m_fragmentShaderId,
+  };
+  m_shaderProgram = m_renderer->createShaderProgram(shaderProgramDesc);
 }
 
 void TestRenderer::update(float dt) {

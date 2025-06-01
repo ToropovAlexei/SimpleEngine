@@ -17,11 +17,10 @@ private:
 
 private:
   engine::renderer::VulkanRenderer *m_renderer;
+  engine::renderer::ShaderProgramId m_shaderProgram;
 
   float m_time = 0.0f;
   glm::vec2 m_offset;
-
-  size_t m_pipelineId;
 
   size_t m_vertexBufferId;
 

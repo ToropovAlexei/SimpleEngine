@@ -2,7 +2,9 @@
 
 #include "engine/renderer/vulkan/vulkan_pipeline_manager.hpp"
 #include "engine/renderer/vulkan/vulkan_shader_manager.hpp"
+#include "engine/renderer/vulkan/vulkan_shader_program_manager.hpp"
 #include <engine/core/assert.hpp>
+#include <engine/renderer/descriptors/shader_program_descriptors.hpp>
 #include <engine/renderer/vulkan/vulkan_buffer_manager.hpp>
 #include <engine/renderer/vulkan/vulkan_device.hpp>
 #include <engine/renderer/vulkan/vulkan_swapchain.hpp>
@@ -43,7 +45,11 @@ public:
 
   [[nodiscard]] size_t createGraphicsPipeline(GraphicsPipelineDesc &desc);
 
+  [[nodiscard]] ShaderProgramId createShaderProgram(ShaderProgramDesc const &desc);
+
   void bindPipeline(VkCommandBuffer commandBuffer, size_t pipelineId);
+
+  void bindShaderProgram(VkCommandBuffer commandBuffer, ShaderProgramId shaderProgramId);
 
   void flushGPU();
 
@@ -56,7 +62,7 @@ public:
   void setVertexBuffer(VkCommandBuffer commandBuffer, uint32_t slot, size_t bufferId);
   void setIndexBuffer(VkCommandBuffer commandBuffer, size_t bufferId, IndexFormat indexFormat);
 
-  void pushConstant(VkCommandBuffer commandBuffer, size_t pipelineId, void *data, uint32_t offset, uint32_t size);
+  void pushConstant(vk::CommandBuffer commandBuffer, ShaderProgramId shaderId, void *data, uint32_t offset, uint32_t size);
 
   // Temporary
   void writeToBuffer(size_t bufferId, void *data, VkDeviceSize size);
@@ -76,6 +82,7 @@ private:
   std::unique_ptr<VulkanDevice> m_device;
   std::unique_ptr<VulkanSwapchain> m_swapChain;
   std::unique_ptr<VulkanBufferManager> m_bufferManager;
+  std::unique_ptr<VulkanShaderProgramManager> m_shaderProgramManager;
   VulkanShaderManager *m_shaderManager;
   VulkanPipelineManager *m_pipelineManager;
   std::vector<vk::CommandBuffer> m_commandBuffers;

@@ -17,8 +17,8 @@ VulkanPipelineManager::~VulkanPipelineManager() {
 size_t VulkanPipelineManager::createGraphicsPipeline(GraphicsPipelineDesc &desc) {
   GraphicsPipeline pipeline;
 
-  std::vector<vk::VertexInputBindingDescription> inputBindingDescriptions;
-  std::vector<vk::VertexInputAttributeDescription> attributeDescriptions;
+  std::vector<vk::VertexInputBindingDescription2EXT> inputBindingDescriptions;
+  std::vector<vk::VertexInputAttributeDescription2EXT> attributeDescriptions;
 
   if (desc.vertexShaderId != INVALID_ID) {
     auto bindReflection = m_shaderManager->getVertexBindReflection(desc.vertexShaderId);
@@ -100,9 +100,9 @@ size_t VulkanPipelineManager::createGraphicsPipeline(GraphicsPipelineDesc &desc)
 
   vk::PipelineVertexInputStateCreateInfo vertexInputInfo = {};
   vertexInputInfo.vertexBindingDescriptionCount = static_cast<uint32_t>(inputBindingDescriptions.size());
-  vertexInputInfo.pVertexBindingDescriptions = inputBindingDescriptions.data();
+  // vertexInputInfo.pVertexBindingDescriptions = inputBindingDescriptions.data();
   vertexInputInfo.vertexAttributeDescriptionCount = static_cast<uint32_t>(attributeDescriptions.size());
-  vertexInputInfo.pVertexAttributeDescriptions = attributeDescriptions.data();
+  // vertexInputInfo.pVertexAttributeDescriptions = attributeDescriptions.data();
 
   vk::PipelineInputAssemblyStateCreateInfo inputAssembly = {
       .topology = static_cast<vk::PrimitiveTopology>(desc.primitiveTopology),

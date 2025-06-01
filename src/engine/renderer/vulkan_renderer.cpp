@@ -1,5 +1,6 @@
 #include "vulkan_renderer.hpp"
 #include "SDL3/SDL_video.h"
+#include "engine/renderer/descriptors/shader_program_descriptors.hpp"
 #include "imgui.h"
 #include "imgui_impl_sdl3.h"
 #include "imgui_impl_vulkan.h"
@@ -17,6 +18,7 @@ VulkanRenderer::VulkanRenderer(SDL_Window *window) : m_window{window} {
   recreateSwapChain();
   m_pipelineManager = new VulkanPipelineManager(m_device.get(), m_shaderManager, m_swapChain.get());
   m_bufferManager = std::make_unique<VulkanBufferManager>(m_device.get());
+  m_shaderProgramManager = std::make_unique<VulkanShaderProgramManager>(m_device.get());
   createCommandBuffers();
   initImGui();
 }
@@ -57,7 +59,7 @@ void VulkanRenderer::beginRendering(vk::CommandBuffer commandBuffer) {
   colorAttachment.imageLayout = vk::ImageLayout::eColorAttachmentOptimal;
   colorAttachment.loadOp = vk::AttachmentLoadOp::eClear;
   colorAttachment.storeOp = vk::AttachmentStoreOp::eStore;
-  colorAttachment.clearValue.color = {{{1.0f, 1.0f, 1.0f, 1.0f}}};
+  colorAttachment.clearValue.color = {{{0.0f, 0.0f, 0.0f, 0.0f}}};
 
   // A single depth stencil attachment info can be used, but they can also be specified separately.
   // When both are specified separately, the only requirement is that the image view is identical.
@@ -86,8 +88,8 @@ void VulkanRenderer::beginRendering(vk::CommandBuffer commandBuffer) {
                         .minDepth = 0.0f,
                         .maxDepth = 1.0f};
   vk::Rect2D scissor{{0, 0}, m_swapChain->getSwapChainExtent()};
-  commandBuffer.setViewport(0, viewport);
-  commandBuffer.setScissor(0, scissor);
+  commandBuffer.setViewportWithCount(viewport);
+  commandBuffer.setScissorWithCount(scissor);
 }
 
 void VulkanRenderer::endRendering(vk::CommandBuffer commandBuffer) {
@@ -115,9 +117,8 @@ vk::CommandBuffer VulkanRenderer::beginFrame() {
     return nullptr;
   }
 
-  if (result != vk::Result::eSuccess && result != vk::Result::eSuboptimalKHR) {
-    SE_THROW_ERROR("Failed to acquire swap chain image!");
-  }
+  SE_ASSERT(result == vk::Result::eSuccess || result == vk::Result::eSuboptimalKHR,
+            "Failed to acquire swap chain image!");
 
 #ifndef NDEBUG
   m_isFrameStarted = true;
@@ -164,9 +165,7 @@ void VulkanRenderer::recreateSwapChain() {
     std::shared_ptr<VulkanSwapchain> oldSwapChain = std::move(m_swapChain);
     m_swapChain = std::make_unique<VulkanSwapchain>(m_device.get(), extent, oldSwapChain);
 
-    if (!oldSwapChain->compareSwapFormats(*m_swapChain.get())) {
-      SE_THROW_ERROR("Swap chain image or depth format has changed!");
-    }
+    SE_ASSERT(m_swapChain->compareSwapFormats(*oldSwapChain), "Swap chain image format has changed!");
   }
   LOG_INFO("Swap chain recreated");
 }
@@ -255,8 +254,22 @@ size_t VulkanRenderer::createGraphicsPipeline(GraphicsPipelineDesc &desc) {
   return m_pipelineManager->createGraphicsPipeline(desc);
 }
 
+ShaderProgramId VulkanRenderer::createShaderProgram(ShaderProgramDesc const &desc) {
+  VulkanShaderProgramDesc vulkanDesc = {};
+  vulkanDesc.fragmentSpirv = m_shaderManager->getFragmentSpirv(desc.fragmentShaderId);
+  vulkanDesc.vertexSpirv = m_shaderManager->getVertexSpirv(desc.vertexShaderId);
+  vulkanDesc.pushConstants = m_shaderManager->getVertexBindReflection(desc.vertexShaderId).pushConstants;
+  vulkanDesc.bindings = m_shaderManager->getVertexBindReflection(desc.vertexShaderId).bindingDescriptions;
+  vulkanDesc.attributes = m_shaderManager->getVertexBindReflection(desc.vertexShaderId).attributeDescriptions;
+  return m_shaderProgramManager->createShaderProgram(vulkanDesc);
+}
+
 void VulkanRenderer::bindPipeline(VkCommandBuffer commandBuffer, size_t pipelineId) {
   vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipelineManager->getGraphicsPipeline(pipelineId));
+}
+
+void VulkanRenderer::bindShaderProgram(VkCommandBuffer commandBuffer, ShaderProgramId shaderProgramId) {
+  m_shaderProgramManager->bindShaderProgram(commandBuffer, shaderProgramId);
 }
 
 void VulkanRenderer::draw(VkCommandBuffer commandBuffer, uint32_t numVertices, uint32_t numInstances,
@@ -297,11 +310,19 @@ void VulkanRenderer::copyBuffer(VkCommandBuffer commandBuffer, size_t dstBuffer,
   vkCmdCopyBuffer(commandBuffer, vkSrcBuffer, vkDstBuffer, 1, &copyRegion);
 }
 
-void VulkanRenderer::pushConstant(VkCommandBuffer commandBuffer, size_t pipelineId, void *data, uint32_t offset,
-                                  uint32_t size) {
-  auto layout = m_pipelineManager->getGraphicsPipelineLayout(pipelineId);
+void VulkanRenderer::pushConstant(vk::CommandBuffer commandBuffer, ShaderProgramId shaderId, void *data,
+                                  uint32_t offset, uint32_t size) {
+  // auto layout = m_pipelineManager->getGraphicsPipelineLayout(pipelineId);
   // TODO Stage Flags
-  vkCmdPushConstants(commandBuffer, layout, VK_SHADER_STAGE_VERTEX_BIT, offset, size, data);
+  // vkCmdPushConstants(commandBuffer, layout, VK_SHADER_STAGE_VERTEX_BIT, offset, size, data);
+  vk::PushConstantsInfo info = {};
+  info.pNext = nullptr;
+  info.layout = m_shaderProgramManager->getShaderProgram(shaderId)->getPipelineLayout();
+  info.stageFlags = vk::ShaderStageFlagBits::eVertex;
+  info.offset = offset;
+  info.size = size;
+  info.pValues = data;
+  commandBuffer.pushConstants2(info);
 }
 
 // Temporary

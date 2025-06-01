@@ -23,8 +23,8 @@ struct BindInfo {
   bool isWrite = false;
 };
 struct BindReflection {
-  std::vector<vk::VertexInputBindingDescription> bindingDescriptions;
-  std::vector<vk::VertexInputAttributeDescription> attributeDescriptions;
+  std::vector<vk::VertexInputBindingDescription2EXT> bindingDescriptions;
+  std::vector<vk::VertexInputAttributeDescription2EXT> attributeDescriptions;
   std::vector<BindInfoPushConstant> pushConstants;
   std::vector<BindInfo> bindInfos;
 };
@@ -32,6 +32,7 @@ struct Shader {
   std::string path;
   vk::ShaderModule shader;
   BindReflection bindReflection;
+  std::vector<char> spirv;
 };
 
 class VulkanShaderManager {
@@ -49,6 +50,9 @@ public:
 
   const BindReflection &getVertexBindReflection(size_t index) { return m_vertexShaders[index].bindReflection; }
   const BindReflection &getFragmentBindReflection(size_t index) { return m_fragmentShaders[index].bindReflection; }
+
+  std::vector<char> &getVertexSpirv(size_t index) { return m_vertexShaders[index].spirv; }
+  std::vector<char> &getFragmentSpirv(size_t index) { return m_fragmentShaders[index].spirv; }
 
 private:
   static std::vector<char> readFile(std::string_view filename);
