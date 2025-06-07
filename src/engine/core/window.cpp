@@ -12,7 +12,7 @@ Window::Window(int width, int height, std::string_view title) {
   }
   LOG_INFO("SDL initialized");
 
-  m_window = SDL_CreateWindow(title.data(), width, height, SDL_WINDOW_RESIZABLE | SDL_WINDOW_VULKAN);
+  m_window = SDL_CreateWindow(title.data(), width, height, SDL_WINDOW_RESIZABLE | SDL_WINDOW_OPENGL);
 
   if (!m_window) {
     LOG_FATAL("Couldn't create window: {}", SDL_GetError());

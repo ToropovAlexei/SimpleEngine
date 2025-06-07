@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 4.0.1)
 include(FetchContent)
 include(FindVulkan)
 
-project(SimpleEngine LANGUAGES CXX)
+project(SimpleEngine LANGUAGES C CXX)
 
 set(CMAKE_CXX_STANDARD 26)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -20,9 +20,12 @@ CPMAddPackage(
   GITHUB_REPOSITORY libsdl-org/SDL
   OPTIONS
     "SDL_X11 ON"
+    "SDL_OPENGL ON"
 )
+
 CPMAddPackage("gh:KhronosGroup/Vulkan-Hpp#main")
 CPMAddPackage("gh:GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator#master")
+
 CPMAddPackage(
     NAME spirv-reflect
     GITHUB_REPOSITORY KhronosGroup/SPIRV-Reflect
@@ -31,6 +34,7 @@ CPMAddPackage(
     "SPIRV_REFLECT_STATIC_LIB ON"
     "SPIRV_REFLECT_EXECUTABLE OFF"
 )
+
 CPMAddPackage(
   NAME glm
   GIT_TAG master
@@ -39,6 +43,10 @@ CPMAddPackage(
    "GLM_ENABLE_CXX_20 ON"
    "GLM_ENABLE_SIMD_AVX2 ON"
 )
+
+set(GLAD_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/glad/include)
+add_library(glad STATIC ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/glad/src/gl.c)
+target_include_directories(glad PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/glad/include)
 
 set(CMAKE_CXX_FLAGS_DEBUG "-g")
 set(CMAKE_CXX_FLAGS_RELEASE "-O3 -march=native -flto -funroll-loops -fomit-frame-pointer -ffast-math -fvisibility=hidden -DNDEBUG")
@@ -49,18 +57,37 @@ set(IMGUI_DIR ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/imgui)
 
 file(GLOB IMGUI_SOURCES ${IMGUI_DIR}/*.cpp)
 
+find_package(OpenGL REQUIRED)
 find_package(Vulkan REQUIRED)
 include_directories(${Vulkan_INCLUDE_DIRS})
 
 file(GLOB_RECURSE HEADERS CONFIGURE_DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/src/*.hpp)
 file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp)
 
-add_executable(${PROJECT_NAME} ${HEADERS} ${SOURCES} ${IMGUI_SOURCES})
-target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_SOURCE_DIR}/src)
-target_include_directories(${PROJECT_NAME} PRIVATE ${IMGUI_DIR})
+add_executable(${PROJECT_NAME}
+    ${HEADERS}
+    ${SOURCES}
+    ${IMGUI_SOURCES}
+)
+
+target_include_directories(${PROJECT_NAME} PRIVATE
+    ${CMAKE_SOURCE_DIR}/src
+    ${IMGUI_DIR}
+    ${GLAD_INCLUDE_DIR}
+)
 
 find_program(GLSL_VALIDATOR NAMES glslangValidator)
-target_link_libraries(${PROJECT_NAME} PRIVATE ${Vulkan_LIBRARIES} SDL3::SDL3 GPUOpen::VulkanMemoryAllocator glm spirv-reflect-static)
+
+target_link_libraries(${PROJECT_NAME} PRIVATE
+    ${Vulkan_LIBRARIES}
+    SDL3::SDL3
+    GPUOpen::VulkanMemoryAllocator
+    glm
+    spirv-reflect-static
+    OpenGL::GL
+    glad
+)
+
 target_compile_definitions(${PROJECT_NAME} PRIVATE
   STB_IMAGE_IMPLEMENTATION
   STB_IMAGE_RESIZE_IMPLEMENTATION

@@ -26,7 +26,7 @@ int Application::run() {
 void Application::handleEvents() {
   SDL_Event event;
   while (SDL_PollEvent(&event)) {
-    ImGui_ImplSDL3_ProcessEvent(&event);
+    // ImGui_ImplSDL3_ProcessEvent(&event);
     if (event.type == SDL_EVENT_QUIT) {
       m_running = false;
     }

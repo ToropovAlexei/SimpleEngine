@@ -5,7 +5,6 @@
 #include <engine/core/input/mouse.hpp>
 #include <engine/core/timer.hpp>
 #include <engine/core/window.hpp>
-#include <engine/renderer/vulkan_renderer.hpp>
 #include <string>
 #include <string_view>
 

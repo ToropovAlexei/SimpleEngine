@@ -1,5 +1,8 @@
 #pragma once
 
+// clang-format off
+#include <glad/gl.h>
+// clang-format on
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_video.h>
 #include <string_view>
