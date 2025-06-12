@@ -25,6 +25,11 @@ fi
 # Сборка с ninja
 ninja -C "$BUILD_DIR"
 
+if [ $? -ne 0 ]; then
+  echo "Build failed. Not running the executable."
+  exit 1
+fi
+
 # Определяем исполняемый файл (первый найденный ELF-файл)
 EXECUTABLE=$(find "$BUILD_DIR" -type f -executable -not -name "*.a" -not -name "*.so" | head -n1)
 
