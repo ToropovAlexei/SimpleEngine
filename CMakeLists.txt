@@ -8,6 +8,8 @@ project(SimpleEngine LANGUAGES C CXX)
 set(CMAKE_CXX_STANDARD 26)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+add_definitions(-DSOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}")
+
 file(
   DOWNLOAD
   https://github.com/cpm-cmake/CPM.cmake/releases/download/v0.40.8/CPM.cmake
@@ -42,6 +44,12 @@ CPMAddPackage(
   OPTIONS
    "GLM_ENABLE_CXX_20 ON"
    "GLM_ENABLE_SIMD_AVX2 ON"
+)
+
+CPMAddPackage(
+  NAME efsw
+  GIT_TAG master
+  GITHUB_REPOSITORY SpartanJ/efsw
 )
 
 set(GLAD_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/glad/include)
@@ -86,6 +94,7 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
     spirv-reflect-static
     OpenGL::GL
     glad
+    efsw
 )
 
 target_compile_definitions(${PROJECT_NAME} PRIVATE
