@@ -23,6 +23,8 @@ public:
 
   void bindVertexBuffer(size_t stride);
 
+  unsigned int id() const { return m_id; }
+
 private:
   unsigned int m_id;
   Type m_type;

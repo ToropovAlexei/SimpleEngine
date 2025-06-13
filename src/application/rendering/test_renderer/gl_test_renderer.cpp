@@ -15,24 +15,29 @@ GlTestRenderer::GlTestRenderer(engine::renderer::GlRenderer *renderer) : m_rende
       {{-0.5f, -0.5f, 0.0f}, {1.0f, 0.0f, 0.0f}},
       {{0.5f, -0.5f, 0.0f}, {0.0f, 1.0f, 0.0f}},
       {{0.0f, 0.5f, 0.0f}, {0.0f, 0.0f, 1.0f}},
+      {{-0.5f, 0.5f, 0.0f}, {1.0f, 0.0f, 0.0f}},
   };
+  static std::vector<unsigned int> indices = {0, 1, 2, 0, 2, 3};
 
   m_vbo = std::make_unique<engine::renderer::GLBuffer>(engine::renderer::GLBuffer::Type::Vertex,
                                                        engine::renderer::GLBuffer::Usage::Static,
                                                        vertices.size() * sizeof(Vertex), vertices.data());
+  m_ibo = std::make_unique<engine::renderer::GLBuffer>(engine::renderer::GLBuffer::Type::Index,
+                                                       engine::renderer::GLBuffer::Usage::Static,
+                                                       indices.size() * sizeof(unsigned int), indices.data());
+  m_vao = std::make_unique<engine::renderer::GLVertexArray>();
 
-  glGenVertexArrays(1, &m_vao);
-  glBindVertexArray(m_vao);
+  m_vao->attachVertexBuffer(m_vbo.get(), 0, sizeof(Vertex), 0);
+  m_vao->attachIndexBuffer(m_ibo.get());
 
-  m_vbo->bindVertexBuffer(sizeof(Vertex));
+  m_vao->setAttributeFormat(0, 3, GL_FLOAT, GL_FALSE, offsetof(Vertex, pos));
+  m_vao->bindAttribute(0, 0);
+  m_vao->enableAttribute(0);
 
-  glVertexAttribFormat(0, 3, GL_FLOAT, GL_FALSE, 0);
-  glEnableVertexAttribArray(0);
-  glVertexAttribBinding(0, 0);
-
-  glVertexAttribFormat(1, 3, GL_FLOAT, GL_FALSE, offsetof(Vertex, color));
-  glEnableVertexAttribArray(1);
-  glVertexAttribBinding(1, 0);
+  m_vao->setAttributeFormat(1, 3, GL_FLOAT, GL_FALSE, offsetof(Vertex, color));
+  m_vao->bindAttribute(1, 0);
+  m_vao->enableAttribute(1);
+  m_vao->bind();
 
   auto shadersFolder = std::filesystem::path(SOURCE_DIR) / "shaders";
   m_shaderReloader = std::make_unique<ShaderReloader>();
@@ -71,8 +76,8 @@ void GlTestRenderer::render() {
     reloadShaders();
     m_shouldReloadShaders = false;
   }
-  glBindVertexArray(m_vao);
-  glDrawArrays(GL_TRIANGLES, 0, 3);
+  m_vao->bind();
+  glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr);
 }
 
 void GlTestRenderer::update(float dt) {}
