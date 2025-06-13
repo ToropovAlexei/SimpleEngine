@@ -22,16 +22,18 @@ static void GLAPIENTRY debugCallback([[maybe_unused]] GLenum source, [[maybe_unu
 GlRenderer::GlRenderer(SDL_Window *window) : m_window{window} {
   m_glCtx = SDL_GL_CreateContext(m_window);
   gladLoadGL((GLADloadfunc)SDL_GL_GetProcAddress);
+#ifndef NDEBUG
   glEnable(GL_DEBUG_OUTPUT);
   glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
   glDebugMessageCallback(debugCallback, nullptr);
   glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DONT_CARE, 0, nullptr, GL_TRUE);
+#endif
 }
 
 GlRenderer::~GlRenderer() { SDL_GL_DestroyContext(m_glCtx); }
 
 void GlRenderer::beginFrame() {
-  glClearColor(0.7f, 0.9f, 0.1f, 1.0f);
+  glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
   glClear(GL_COLOR_BUFFER_BIT);
 }
 
