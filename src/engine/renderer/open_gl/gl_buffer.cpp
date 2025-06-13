@@ -16,6 +16,12 @@ GLBuffer::~GLBuffer() { glDeleteBuffers(1, &m_id); }
 
 void GLBuffer::bind() { glBindBuffer(static_cast<GLenum>(m_type), m_id); }
 
+void GLBuffer::bindBase(uint32_t index) { glBindBufferBase(static_cast<GLenum>(m_type), index, m_id); }
+
 void GLBuffer::bindVertexBuffer(size_t stride) { glBindVertexBuffer(0, m_id, 0, static_cast<GLsizei>(stride)); }
+
+void GLBuffer::update(size_t offset, size_t size, const void *data) {
+  glNamedBufferSubData(m_id, static_cast<GLintptr>(offset), static_cast<GLsizeiptr>(size), data);
+}
 
 } // namespace engine::renderer

@@ -10,6 +10,8 @@ public:
   void beginFrame();
   void endFrame();
 
+  void onResize(int width, int height);
+
 private:
   SDL_Window *m_window;
   SDL_GLContext m_glCtx;

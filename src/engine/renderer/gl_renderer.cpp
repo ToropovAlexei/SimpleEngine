@@ -38,4 +38,6 @@ void GlRenderer::beginFrame() {
 }
 
 void GlRenderer::endFrame() { SDL_GL_SwapWindow(m_window); }
+
+void GlRenderer::onResize(int width, int height) { glViewport(0, 0, width, height); }
 } // namespace engine::renderer

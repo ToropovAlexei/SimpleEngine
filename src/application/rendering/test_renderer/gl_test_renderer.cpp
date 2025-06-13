@@ -26,9 +26,14 @@ GlTestRenderer::GlTestRenderer(engine::renderer::GlRenderer *renderer) : m_rende
                                                        engine::renderer::GLBuffer::Usage::Static,
                                                        indices.size() * sizeof(unsigned int), indices.data());
   m_vao = std::make_unique<engine::renderer::GLVertexArray>();
+  m_ubo = std::make_unique<engine::renderer::GLBuffer>(engine::renderer::GLBuffer::Type::Uniform,
+                                                       engine::renderer::GLBuffer::Usage::Dynamic, sizeof(GlobalUBO),
+                                                       nullptr);
+  m_ubo->update(0, sizeof(GlobalUBO), &m_uboData);
 
   m_vao->attachVertexBuffer(m_vbo.get(), 0, sizeof(Vertex), 0);
   m_vao->attachIndexBuffer(m_ibo.get());
+  m_ubo->bindBase(0);
 
   m_vao->setAttributeFormat(0, 3, GL_FLOAT, GL_FALSE, offsetof(Vertex, pos));
   m_vao->bindAttribute(0, 0);
@@ -80,4 +85,7 @@ void GlTestRenderer::render() {
   glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr);
 }
 
-void GlTestRenderer::update(float dt) {}
+void GlTestRenderer::update(float dt) {
+  m_uboData.elapsedTime += dt;
+  m_ubo->update(0, sizeof(GlobalUBO), &m_uboData);
+}

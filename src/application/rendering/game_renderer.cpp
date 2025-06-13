@@ -11,6 +11,6 @@ void GameRenderer::render(float dt) {
   m_renderer->endFrame();
 }
 
-void GameRenderer::setRenderSize(int width, int height) {}
+void GameRenderer::setRenderSize(int width, int height) { m_renderer->onResize(width, height); }
 
-void GameRenderer::updateRenderers(float dt) {}
+void GameRenderer::updateRenderers(float dt) { m_testRenderer->update(dt); }

@@ -11,6 +11,10 @@
 #include <memory>
 #include <vector>
 
+struct GlobalUBO {
+  float elapsedTime;
+};
+
 class ShaderReloader : public efsw::FileWatchListener {
 public:
   std::function<void()> onShaderModified;
@@ -55,6 +59,9 @@ private:
   std::unique_ptr<engine::renderer::GLBuffer> m_vbo;
   std::unique_ptr<engine::renderer::GLBuffer> m_ibo;
   std::unique_ptr<engine::renderer::GLVertexArray> m_vao;
+  std::unique_ptr<engine::renderer::GLBuffer> m_ubo;
+
+  GlobalUBO m_uboData = {0.0f};
 
   bool m_shouldReloadShaders = false;
   std::unique_ptr<efsw::FileWatcher> m_fileWatcher;
