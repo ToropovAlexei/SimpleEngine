@@ -17,13 +17,14 @@ GlTestRenderer::GlTestRenderer(engine::renderer::GlRenderer *renderer) : m_rende
       {{0.0f, 0.5f, 0.0f}, {0.0f, 0.0f, 1.0f}},
   };
 
+  m_vbo = std::make_unique<engine::renderer::GLBuffer>(engine::renderer::GLBuffer::Type::Vertex,
+                                                       engine::renderer::GLBuffer::Usage::Static,
+                                                       vertices.size() * sizeof(Vertex), vertices.data());
+
   glGenVertexArrays(1, &m_vao);
-  glGenBuffers(1, &m_vbo);
   glBindVertexArray(m_vao);
 
-  glBindBuffer(GL_ARRAY_BUFFER, m_vbo);
-  glBufferData(GL_ARRAY_BUFFER, static_cast<long>(vertices.size() * sizeof(Vertex)), vertices.data(), GL_STATIC_DRAW);
-  glBindVertexBuffer(0, m_vbo, 0, sizeof(Vertex));
+  m_vbo->bindVertexBuffer(sizeof(Vertex));
 
   glVertexAttribFormat(0, 3, GL_FLOAT, GL_FALSE, 0);
   glEnableVertexAttribArray(0);

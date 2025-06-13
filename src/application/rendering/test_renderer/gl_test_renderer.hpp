@@ -2,6 +2,7 @@
 
 #include "engine/core/assert.hpp"
 #include "engine/renderer/gl_renderer.hpp"
+#include "engine/renderer/open_gl/gl_buffer.hpp"
 #include "engine/renderer/open_gl/open_gl_shader_program.hpp"
 #include <cstdint>
 #include <efsw/efsw.hpp>
@@ -50,7 +51,7 @@ private:
 private:
   engine::renderer::GlRenderer *m_renderer;
   std::unique_ptr<engine::renderer::OpenGLShaderProgram> m_shader;
-  std::uint32_t m_vbo;
+  std::unique_ptr<engine::renderer::GLBuffer> m_vbo;
   std::uint32_t m_vao;
 
   bool m_shouldReloadShaders = false;
