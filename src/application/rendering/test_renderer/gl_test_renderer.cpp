@@ -1,23 +1,40 @@
 #include "gl_test_renderer.hpp"
 #include "engine/core/filesystem.hpp"
+#include "engine/renderer/open_gl/gl_texture.hpp"
 #include "engine/renderer/open_gl/open_gl_shader_program.hpp"
+#include "stb_image.h"
 #include <filesystem>
 #include <functional>
 #include <vector>
 
 struct Vertex {
   float pos[3];
-  float color[3];
+  float uv[2];
 };
 
 GlTestRenderer::GlTestRenderer(engine::renderer::GlRenderer *renderer) : m_renderer{renderer} {
   static std::vector<Vertex> vertices = {
-      {{-0.5f, -0.5f, 0.0f}, {1.0f, 0.0f, 0.0f}},
-      {{0.5f, -0.5f, 0.0f}, {0.0f, 1.0f, 0.0f}},
-      {{0.0f, 0.5f, 0.0f}, {0.0f, 0.0f, 1.0f}},
-      {{-0.5f, 0.5f, 0.0f}, {1.0f, 0.0f, 0.0f}},
+      {{0.5f, 0.5f, 0.0f}, {1.0f, 1.0f}},
+      {{0.5f, -0.5f, 0.0f}, {1.0f, 0.0f}},
+      {{-0.5f, -0.5f, 0.0f}, {0.0f, 0.0f}},
+      {{-0.5f, 0.5f, 0.0f}, {0.0f, 1.0f}},
   };
-  static std::vector<unsigned int> indices = {0, 1, 2, 0, 2, 3};
+  static std::vector<unsigned int> indices = {0, 1, 3, 1, 2, 3};
+  auto wallPath = engine::core::getAbsolutePath(std::filesystem::path("assets/wall.jpg"));
+  int width;
+  int height;
+  int nrChannels;
+  unsigned char *data = stbi_load(wallPath.c_str(), &width, &height, &nrChannels, 0);
+  engine::renderer::GLTextureDesc desc = {};
+  desc.type = engine::renderer::GLTextureType::Texture2D;
+  desc.width = static_cast<uint32_t>(width);
+  desc.height = static_cast<uint32_t>(height);
+  desc.internalFormat = engine::renderer::GLTextureInternalFormat::RGB8;
+  desc.format = engine::renderer::GLTextureFormat::RGB;
+  desc.dataType = engine::renderer::GLTextureDataType::UByte;
+  m_tex = std::make_unique<engine::renderer::GLTexture>(desc);
+  m_tex->setData(data);
+  stbi_image_free(data);
 
   m_vbo = std::make_unique<engine::renderer::GLBuffer>(engine::renderer::GLBuffer::Type::Vertex,
                                                        engine::renderer::GLBuffer::Usage::Static,
@@ -34,12 +51,13 @@ GlTestRenderer::GlTestRenderer(engine::renderer::GlRenderer *renderer) : m_rende
   m_vao->attachVertexBuffer(m_vbo.get(), 0, sizeof(Vertex), 0);
   m_vao->attachIndexBuffer(m_ibo.get());
   m_ubo->bindBase(0);
+  m_tex->bind(1);
 
   m_vao->setAttributeFormat(0, 3, GL_FLOAT, GL_FALSE, offsetof(Vertex, pos));
   m_vao->bindAttribute(0, 0);
   m_vao->enableAttribute(0);
 
-  m_vao->setAttributeFormat(1, 3, GL_FLOAT, GL_FALSE, offsetof(Vertex, color));
+  m_vao->setAttributeFormat(1, 2, GL_FLOAT, GL_FALSE, offsetof(Vertex, uv));
   m_vao->bindAttribute(1, 0);
   m_vao->enableAttribute(1);
   m_vao->bind();

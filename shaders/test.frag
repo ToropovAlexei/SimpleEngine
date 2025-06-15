@@ -1,13 +1,14 @@
 #version 460
 
-layout(location = 0) in vec3 color;
+layout(location = 0) in vec2 uv;
 
 layout(location = 0) out vec4 outColor;
 
 layout(std140, binding = 0) uniform Constants {
     float elapsedTime;
 };
+layout(binding = 1) uniform sampler2D uTexture;
 
 void main() {
-    outColor = vec4(color, 1.0);
+    outColor = texture(uTexture, uv);
 }

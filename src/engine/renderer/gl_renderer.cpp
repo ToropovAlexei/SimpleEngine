@@ -34,7 +34,7 @@ GlRenderer::~GlRenderer() { SDL_GL_DestroyContext(m_glCtx); }
 
 void GlRenderer::beginFrame() {
   glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
-  glClear(GL_COLOR_BUFFER_BIT);
+  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }
 
 void GlRenderer::endFrame() { SDL_GL_SwapWindow(m_window); }

@@ -3,6 +3,7 @@
 #include "engine/core/assert.hpp"
 #include "engine/renderer/gl_renderer.hpp"
 #include "engine/renderer/open_gl/gl_buffer.hpp"
+#include "engine/renderer/open_gl/gl_texture.hpp"
 #include "engine/renderer/open_gl/gl_vertex_array.hpp"
 #include "engine/renderer/open_gl/open_gl_shader_program.hpp"
 #include <efsw/efsw.hpp>
@@ -60,6 +61,7 @@ private:
   std::unique_ptr<engine::renderer::GLBuffer> m_ibo;
   std::unique_ptr<engine::renderer::GLVertexArray> m_vao;
   std::unique_ptr<engine::renderer::GLBuffer> m_ubo;
+  std::unique_ptr<engine::renderer::GLTexture> m_tex;
 
   GlobalUBO m_uboData = {0.0f};
 

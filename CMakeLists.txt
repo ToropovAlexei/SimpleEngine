@@ -52,6 +52,12 @@ CPMAddPackage(
   GITHUB_REPOSITORY SpartanJ/efsw
 )
 
+CPMAddPackage(
+  stb
+  GITHUB_REPOSITORY nothings/stb
+  GIT_TAG master
+)
+
 set(GLAD_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/glad/include)
 add_library(glad STATIC ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/glad/src/gl.c)
 target_include_directories(glad PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/glad/include)
@@ -80,6 +86,7 @@ add_executable(${PROJECT_NAME}
 
 target_include_directories(${PROJECT_NAME} PRIVATE
     ${CMAKE_SOURCE_DIR}/src
+    ${stb_SOURCE_DIR}
     ${IMGUI_DIR}
     ${GLAD_INCLUDE_DIR}
 )
@@ -148,3 +155,5 @@ add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
         "${PROJECT_BINARY_DIR}/shaders"
         "$<TARGET_FILE_DIR:${PROJECT_NAME}>/shaders"
         )
+
+file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/assets DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
