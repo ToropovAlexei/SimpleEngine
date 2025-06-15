@@ -12,7 +12,13 @@ layout(std140, binding = 0) uniform Constants {
     float elapsedTime;
 };
 
+layout(std430, binding = 2) buffer InstanceBuffer {
+    mat4 models[];
+};
+
 void main() {
+    mat4 model = models[gl_InstanceID];
+    
     gl_Position = projection * view * model * vec4(pos, 1.0);
     uvOut = uvIn;
 }

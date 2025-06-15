@@ -80,6 +80,13 @@ GlTestRenderer::GlTestRenderer(engine::renderer::GlRenderer *renderer) : m_rende
   m_tex->setData(data);
   stbi_image_free(data);
 
+  m_instances.resize(1000);
+  for (size_t i = 0; i < m_instances.size(); ++i) {
+    float x = (i % 30) * 1.5f - 15.0f;
+    float z = (static_cast<float>(i) / 30) * 1.5f - 55.0f;
+    m_instances[i].model = glm::translate(glm::mat4(1.0f), glm::vec3(x, 0.0f, z));
+  }
+
   m_vbo = std::make_unique<engine::renderer::GLBuffer>(engine::renderer::GLBuffer::Type::Vertex,
                                                        engine::renderer::GLBuffer::Usage::Static,
                                                        vertices.size() * sizeof(Vertex), vertices.data());
@@ -90,17 +97,21 @@ GlTestRenderer::GlTestRenderer(engine::renderer::GlRenderer *renderer) : m_rende
   m_ubo = std::make_unique<engine::renderer::GLBuffer>(engine::renderer::GLBuffer::Type::Uniform,
                                                        engine::renderer::GLBuffer::Usage::Dynamic, sizeof(GlobalUBO),
                                                        nullptr);
+  m_ssbo = std::make_unique<engine::renderer::GLBuffer>(engine::renderer::GLBuffer::Type::ShaderStorage,
+                                                        engine::renderer::GLBuffer::Usage::Dynamic,
+                                                        m_instances.size() * sizeof(InstanceData), m_instances.data());
   m_uboData.model = glm::mat4(1.0f);
   m_uboData.model = glm::rotate(m_uboData.model, glm::radians(-55.0f), glm::vec3(1.0f, 0.0f, 0.0f));
   m_uboData.projection =
-      glm::perspective(glm::radians(45.0f), static_cast<float>(m_width) / static_cast<float>(m_height), 0.1f, 100.0f);
+      glm::perspective(glm::radians(45.0f), static_cast<float>(m_width) / static_cast<float>(m_height), 0.1f, 1000.0f);
   m_uboData.view = glm::mat4(1.0f);
-  m_uboData.view = glm::translate(m_uboData.view, glm::vec3(0.0f, 0.0f, -3.0f));
+  m_uboData.view = glm::translate(m_uboData.view, glm::vec3(0.0f, 0.0f, -30.0f));
   m_ubo->update(0, sizeof(GlobalUBO), &m_uboData);
 
   m_vao->attachVertexBuffer(m_vbo.get(), 0, sizeof(Vertex), 0);
   m_vao->attachIndexBuffer(m_ibo.get());
   m_ubo->bindBase(0);
+  m_ssbo->bindBase(2);
   m_tex->bind(1);
 
   m_vao->setAttributeFormat(0, 3, GL_FLOAT, GL_FALSE, offsetof(Vertex, pos));
@@ -150,7 +161,8 @@ void GlTestRenderer::render() {
     m_shouldReloadShaders = false;
   }
   m_vao->bind();
-  glDrawElements(GL_TRIANGLES, static_cast<GLsizei>(indices.size()), GL_UNSIGNED_INT, nullptr);
+  glDrawElementsInstanced(GL_TRIANGLES, static_cast<GLsizei>(indices.size()), GL_UNSIGNED_INT, nullptr,
+                          static_cast<GLsizei>(m_instances.size()));
 }
 
 void GlTestRenderer::resize(int width, int height) {

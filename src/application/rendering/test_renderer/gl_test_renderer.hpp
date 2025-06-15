@@ -20,6 +20,10 @@ struct GlobalUBO {
   float elapsedTime;
 };
 
+struct InstanceData {
+  glm::mat4 model;
+};
+
 class ShaderReloader : public efsw::FileWatchListener {
 public:
   std::function<void()> onShaderModified;
@@ -56,6 +60,8 @@ public:
   }
 
   void resize(int width, int height);
+  void setView(const glm::mat4 &view) { m_uboData.view = view; }
+  void setProjection(const glm::mat4 &projection) { m_uboData.projection = projection; }
 
 private:
   void reloadShaders();
@@ -68,11 +74,14 @@ private:
   std::unique_ptr<engine::renderer::GLVertexArray> m_vao;
   std::unique_ptr<engine::renderer::GLBuffer> m_ubo;
   std::unique_ptr<engine::renderer::GLTexture> m_tex;
+  std::unique_ptr<engine::renderer::GLBuffer> m_ssbo;
+
+  std::vector<InstanceData> m_instances;
 
   int m_width;
   int m_height;
 
-  GlobalUBO m_uboData = {0.0f, glm::mat4(1.0f), glm::mat4(1.0f)};
+  GlobalUBO m_uboData = {glm::mat4(1.0f), glm::mat4(1.0f), glm::mat4(1.0f), 0.0f};
 
   bool m_shouldReloadShaders = false;
   std::unique_ptr<efsw::FileWatcher> m_fileWatcher;

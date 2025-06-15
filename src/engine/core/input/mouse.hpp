@@ -7,6 +7,7 @@
 namespace engine {
 namespace core {
 class Mouse {
+public:
   enum class Button {
     LEFT = SDL_BUTTON_LEFT,
     MIDDLE = SDL_BUTTON_MIDDLE,
@@ -17,6 +18,11 @@ class Mouse {
   };
 
 public:
+  void clearDeltas() noexcept {
+    m_dX = 0;
+    m_dY = 0;
+  }
+
   void handleEvent(const SDL_Event &event) noexcept {
     if (event.type == SDL_EVENT_MOUSE_MOTION) {
       m_X = event.motion.x;

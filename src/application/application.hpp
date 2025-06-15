@@ -1,6 +1,7 @@
 #pragma once
 
 #include "application/rendering/game_renderer.hpp"
+#include "camera.hpp"
 #include <engine/core/input/keyboard.hpp>
 #include <engine/core/input/mouse.hpp>
 #include <engine/core/timer.hpp>
@@ -19,6 +20,7 @@ private:
   void handleEvents();
   void update(float dt);
   void render(float dt);
+  void updateCamera(float dt);
 
 private:
   int m_width;
@@ -31,4 +33,5 @@ private:
   engine::core::Window m_window;
   engine::core::Timer m_timer;
   GameRenderer m_gameRenderer;
+  Camera m_camera;
 };
