@@ -22,6 +22,7 @@ static void GLAPIENTRY debugCallback([[maybe_unused]] GLenum source, [[maybe_unu
 GlRenderer::GlRenderer(SDL_Window *window) : m_window{window} {
   m_glCtx = SDL_GL_CreateContext(m_window);
   gladLoadGL((GLADloadfunc)SDL_GL_GetProcAddress);
+  glEnable(GL_DEPTH_TEST); 
 #ifndef NDEBUG
   glEnable(GL_DEBUG_OUTPUT);
   glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);

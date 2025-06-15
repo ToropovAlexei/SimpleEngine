@@ -9,10 +9,14 @@
 #include <efsw/efsw.hpp>
 #include <fstream>
 #include <functional>
+#include <glm/glm.hpp>
 #include <memory>
 #include <vector>
 
 struct GlobalUBO {
+  glm::mat4 model;
+  glm::mat4 view;
+  glm::mat4 projection;
   float elapsedTime;
 };
 
@@ -51,6 +55,8 @@ public:
     return buffer;
   }
 
+  void resize(int width, int height);
+
 private:
   void reloadShaders();
 
@@ -63,7 +69,10 @@ private:
   std::unique_ptr<engine::renderer::GLBuffer> m_ubo;
   std::unique_ptr<engine::renderer::GLTexture> m_tex;
 
-  GlobalUBO m_uboData = {0.0f};
+  int m_width;
+  int m_height;
+
+  GlobalUBO m_uboData = {0.0f, glm::mat4(1.0f), glm::mat4(1.0f)};
 
   bool m_shouldReloadShaders = false;
   std::unique_ptr<efsw::FileWatcher> m_fileWatcher;

@@ -17,6 +17,9 @@ public:
 
   SDL_Window *getWindow() noexcept { return m_window; }
 
+  int getWidth();
+  int getHeight();
+
 private:
   SDL_Window *m_window;
 };

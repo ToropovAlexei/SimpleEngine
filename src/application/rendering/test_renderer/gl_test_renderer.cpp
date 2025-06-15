@@ -2,6 +2,8 @@
 #include "engine/core/filesystem.hpp"
 #include "engine/renderer/open_gl/gl_texture.hpp"
 #include "engine/renderer/open_gl/open_gl_shader_program.hpp"
+#include "glm/ext/matrix_clip_space.hpp"
+#include "glm/ext/matrix_transform.hpp"
 #include "stb_image.h"
 #include <filesystem>
 #include <functional>
@@ -12,14 +14,56 @@ struct Vertex {
   float uv[2];
 };
 
+static std::vector<Vertex> vertices = { // Передняя грань (Z = 0.5)
+    {{-0.5f, -0.5f, 0.5f}, {0.0f, 0.0f}},
+    {{0.5f, -0.5f, 0.5f}, {1.0f, 0.0f}},
+    {{0.5f, 0.5f, 0.5f}, {1.0f, 1.0f}},
+    {{-0.5f, 0.5f, 0.5f}, {0.0f, 1.0f}},
+
+    // Задняя грань (Z = -0.5)
+    {{-0.5f, -0.5f, -0.5f}, {1.0f, 0.0f}},
+    {{0.5f, -0.5f, -0.5f}, {0.0f, 0.0f}},
+    {{0.5f, 0.5f, -0.5f}, {0.0f, 1.0f}},
+    {{-0.5f, 0.5f, -0.5f}, {1.0f, 1.0f}},
+
+    // Верхняя грань (Y = 0.5)
+    {{-0.5f, 0.5f, -0.5f}, {0.0f, 1.0f}},
+    {{0.5f, 0.5f, -0.5f}, {1.0f, 1.0f}},
+    {{0.5f, 0.5f, 0.5f}, {1.0f, 0.0f}},
+    {{-0.5f, 0.5f, 0.5f}, {0.0f, 0.0f}},
+
+    // Нижняя грань (Y = -0.5)
+    {{-0.5f, -0.5f, -0.5f}, {0.0f, 0.0f}},
+    {{0.5f, -0.5f, -0.5f}, {1.0f, 0.0f}},
+    {{0.5f, -0.5f, 0.5f}, {1.0f, 1.0f}},
+    {{-0.5f, -0.5f, 0.5f}, {0.0f, 1.0f}},
+
+    // Правая грань (X = 0.5)
+    {{0.5f, -0.5f, -0.5f}, {0.0f, 0.0f}},
+    {{0.5f, -0.5f, 0.5f}, {1.0f, 0.0f}},
+    {{0.5f, 0.5f, 0.5f}, {1.0f, 1.0f}},
+    {{0.5f, 0.5f, -0.5f}, {0.0f, 1.0f}},
+
+    // Левая грань (X = -0.5)
+    {{-0.5f, -0.5f, -0.5f}, {1.0f, 0.0f}},
+    {{-0.5f, -0.5f, 0.5f}, {0.0f, 0.0f}},
+    {{-0.5f, 0.5f, 0.5f}, {0.0f, 1.0f}},
+    {{-0.5f, 0.5f, -0.5f}, {1.0f, 1.0f}}};
+static std::vector<unsigned int> indices = { // Передняя грань
+    0, 1, 2, 0, 2, 3,
+    // Задняя грань
+    4, 5, 6, 4, 6, 7,
+    // Верхняя грань
+    8, 9, 10, 8, 10, 11,
+    // Нижняя грань
+    12, 13, 14, 12, 14, 15,
+    // Правая грань
+    16, 17, 18, 16, 18, 19,
+    // Левая грань
+    20, 21, 22, 20, 22, 23};
+
 GlTestRenderer::GlTestRenderer(engine::renderer::GlRenderer *renderer) : m_renderer{renderer} {
-  static std::vector<Vertex> vertices = {
-      {{0.5f, 0.5f, 0.0f}, {1.0f, 1.0f}},
-      {{0.5f, -0.5f, 0.0f}, {1.0f, 0.0f}},
-      {{-0.5f, -0.5f, 0.0f}, {0.0f, 0.0f}},
-      {{-0.5f, 0.5f, 0.0f}, {0.0f, 1.0f}},
-  };
-  static std::vector<unsigned int> indices = {0, 1, 3, 1, 2, 3};
+
   auto wallPath = engine::core::getAbsolutePath(std::filesystem::path("assets/wall.jpg"));
   int width;
   int height;
@@ -46,6 +90,12 @@ GlTestRenderer::GlTestRenderer(engine::renderer::GlRenderer *renderer) : m_rende
   m_ubo = std::make_unique<engine::renderer::GLBuffer>(engine::renderer::GLBuffer::Type::Uniform,
                                                        engine::renderer::GLBuffer::Usage::Dynamic, sizeof(GlobalUBO),
                                                        nullptr);
+  m_uboData.model = glm::mat4(1.0f);
+  m_uboData.model = glm::rotate(m_uboData.model, glm::radians(-55.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+  m_uboData.projection =
+      glm::perspective(glm::radians(45.0f), static_cast<float>(m_width) / static_cast<float>(m_height), 0.1f, 100.0f);
+  m_uboData.view = glm::mat4(1.0f);
+  m_uboData.view = glm::translate(m_uboData.view, glm::vec3(0.0f, 0.0f, -3.0f));
   m_ubo->update(0, sizeof(GlobalUBO), &m_uboData);
 
   m_vao->attachVertexBuffer(m_vbo.get(), 0, sizeof(Vertex), 0);
@@ -100,10 +150,18 @@ void GlTestRenderer::render() {
     m_shouldReloadShaders = false;
   }
   m_vao->bind();
-  glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr);
+  glDrawElements(GL_TRIANGLES, static_cast<GLsizei>(indices.size()), GL_UNSIGNED_INT, nullptr);
+}
+
+void GlTestRenderer::resize(int width, int height) {
+  m_width = width;
+  m_height = height;
+  m_uboData.projection =
+      glm::perspective(glm::radians(60.0f), static_cast<float>(m_width) / static_cast<float>(m_height), 0.1f, 100.0f);
 }
 
 void GlTestRenderer::update(float dt) {
   m_uboData.elapsedTime += dt;
+  m_uboData.model = glm::rotate(m_uboData.model, glm::radians(100.0f * dt), glm::vec3(1.0f, 1.0f, 1.0f));
   m_ubo->update(0, sizeof(GlobalUBO), &m_uboData);
 }

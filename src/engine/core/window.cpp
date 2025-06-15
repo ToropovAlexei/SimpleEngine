@@ -22,5 +22,17 @@ Window::Window(int width, int height, std::string_view title) {
 }
 
 Window::~Window() { SDL_DestroyWindow(m_window); }
+
+int Window::getWidth() {
+  int width;
+  SDL_GetWindowSize(m_window, &width, nullptr);
+  return width;
+}
+
+int Window::getHeight() {
+  int height;
+  SDL_GetWindowSize(m_window, nullptr, &height);
+  return height;
+}
 } // namespace core
 } // namespace engine
