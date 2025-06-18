@@ -1,8 +1,10 @@
 #include "assets_manager.hpp"
-#include "engine/core/filesystem.hpp"
 #include "stb_image.h"
 #include <cstring>
+#include <engine/core/assert.hpp>
+#include <engine/core/filesystem.hpp>
 #include <engine/core/logger.hpp>
+#include <fstream>
 #include <memory>
 
 namespace engine::core {
@@ -27,6 +29,21 @@ Texture AssetsManager::loadTexture(std::string_view path) {
 
   return texture;
 };
+
+std::vector<char> AssetsManager::loadShader(std::string_view path) {
+  std::ifstream file(shadersPath / path.data(), std::ios::ate | std::ios::binary);
+
+  SE_ASSERT(file.is_open(), "Failed to open {}!", path);
+
+  size_t fileSize = static_cast<size_t>(file.tellg());
+  std::vector<char> buffer(fileSize);
+
+  file.seekg(0);
+  file.read(buffer.data(), static_cast<std::streamsize>(fileSize));
+
+  file.close();
+  return buffer;
+}
 
 Texture AssetsManager::createErrorTexture(uint32_t size) {
   Texture texture;

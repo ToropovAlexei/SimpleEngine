@@ -45,7 +45,8 @@ private:
 #endif
 
 public:
-  static Texture loadTexture(std::string_view path);
+  [[nodiscard]] static Texture loadTexture(std::string_view path);
+  [[nodiscard]] static std::vector<char> loadShader(std::string_view path);
 
 #ifndef NDEBUG
   [[nodiscard]] static CallbackId subscribe(FileChangeCallback callback);

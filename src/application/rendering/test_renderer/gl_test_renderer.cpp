@@ -127,10 +127,8 @@ GlTestRenderer::GlTestRenderer(engine::renderer::GlRenderer *renderer) : m_rende
 
 void GlTestRenderer::reloadShaders() {
   auto shadersFolder = engine::core::getAbsolutePath(std::filesystem::path("assets/shaders"));
-  std::string vertexShaderPath = shadersFolder / "test.vert";
-  auto vertexShaderCode = readFile(vertexShaderPath);
-  std::string fragmentShaderPath = shadersFolder / "test.frag";
-  auto fragmentShaderCode = readFile(fragmentShaderPath);
+  auto vertexShaderCode =  engine::core::AssetsManager::loadShader("test.vert");
+  auto fragmentShaderCode = engine::core::AssetsManager::loadShader("test.frag");
   engine::renderer::ShaderProgramCreateDesc desc = {fragmentShaderCode, vertexShaderCode};
   m_shader = std::make_unique<engine::renderer::OpenGLShaderProgram>(desc);
   m_shader->use();

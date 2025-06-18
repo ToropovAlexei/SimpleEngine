@@ -7,7 +7,6 @@
 #include "engine/renderer/open_gl/gl_vertex_array.hpp"
 #include "engine/renderer/open_gl/open_gl_shader_program.hpp"
 #include <efsw/efsw.hpp>
-#include <fstream>
 #include <glm/glm.hpp>
 #include <memory>
 #include <vector>
@@ -29,21 +28,6 @@ public:
 
   void render();
   void update(float dt);
-
-  std::vector<char> readFile(std::string_view filename) {
-    std::ifstream file(filename.data(), std::ios::ate | std::ios::binary);
-
-    SE_ASSERT(file.is_open(), "Failed to open shader file!");
-
-    size_t fileSize = static_cast<size_t>(file.tellg());
-    std::vector<char> buffer(fileSize);
-
-    file.seekg(0);
-    file.read(buffer.data(), static_cast<std::streamsize>(fileSize));
-
-    file.close();
-    return buffer;
-  }
 
   void resize(int width, int height);
   void setView(const glm::mat4 &view) { m_uboData.view = view; }
