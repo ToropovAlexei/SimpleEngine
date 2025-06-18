@@ -8,7 +8,6 @@
 #include "engine/renderer/open_gl/open_gl_shader_program.hpp"
 #include <efsw/efsw.hpp>
 #include <fstream>
-#include <functional>
 #include <glm/glm.hpp>
 #include <memory>
 #include <vector>
@@ -22,19 +21,6 @@ struct GlobalUBO {
 
 struct InstanceData {
   glm::mat4 model;
-};
-
-class ShaderReloader : public efsw::FileWatchListener {
-public:
-  std::function<void()> onShaderModified;
-
-  void handleFileAction(efsw::WatchID watchid, const std::string &dir, const std::string &filename, efsw::Action action,
-                        std::string oldFilename = "") override {
-    if (action == efsw::Actions::Modified) {
-      std::cout << "Shader changed: " << filename << ", reloading..." << std::endl;
-      onShaderModified();
-    }
-  }
 };
 
 class GlTestRenderer {
@@ -84,7 +70,4 @@ private:
   GlobalUBO m_uboData = {glm::mat4(1.0f), glm::mat4(1.0f), glm::mat4(1.0f), 0.0f};
 
   bool m_shouldReloadShaders = false;
-  std::unique_ptr<efsw::FileWatcher> m_fileWatcher;
-  std::unique_ptr<ShaderReloader> m_shaderReloader;
-  efsw::WatchID m_watchId = 0;
 };

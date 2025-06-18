@@ -51,6 +51,33 @@ Texture AssetsManager::createErrorTexture(uint32_t size) {
   return texture;
 }
 
+#ifndef NDEBUG
+AssetsManager::CallbackId AssetsManager::subscribe(FileChangeCallback callback) {
+  if (!efswWatcher) {
+    efswWatcher = std::make_unique<efsw::FileWatcher>();
+    watcher = std::make_unique<AssetsWatcher>();
+    efswWatcher->addWatch(std::filesystem::path(SOURCE_DIR) / "assets", watcher.get(), true);
+    efswWatcher->watch();
+  }
+  CallbackId id = {nextCallbackId++};
+  callbacks[id.value] = callback;
+  return id;
+}
+
+void AssetsManager::unsubscribe(CallbackId id) { callbacks.erase(id.value); }
+
+void AssetsManager::onAssetsModified(std::string filename) {
+  for (auto &callback : callbacks) {
+    callback.second(filename);
+  }
+}
+
+std::unordered_map<size_t, AssetsManager::FileChangeCallback> AssetsManager::callbacks{};
+std::unique_ptr<efsw::FileWatcher> AssetsManager::efswWatcher{};
+std::unique_ptr<AssetsManager::AssetsWatcher> AssetsManager::watcher{};
+size_t AssetsManager::nextCallbackId = 0;
+#endif
+
 std::filesystem::path AssetsManager::assetsPath = getAbsolutePath("assets");
 std::filesystem::path AssetsManager::shadersPath = AssetsManager::assetsPath / "shaders";
 std::filesystem::path AssetsManager::texturesPath = AssetsManager::assetsPath / "textures";

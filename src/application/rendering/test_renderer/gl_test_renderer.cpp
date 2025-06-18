@@ -118,29 +118,15 @@ GlTestRenderer::GlTestRenderer(engine::renderer::GlRenderer *renderer) : m_rende
   m_vao->enableAttribute(1);
   m_vao->bind();
 
-  auto shadersFolder = std::filesystem::path(SOURCE_DIR) / "shaders";
-  m_shaderReloader = std::make_unique<ShaderReloader>();
-  m_shaderReloader->onShaderModified = [this]() {
-    auto sourceShadersPath = std::filesystem::path(SOURCE_DIR) / "shaders";
-    auto targetShadersPath = engine::core::getAbsolutePath(std::filesystem::path("shaders"));
-
-    for (const auto &entry : std::filesystem::directory_iterator(sourceShadersPath)) {
-      std::filesystem::copy(entry.path(), targetShadersPath / entry.path().filename(),
-                            std::filesystem::copy_options::overwrite_existing);
-    }
-
-    m_shouldReloadShaders = true;
-  };
-
-  m_fileWatcher = std::make_unique<efsw::FileWatcher>();
-  m_watchId = m_fileWatcher->addWatch(shadersFolder.string(), m_shaderReloader.get(), true);
-  m_fileWatcher->watch();
+#ifndef NDEBUG
+  auto cbId = engine::core::AssetsManager::subscribe([this](std::string filename) { m_shouldReloadShaders = true; });
+#endif
 
   reloadShaders();
 }
 
 void GlTestRenderer::reloadShaders() {
-  auto shadersFolder = engine::core::getAbsolutePath(std::filesystem::path("shaders"));
+  auto shadersFolder = engine::core::getAbsolutePath(std::filesystem::path("assets/shaders"));
   std::string vertexShaderPath = shadersFolder / "test.vert";
   auto vertexShaderCode = readFile(vertexShaderPath);
   std::string fragmentShaderPath = shadersFolder / "test.frag";
