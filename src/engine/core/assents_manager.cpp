@@ -1,0 +1,57 @@
+#include "assets_manager.hpp"
+#include "engine/core/filesystem.hpp"
+#include "stb_image.h"
+#include <cstring>
+#include <engine/core/logger.hpp>
+#include <memory>
+
+namespace engine::core {
+Texture AssetsManager::loadTexture(std::string_view path) {
+  Texture texture;
+  std::string absPath = std::string(texturesPath / path);
+
+  int width;
+  int height;
+  int channels;
+  std::byte *rawData = reinterpret_cast<std::byte *>(stbi_load(absPath.c_str(), &width, &height, &channels, 0));
+
+  if (!rawData) {
+    LOG_ERROR("Failed to load texture: {}", absPath);
+    return createErrorTexture();
+  }
+
+  texture.width = static_cast<uint32_t>(width);
+  texture.height = static_cast<uint32_t>(height);
+  texture.channels = static_cast<uint8_t>(channels);
+  texture.data.reset(rawData);
+
+  return texture;
+};
+
+Texture AssetsManager::createErrorTexture(uint32_t size) {
+  Texture texture;
+  texture.width = size;
+  texture.height = size;
+  texture.channels = 4;
+
+  texture.data = std::make_unique<std::byte[]>(size * size * 4);
+  const std::byte pink[] = {std::byte(0xFF), std::byte(0x00), std::byte(0xFF), std::byte(0xFF)};
+  const std::byte black[] = {std::byte(0x00), std::byte(0x00), std::byte(0x00), std::byte(0xFF)};
+
+  for (uint32_t y = 0; y < size; ++y) {
+    for (uint32_t x = 0; x < size; ++x) {
+      bool isPink = (x / (size / 2)) % 2 == (y / (size / 2)) % 2;
+
+      uint32_t pixelOffset = (y * size + x) * 4;
+      const std::byte *color = isPink ? pink : black;
+      std::memcpy(&texture.data[pixelOffset], color, 4);
+    }
+  }
+
+  return texture;
+}
+
+std::filesystem::path AssetsManager::assetsPath = getAbsolutePath("assets");
+std::filesystem::path AssetsManager::shadersPath = AssetsManager::assetsPath / "shaders";
+std::filesystem::path AssetsManager::texturesPath = AssetsManager::assetsPath / "textures";
+} // namespace engine::core

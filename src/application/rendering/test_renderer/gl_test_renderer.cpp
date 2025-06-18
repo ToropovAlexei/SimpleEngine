@@ -1,10 +1,10 @@
 #include "gl_test_renderer.hpp"
+#include "engine/core/assets_manager.hpp"
 #include "engine/core/filesystem.hpp"
 #include "engine/renderer/open_gl/gl_texture.hpp"
 #include "engine/renderer/open_gl/open_gl_shader_program.hpp"
 #include "glm/ext/matrix_clip_space.hpp"
 #include "glm/ext/matrix_transform.hpp"
-#include "stb_image.h"
 #include <filesystem>
 #include <functional>
 #include <vector>
@@ -64,21 +64,16 @@ static std::vector<unsigned int> indices = { // Передняя грань
 
 GlTestRenderer::GlTestRenderer(engine::renderer::GlRenderer *renderer) : m_renderer{renderer} {
 
-  auto wallPath = engine::core::getAbsolutePath(std::filesystem::path("assets/wall.jpg"));
-  int width;
-  int height;
-  int nrChannels;
-  unsigned char *data = stbi_load(wallPath.c_str(), &width, &height, &nrChannels, 0);
+  auto tex = engine::core::AssetsManager::loadTexture("wall.jpg");
   engine::renderer::GLTextureDesc desc = {};
   desc.type = engine::renderer::GLTextureType::Texture2D;
-  desc.width = static_cast<uint32_t>(width);
-  desc.height = static_cast<uint32_t>(height);
+  desc.width = static_cast<uint32_t>(tex.width);
+  desc.height = static_cast<uint32_t>(tex.height);
   desc.internalFormat = engine::renderer::GLTextureInternalFormat::RGB8;
-  desc.format = engine::renderer::GLTextureFormat::RGB;
+  desc.format = tex.channels == 4 ? engine::renderer::GLTextureFormat::RGBA : engine::renderer::GLTextureFormat::RGB;
   desc.dataType = engine::renderer::GLTextureDataType::UByte;
   m_tex = std::make_unique<engine::renderer::GLTexture>(desc);
-  m_tex->setData(data);
-  stbi_image_free(data);
+  m_tex->setData(tex.data.get());
 
   m_instances.resize(1000);
   for (size_t i = 0; i < m_instances.size(); ++i) {
