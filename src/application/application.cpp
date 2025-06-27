@@ -10,7 +10,6 @@
 Application::Application(int width, int height, std::string_view name)
     : m_width{width}, m_height{height}, m_window{width, height, name}, m_gameRenderer{m_window} {
   m_camera.setPerspective(60.0f, static_cast<float>(m_width) / static_cast<float>(m_height), 0.1f, 1000.0f);
-  SDL_SetWindowRelativeMouseMode(m_window.getWindow(), true);
 }
 
 Application::~Application() {
@@ -33,7 +32,7 @@ void Application::handleEvents() {
   m_mouse.clearDeltas();
   SDL_Event event;
   while (SDL_PollEvent(&event)) {
-    // ImGui_ImplSDL3_ProcessEvent(&event);
+    ImGui_ImplSDL3_ProcessEvent(&event);
     if (event.type == SDL_EVENT_QUIT) {
       m_running = false;
     }
@@ -42,6 +41,12 @@ void Application::handleEvents() {
       m_height = event.window.data2;
       m_gameRenderer.setRenderSize(m_width, m_height);
       m_camera.setPerspective(60.0f, static_cast<float>(m_width) / static_cast<float>(m_height), 0.1f, 1000.0f);
+    }
+    // TODO TESTING ONLY
+    static bool mouseCaptured = true;
+    if (m_keyboard.isKeyDown(SDL_SCANCODE_F)) {
+      mouseCaptured = !mouseCaptured;
+      SDL_SetWindowRelativeMouseMode(m_window.getWindow(), mouseCaptured);
     }
     m_keyboard.handleEvent(event);
     m_mouse.handleEvent(event);
