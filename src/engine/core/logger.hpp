@@ -2,7 +2,7 @@
 
 #include <chrono>
 #include <format>
-#include <iostream>
+#include <print>
 #include <sstream>
 #include <string>
 
@@ -15,9 +15,7 @@ enum class LogLevel { Trace, Debug, Info, Warn, Error, Fatal };
 class Logger {
 public:
   template <LogLevel Level, typename... Args> static void log(std::format_string<Args...> fmt, Args &&...args) {
-    std::cout << "[" << currentTime() << "]";
-    std::cout << "[" << logLevelToString(Level) << "] ";
-    std::cout << std::format(fmt, std::forward<Args>(args)...) << std::endl;
+    std::println("[{}][{}] {}", currentTime(), logLevelToString(Level), std::format(fmt, std::forward<Args>(args)...));
   }
 
 private:
