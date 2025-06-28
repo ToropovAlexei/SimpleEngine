@@ -8,10 +8,10 @@ enum ShaderType {
   Fragment = GL_FRAGMENT_SHADER,
 };
 
-class OpenGLShader {
+class GLShader {
 public:
-  OpenGLShader(const std::vector<char> &code, ShaderType type);
-  ~OpenGLShader();
+  GLShader(const std::vector<char> &code, ShaderType type);
+  ~GLShader();
 
   unsigned int getId() { return m_shaderId; };
 

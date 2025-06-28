@@ -1,9 +1,9 @@
-#include "open_gl_shader.hpp"
+#include "gl_shader.hpp"
 #include "engine/core/logger.hpp"
 #include <string>
 
 namespace engine::renderer {
-OpenGLShader::OpenGLShader(const std::vector<char> &code, ShaderType type) {
+GLShader::GLShader(const std::vector<char> &code, ShaderType type) {
   m_shaderId = glCreateShader(type);
   std::string shaderStr(code.data(), code.size());
   auto codeCStr = shaderStr.c_str();
@@ -26,7 +26,7 @@ OpenGLShader::OpenGLShader(const std::vector<char> &code, ShaderType type) {
 #endif
 }
 
-OpenGLShader::~OpenGLShader() {
+GLShader::~GLShader() {
   if (m_shaderId != 0) {
     glDeleteShader(m_shaderId);
   }

@@ -3,7 +3,7 @@
 #include "engine/core/filesystem.hpp"
 #include "engine/renderer/open_gl/gl_buffer.hpp"
 #include "engine/renderer/open_gl/gl_texture.hpp"
-#include "engine/renderer/open_gl/open_gl_shader_program.hpp"
+#include "engine/renderer/open_gl/gl_shader_program.hpp"
 #include "glm/ext/matrix_clip_space.hpp"
 #include "glm/ext/matrix_transform.hpp"
 #include <filesystem>
@@ -124,7 +124,7 @@ void GlTestRenderer::reloadShaders() {
   auto vertexShaderCode = AssetsManager::loadShader("test.vert");
   auto fragmentShaderCode = AssetsManager::loadShader("test.frag");
   ShaderProgramCreateDesc desc = {fragmentShaderCode, vertexShaderCode};
-  m_shader = std::make_unique<OpenGLShaderProgram>(desc);
+  m_shader = std::make_unique<GLShaderProgram>(desc);
   m_shader->use();
 }
 

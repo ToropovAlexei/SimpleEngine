@@ -8,11 +8,11 @@ struct ShaderProgramCreateDesc {
   const std::vector<char> &vertexShaderCode;
 };
 
-class OpenGLShaderProgram {
+class GLShaderProgram {
 public:
-  OpenGLShaderProgram(const ShaderProgramCreateDesc desc);
-  ~OpenGLShaderProgram();
-  
+  GLShaderProgram(const ShaderProgramCreateDesc desc);
+  ~GLShaderProgram();
+
   void use();
 
 private:

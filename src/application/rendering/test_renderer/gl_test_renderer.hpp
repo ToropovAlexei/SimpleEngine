@@ -5,7 +5,7 @@
 #include "engine/renderer/open_gl/gl_buffer.hpp"
 #include "engine/renderer/open_gl/gl_texture.hpp"
 #include "engine/renderer/open_gl/gl_vertex_array.hpp"
-#include "engine/renderer/open_gl/open_gl_shader_program.hpp"
+#include "engine/renderer/open_gl/gl_shader_program.hpp"
 #include <efsw/efsw.hpp>
 #include <glm/glm.hpp>
 #include <memory>
@@ -38,7 +38,7 @@ private:
 
 private:
   engine::renderer::GlRenderer *m_renderer;
-  std::unique_ptr<engine::renderer::OpenGLShaderProgram> m_shader;
+  std::unique_ptr<engine::renderer::GLShaderProgram> m_shader;
   std::unique_ptr<engine::renderer::GLBuffer> m_vbo;
   std::unique_ptr<engine::renderer::GLBuffer> m_ibo;
   std::unique_ptr<engine::renderer::GLVertexArray> m_vao;
