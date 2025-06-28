@@ -2,8 +2,8 @@
 #include "engine/core/assets_manager.hpp"
 #include "engine/core/filesystem.hpp"
 #include "engine/renderer/open_gl/gl_buffer.hpp"
-#include "engine/renderer/open_gl/gl_texture.hpp"
 #include "engine/renderer/open_gl/gl_shader_program.hpp"
+#include "engine/renderer/open_gl/gl_texture.hpp"
 #include "glm/ext/matrix_clip_space.hpp"
 #include "glm/ext/matrix_transform.hpp"
 #include <filesystem>
@@ -113,7 +113,8 @@ GlTestRenderer::GlTestRenderer(engine::renderer::GlRenderer *renderer) : m_rende
   m_vao->bind();
 
 #ifndef NDEBUG
-  auto cbId = AssetsManager::subscribe([this](std::string filename) { m_shouldReloadShaders = true; });
+  [[maybe_unused]] auto cbId =
+      AssetsManager::subscribe([this]([[maybe_unused]] std::string filename) { m_shouldReloadShaders = true; });
 #endif
 
   reloadShaders();
@@ -149,4 +150,10 @@ void GlTestRenderer::update(float dt) {
   m_uboData.elapsedTime += dt;
   m_uboData.model = glm::rotate(m_uboData.model, glm::radians(100.0f * dt), glm::vec3(1.0f, 1.0f, 1.0f));
   m_ubo->update(m_uboData);
+
+  for (size_t i = 0; i < m_instances.size(); ++i) {
+    m_instances[i].model = glm::rotate(m_instances[i].model, glm::radians(dt * (static_cast<float>(i) * 0.01f + 1.0f)),
+                                       glm::vec3(1.0f, 1.0f, 1.0f));
+  }
+  m_ssbo->update(m_instances);
 }

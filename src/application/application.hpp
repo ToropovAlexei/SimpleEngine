@@ -27,7 +27,6 @@ private:
   int m_height;
   std::string m_name;
   bool m_running = true;
-  bool m_isSuspended = false;
   engine::core::Keyboard m_keyboard;
   engine::core::Mouse m_mouse;
   engine::core::Window m_window;

@@ -3,9 +3,9 @@
 #include "engine/core/assert.hpp"
 #include "engine/renderer/gl_renderer.hpp"
 #include "engine/renderer/open_gl/gl_buffer.hpp"
+#include "engine/renderer/open_gl/gl_shader_program.hpp"
 #include "engine/renderer/open_gl/gl_texture.hpp"
 #include "engine/renderer/open_gl/gl_vertex_array.hpp"
-#include "engine/renderer/open_gl/gl_shader_program.hpp"
 #include <efsw/efsw.hpp>
 #include <glm/glm.hpp>
 #include <memory>
@@ -37,7 +37,7 @@ private:
   void reloadShaders();
 
 private:
-  engine::renderer::GlRenderer *m_renderer;
+  [[maybe_unused]] engine::renderer::GlRenderer *m_renderer;
   std::unique_ptr<engine::renderer::GLShaderProgram> m_shader;
   std::unique_ptr<engine::renderer::GLBuffer> m_vbo;
   std::unique_ptr<engine::renderer::GLBuffer> m_ibo;

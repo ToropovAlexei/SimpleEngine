@@ -6,7 +6,7 @@ GameRenderer::GameRenderer(engine::core::Window &window) : m_window{window} {
   m_testRenderer->resize(m_window.getWidth(), m_window.getHeight());
 }
 
-void GameRenderer::render(float dt) {
+void GameRenderer::render([[maybe_unused]] float dt) {
   m_renderer->beginFrame();
   m_testRenderer->render();
   m_renderer->endFrame();
