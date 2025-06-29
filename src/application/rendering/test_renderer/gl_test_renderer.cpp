@@ -1,12 +1,12 @@
 #include "gl_test_renderer.hpp"
 #include "engine/core/assets_manager.hpp"
-#include "engine/core/filesystem.hpp"
 #include "engine/renderer/open_gl/gl_buffer.hpp"
 #include "engine/renderer/open_gl/gl_shader_program.hpp"
 #include "engine/renderer/open_gl/gl_texture.hpp"
 #include "glm/ext/matrix_clip_space.hpp"
 #include "glm/ext/matrix_transform.hpp"
-#include <filesystem>
+#include "glm/gtc/type_ptr.hpp"
+#include "imgui.h"
 #include <vector>
 
 using namespace engine::renderer;
@@ -14,44 +14,47 @@ using namespace engine::core;
 
 struct Vertex {
   float pos[3];
+  float normal[3];
   float uv[2];
 };
 
-static std::vector<Vertex> vertices = { // Передняя грань (Z = 0.5)
-    {{-0.5f, -0.5f, 0.5f}, {0.0f, 0.0f}},
-    {{0.5f, -0.5f, 0.5f}, {1.0f, 0.0f}},
-    {{0.5f, 0.5f, 0.5f}, {1.0f, 1.0f}},
-    {{-0.5f, 0.5f, 0.5f}, {0.0f, 1.0f}},
+static std::vector<Vertex> vertices = {
+    // Передняя грань (Z = 0.5) - нормаль (0, 0, 1)
+    {{-0.5f, -0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}, {0.0f, 0.0f}},
+    {{0.5f, -0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}, {1.0f, 0.0f}},
+    {{0.5f, 0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}, {1.0f, 1.0f}},
+    {{-0.5f, 0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}, {0.0f, 1.0f}},
 
-    // Задняя грань (Z = -0.5)
-    {{-0.5f, -0.5f, -0.5f}, {1.0f, 0.0f}},
-    {{0.5f, -0.5f, -0.5f}, {0.0f, 0.0f}},
-    {{0.5f, 0.5f, -0.5f}, {0.0f, 1.0f}},
-    {{-0.5f, 0.5f, -0.5f}, {1.0f, 1.0f}},
+    // Задняя грань (Z = -0.5) - нормаль (0, 0, -1)
+    {{-0.5f, -0.5f, -0.5f}, {0.0f, 0.0f, -1.0f}, {1.0f, 0.0f}},
+    {{0.5f, -0.5f, -0.5f}, {0.0f, 0.0f, -1.0f}, {0.0f, 0.0f}},
+    {{0.5f, 0.5f, -0.5f}, {0.0f, 0.0f, -1.0f}, {0.0f, 1.0f}},
+    {{-0.5f, 0.5f, -0.5f}, {0.0f, 0.0f, -1.0f}, {1.0f, 1.0f}},
 
-    // Верхняя грань (Y = 0.5)
-    {{-0.5f, 0.5f, -0.5f}, {0.0f, 1.0f}},
-    {{0.5f, 0.5f, -0.5f}, {1.0f, 1.0f}},
-    {{0.5f, 0.5f, 0.5f}, {1.0f, 0.0f}},
-    {{-0.5f, 0.5f, 0.5f}, {0.0f, 0.0f}},
+    // Верхняя грань (Y = 0.5) - нормаль (0, 1, 0)
+    {{-0.5f, 0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}, {0.0f, 1.0f}},
+    {{0.5f, 0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}, {1.0f, 1.0f}},
+    {{0.5f, 0.5f, 0.5f}, {0.0f, 1.0f, 0.0f}, {1.0f, 0.0f}},
+    {{-0.5f, 0.5f, 0.5f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f}},
 
-    // Нижняя грань (Y = -0.5)
-    {{-0.5f, -0.5f, -0.5f}, {0.0f, 0.0f}},
-    {{0.5f, -0.5f, -0.5f}, {1.0f, 0.0f}},
-    {{0.5f, -0.5f, 0.5f}, {1.0f, 1.0f}},
-    {{-0.5f, -0.5f, 0.5f}, {0.0f, 1.0f}},
+    // Нижняя грань (Y = -0.5) - нормаль (0, -1, 0)
+    {{-0.5f, -0.5f, -0.5f}, {0.0f, -1.0f, 0.0f}, {0.0f, 0.0f}},
+    {{0.5f, -0.5f, -0.5f}, {0.0f, -1.0f, 0.0f}, {1.0f, 0.0f}},
+    {{0.5f, -0.5f, 0.5f}, {0.0f, -1.0f, 0.0f}, {1.0f, 1.0f}},
+    {{-0.5f, -0.5f, 0.5f}, {0.0f, -1.0f, 0.0f}, {0.0f, 1.0f}},
 
-    // Правая грань (X = 0.5)
-    {{0.5f, -0.5f, -0.5f}, {0.0f, 0.0f}},
-    {{0.5f, -0.5f, 0.5f}, {1.0f, 0.0f}},
-    {{0.5f, 0.5f, 0.5f}, {1.0f, 1.0f}},
-    {{0.5f, 0.5f, -0.5f}, {0.0f, 1.0f}},
+    // Правая грань (X = 0.5) - нормаль (1, 0, 0)
+    {{0.5f, -0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f}},
+    {{0.5f, -0.5f, 0.5f}, {1.0f, 0.0f, 0.0f}, {1.0f, 0.0f}},
+    {{0.5f, 0.5f, 0.5f}, {1.0f, 0.0f, 0.0f}, {1.0f, 1.0f}},
+    {{0.5f, 0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}, {0.0f, 1.0f}},
 
-    // Левая грань (X = -0.5)
-    {{-0.5f, -0.5f, -0.5f}, {1.0f, 0.0f}},
-    {{-0.5f, -0.5f, 0.5f}, {0.0f, 0.0f}},
-    {{-0.5f, 0.5f, 0.5f}, {0.0f, 1.0f}},
-    {{-0.5f, 0.5f, -0.5f}, {1.0f, 1.0f}}};
+    // Левая грань (X = -0.5) - нормаль (-1, 0, 0)
+    {{-0.5f, -0.5f, -0.5f}, {-1.0f, 0.0f, 0.0f}, {1.0f, 0.0f}},
+    {{-0.5f, -0.5f, 0.5f}, {-1.0f, 0.0f, 0.0f}, {0.0f, 0.0f}},
+    {{-0.5f, 0.5f, 0.5f}, {-1.0f, 0.0f, 0.0f}, {0.0f, 1.0f}},
+    {{-0.5f, 0.5f, -0.5f}, {-1.0f, 0.0f, 0.0f}, {1.0f, 1.0f}}};
+
 static std::vector<unsigned int> indices = { // Передняя грань
     0, 1, 2, 0, 2, 3,
     // Задняя грань
@@ -87,10 +90,9 @@ GlTestRenderer::GlTestRenderer(engine::renderer::GlRenderer *renderer) : m_rende
   m_vbo = GLBuffer::createVBO(vertices);
   m_ibo = GLBuffer::createIBO(indices);
   m_vao = std::make_unique<GLVertexArray>();
+  m_lightVAO = std::make_unique<GLVertexArray>();
   m_ubo = GLBuffer::createUBO(m_uboData);
   m_ssbo = GLBuffer::createSSBO(m_instances);
-  m_uboData.model = glm::mat4(1.0f);
-  m_uboData.model = glm::rotate(m_uboData.model, glm::radians(-55.0f), glm::vec3(1.0f, 0.0f, 0.0f));
   m_uboData.projection =
       glm::perspective(glm::radians(45.0f), static_cast<float>(m_width) / static_cast<float>(m_height), 0.1f, 1000.0f);
   m_uboData.view = glm::mat4(1.0f);
@@ -107,10 +109,27 @@ GlTestRenderer::GlTestRenderer(engine::renderer::GlRenderer *renderer) : m_rende
   m_vao->bindAttribute(0, 0);
   m_vao->enableAttribute(0);
 
-  m_vao->setAttributeFormat(1, 2, GL_FLOAT, GL_FALSE, offsetof(Vertex, uv));
+  m_vao->setAttributeFormat(1, 3, GL_FLOAT, GL_FALSE, offsetof(Vertex, normal));
   m_vao->bindAttribute(1, 0);
   m_vao->enableAttribute(1);
-  m_vao->bind();
+
+  m_vao->setAttributeFormat(2, 2, GL_FLOAT, GL_FALSE, offsetof(Vertex, uv));
+  m_vao->bindAttribute(2, 0);
+  m_vao->enableAttribute(2);
+
+  m_lightVAO->attachVertexBuffer(m_vbo.get(), 0, sizeof(Vertex), 0);
+  m_lightVAO->attachIndexBuffer(m_ibo.get());
+  m_lightVAO->setAttributeFormat(0, 3, GL_FLOAT, GL_FALSE, offsetof(Vertex, pos));
+  m_lightVAO->bindAttribute(0, 0);
+  m_lightVAO->enableAttribute(0);
+
+  m_lightVAO->setAttributeFormat(1, 3, GL_FLOAT, GL_FALSE, offsetof(Vertex, normal));
+  m_lightVAO->bindAttribute(1, 0);
+  m_lightVAO->enableAttribute(1);
+
+  m_lightVAO->setAttributeFormat(2, 2, GL_FLOAT, GL_FALSE, offsetof(Vertex, uv));
+  m_lightVAO->bindAttribute(2, 0);
+  m_lightVAO->enableAttribute(2);
 
 #ifndef NDEBUG
   [[maybe_unused]] auto cbId =
@@ -121,12 +140,15 @@ GlTestRenderer::GlTestRenderer(engine::renderer::GlRenderer *renderer) : m_rende
 }
 
 void GlTestRenderer::reloadShaders() {
-  auto shadersFolder = getAbsolutePath(std::filesystem::path("assets/shaders"));
   auto vertexShaderCode = AssetsManager::loadShader("test.vert");
   auto fragmentShaderCode = AssetsManager::loadShader("test.frag");
   ShaderProgramCreateDesc desc = {fragmentShaderCode, vertexShaderCode};
   m_shader = std::make_unique<GLShaderProgram>(desc);
-  m_shader->use();
+
+  auto lightVertexShaderCode = AssetsManager::loadShader("light.vert");
+  auto lightFragmentShaderCode = AssetsManager::loadShader("light.frag");
+  ShaderProgramCreateDesc lightDesc = {lightFragmentShaderCode, lightVertexShaderCode};
+  m_lightShader = std::make_unique<GLShaderProgram>(lightDesc);
 }
 
 void GlTestRenderer::render() {
@@ -134,9 +156,21 @@ void GlTestRenderer::render() {
     reloadShaders();
     m_shouldReloadShaders = false;
   }
+  m_shader->use();
   m_vao->bind();
   glDrawElementsInstanced(GL_TRIANGLES, static_cast<GLsizei>(indices.size()), GL_UNSIGNED_INT, nullptr,
                           static_cast<GLsizei>(m_instances.size()));
+
+  m_lightShader->use();
+  m_lightVAO->bind();
+  glDrawElements(GL_TRIANGLES, static_cast<GLsizei>(indices.size()), GL_UNSIGNED_INT, nullptr);
+
+  ImGui::Begin("Test");
+  ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", static_cast<double>(1000.0f / ImGui::GetIO().Framerate),
+              static_cast<double>(ImGui::GetIO().Framerate));
+  ImGui::ColorEdit3("Light Color", glm::value_ptr(m_uboData.lightColor));
+  ImGui::SliderFloat3("Light Position", glm::value_ptr(m_uboData.lightPos), -10.0f, 10.0f);
+  ImGui::End();
 }
 
 void GlTestRenderer::resize(int width, int height) {
@@ -148,7 +182,6 @@ void GlTestRenderer::resize(int width, int height) {
 
 void GlTestRenderer::update(float dt) {
   m_uboData.elapsedTime += dt;
-  m_uboData.model = glm::rotate(m_uboData.model, glm::radians(100.0f * dt), glm::vec3(1.0f, 1.0f, 1.0f));
   m_ubo->update(m_uboData);
 
   for (size_t i = 0; i < m_instances.size(); ++i) {

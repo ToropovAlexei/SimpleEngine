@@ -16,7 +16,7 @@ static void GLAPIENTRY debugCallback([[maybe_unused]] GLenum source, [[maybe_unu
   } else if (severity == GL_DEBUG_SEVERITY_LOW) {
     LOG_INFO("OpenGL: {}", message);
   } else if (severity == GL_DEBUG_SEVERITY_NOTIFICATION) {
-    LOG_TRACE("OpenGL: {}", message);
+    // LOG_TRACE("OpenGL: {}", message);
   } else {
     LOG_INFO("OpenGL: {}", message);
   }
@@ -54,7 +54,7 @@ void GlRenderer::beginFrame() {
   // For testing only
   ImGui::ShowDemoWindow();
 
-  glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
+  glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }
 

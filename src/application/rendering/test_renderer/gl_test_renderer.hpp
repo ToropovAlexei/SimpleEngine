@@ -12,10 +12,13 @@
 #include <vector>
 
 struct alignas(16) GlobalUBO {
-  glm::mat4 model;
   glm::mat4 view;
   glm::mat4 projection;
+  alignas(16) glm::vec3 cameraPos;
+  alignas(16) glm::vec3 lightPos;
+  alignas(16) glm::vec3 lightColor;
   float elapsedTime;
+  float padding[3];
 };
 
 struct InstanceData {
@@ -31,6 +34,7 @@ public:
 
   void resize(int width, int height);
   void setView(const glm::mat4 &view) { m_uboData.view = view; }
+  void setCameraPos(const glm::vec3 &pos) { m_uboData.cameraPos = pos; }
   void setProjection(const glm::mat4 &projection) { m_uboData.projection = projection; }
 
 private:
@@ -39,9 +43,11 @@ private:
 private:
   [[maybe_unused]] engine::renderer::GlRenderer *m_renderer;
   std::unique_ptr<engine::renderer::GLShaderProgram> m_shader;
+  std::unique_ptr<engine::renderer::GLShaderProgram> m_lightShader;
   std::unique_ptr<engine::renderer::GLBuffer> m_vbo;
   std::unique_ptr<engine::renderer::GLBuffer> m_ibo;
   std::unique_ptr<engine::renderer::GLVertexArray> m_vao;
+  std::unique_ptr<engine::renderer::GLVertexArray> m_lightVAO;
   std::unique_ptr<engine::renderer::GLBuffer> m_ubo;
   std::unique_ptr<engine::renderer::GLTexture> m_tex;
   std::unique_ptr<engine::renderer::GLBuffer> m_ssbo;
@@ -51,7 +57,12 @@ private:
   int m_width;
   int m_height;
 
-  GlobalUBO m_uboData = {glm::mat4(1.0f), glm::mat4(1.0f), glm::mat4(1.0f), 0.0f};
+  GlobalUBO m_uboData = {glm::mat4(1.0f),
+                         glm::mat4(1.0f),
+                         glm::vec3(0.0f, 0.0f, 0.0f),
+                         glm::vec3(0.0f, 0.0f, 0.0f),
+                         glm::vec3(0.5f, 0.5f, 0.5f),
+                         0.0f};
 
   bool m_shouldReloadShaders = false;
 };

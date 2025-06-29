@@ -42,14 +42,10 @@ void Application::handleEvents() {
       m_gameRenderer.setRenderSize(m_width, m_height);
       m_camera.setPerspective(60.0f, static_cast<float>(m_width) / static_cast<float>(m_height), 0.1f, 1000.0f);
     }
-    // TODO TESTING ONLY
-    static bool mouseCaptured = true;
-    if (m_keyboard.isKeyDown(SDL_SCANCODE_F)) {
-      mouseCaptured = !mouseCaptured;
-      SDL_SetWindowRelativeMouseMode(m_window.getWindow(), mouseCaptured);
-    }
     m_keyboard.handleEvent(event);
-    m_mouse.handleEvent(event);
+    if (!ImGui::GetIO().WantCaptureMouse) {
+      m_mouse.handleEvent(event);
+    }
   }
 }
 
@@ -58,11 +54,23 @@ void Application::update(float dt) {
   m_gameRenderer.updateRenderers(dt);
   m_gameRenderer.setView(m_camera.getViewMatrix());
   m_gameRenderer.setProjection(m_camera.getProjectionMatrix());
+  m_gameRenderer.setCameraPos(m_camera.getPosition());
 }
 
 void Application::render(float dt) { m_gameRenderer.render(dt); }
 
 void Application::updateCamera(float dt) {
+  // TODO TESTING ONLY
+  static bool mouseCaptured = false;
+  if (m_keyboard.isKeyDown(SDL_SCANCODE_F)) {
+    mouseCaptured = !mouseCaptured;
+    SDL_SetWindowRelativeMouseMode(m_window.getWindow(), mouseCaptured);
+  }
+
+  if (!mouseCaptured) {
+    return;
+  }
+
   const float moveSpeed = 15.0f; // Скорость движения
   const float mouseSensitivity = 0.003f;
 

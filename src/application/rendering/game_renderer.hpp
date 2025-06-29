@@ -21,6 +21,7 @@ public:
     m_projection = projection;
     m_testRenderer->setProjection(projection);
   }
+  void setCameraPos(const glm::vec3 &pos) { m_testRenderer->setCameraPos(pos); }
 
 private:
   engine::core::Window &m_window;
