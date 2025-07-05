@@ -1,5 +1,4 @@
 #include "application.hpp"
-#include "SDL3/SDL_scancode.h"
 #include "glm/ext/quaternion_trigonometric.hpp"
 #include "imgui_impl_sdl3.h"
 #include <SDL3/SDL_events.h>
@@ -10,6 +9,12 @@
 Application::Application(int width, int height, std::string_view name)
     : m_width{width}, m_height{height}, m_window{width, height, name}, m_gameRenderer{m_window} {
   m_camera.setPerspective(60.0f, static_cast<float>(m_width) / static_cast<float>(m_height), 0.1f, 1000.0f);
+  SDL_GL_SetSwapInterval(0);
+  using Key = engine::core::Keyboard::Key;
+  m_keyboard.onKeyDown(Key::F, [this]() {
+    m_mouseCaptured = !m_mouseCaptured;
+    SDL_SetWindowRelativeMouseMode(m_window.getWindow(), m_mouseCaptured);
+  });
 }
 
 Application::~Application() {
@@ -60,14 +65,9 @@ void Application::update(float dt) {
 void Application::render(float dt) { m_gameRenderer.render(dt); }
 
 void Application::updateCamera(float dt) {
-  // TODO TESTING ONLY
-  static bool mouseCaptured = false;
-  if (m_keyboard.isKeyDown(SDL_SCANCODE_F)) {
-    mouseCaptured = !mouseCaptured;
-    SDL_SetWindowRelativeMouseMode(m_window.getWindow(), mouseCaptured);
-  }
+  using Key = engine::core::Keyboard::Key;
 
-  if (!mouseCaptured) {
+  if (!m_mouseCaptured) {
     return;
   }
 
@@ -76,17 +76,17 @@ void Application::updateCamera(float dt) {
 
   glm::vec3 moveDirection(0.0f);
 
-  if (m_keyboard.isKeyDown(SDL_SCANCODE_W))
+  if (m_keyboard.isKeyDown(Key::W))
     moveDirection += m_camera.getDirection();
-  if (m_keyboard.isKeyDown(SDL_SCANCODE_S))
+  if (m_keyboard.isKeyDown(Key::S))
     moveDirection -= m_camera.getDirection();
-  if (m_keyboard.isKeyDown(SDL_SCANCODE_A))
+  if (m_keyboard.isKeyDown(Key::A))
     moveDirection -= m_camera.getRight();
-  if (m_keyboard.isKeyDown(SDL_SCANCODE_D))
+  if (m_keyboard.isKeyDown(Key::D))
     moveDirection += m_camera.getRight();
-  if (m_keyboard.isKeyDown(SDL_SCANCODE_SPACE))
+  if (m_keyboard.isKeyDown(Key::SPACE))
     moveDirection.y += 1.0f;
-  if (m_keyboard.isKeyDown(SDL_SCANCODE_X))
+  if (m_keyboard.isKeyDown(Key::X))
     moveDirection.y -= 1.0f;
 
   if (glm::length(moveDirection) > 0.0f) {
