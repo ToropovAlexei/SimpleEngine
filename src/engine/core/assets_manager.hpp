@@ -1,5 +1,7 @@
 #pragma once
 
+#include <unordered_set>
+#include <vector>
 #ifndef NDEBUG
 #include "efsw/efsw.hpp"
 #include <functional>
@@ -59,6 +61,11 @@ private:
 #ifndef NDEBUG
   static void onAssetsModified(std::string filename);
 #endif
+
+  static std::vector<char> readFile(std::string_view filename);
+
+  static std::string loadShaderWithIncludes(const std::filesystem::path &path,
+                                            std::unordered_set<std::string> &includedFiles, int depth = 0);
 
 private:
   static std::filesystem::path assetsPath;

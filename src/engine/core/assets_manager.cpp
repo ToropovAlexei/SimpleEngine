@@ -31,6 +31,54 @@ Texture AssetsManager::loadTexture(std::string_view path) {
 };
 
 std::vector<char> AssetsManager::loadShader(std::string_view path) {
+  std::unordered_set<std::string> includedFiles;
+  std::string code = loadShaderWithIncludes(std::filesystem::path(shadersPath / path.data()), includedFiles);
+  return std::vector<char>(code.begin(), code.end());
+}
+
+std::string AssetsManager::loadShaderWithIncludes(const std::filesystem::path &path,
+                                                  std::unordered_set<std::string> &includedFiles, int depth) {
+  SE_ASSERT(depth <= 32, "Maximum include depth reached (possible cyclic include)");
+
+  std::string canonicalPath = std::filesystem::canonical(path).string();
+  if (includedFiles.count(canonicalPath)) {
+    return "";
+  }
+  includedFiles.insert(canonicalPath);
+
+  std::ifstream file(path);
+  SE_ASSERT(file.is_open(), "Failed to open shader file: {}", path.string());
+
+  std::stringstream buffer;
+  std::string line;
+  std::filesystem::path parentDir = path.parent_path();
+
+  while (std::getline(file, line)) {
+    if (line.find("#include") == 0) {
+      size_t start = line.find('"');
+      if (start == std::string::npos)
+        start = line.find('<');
+      if (start == std::string::npos)
+        continue;
+
+      size_t end = line.find_last_of(start == line.find('"') ? '"' : '>');
+      if (end == std::string::npos)
+        continue;
+
+      std::string includePath = line.substr(start + 1, end - start - 1);
+      std::filesystem::path fullIncludePath = parentDir / includePath;
+
+      std::string includedContent = loadShaderWithIncludes(fullIncludePath, includedFiles, depth + 1);
+      buffer << includedContent << "\n";
+    } else {
+      buffer << line << "\n";
+    }
+  }
+
+  return buffer.str();
+}
+
+std::vector<char> AssetsManager::readFile(std::string_view path) {
   std::ifstream file(shadersPath / path.data(), std::ios::ate | std::ios::binary);
 
   SE_ASSERT(file.is_open(), "Failed to open {}!", path);
