@@ -17,12 +17,20 @@ struct alignas(16) GlobalUBO {
   alignas(16) glm::vec3 cameraPos;
   alignas(16) glm::vec3 lightPos;
   alignas(16) glm::vec3 lightColor;
-  float elapsedTime;
-  float padding[3];
+  alignas(16) float elapsedTime;
+};
+
+struct alignas(16) Material {
+  glm::vec3 ambient;
+  float shininess;
+  glm::vec3 diffuse;
+  float opacity;
+  glm::vec3 specular;
 };
 
 struct InstanceData {
   glm::mat4 model;
+  alignas(16) uint32_t materialId;
 };
 
 class GlTestRenderer {
@@ -51,8 +59,10 @@ private:
   std::unique_ptr<engine::renderer::GLBuffer> m_ubo;
   std::unique_ptr<engine::renderer::GLTexture> m_tex;
   std::unique_ptr<engine::renderer::GLBuffer> m_ssbo;
+  std::unique_ptr<engine::renderer::GLBuffer> m_materialsSSBO;
 
   std::vector<InstanceData> m_instances;
+  std::vector<Material> m_materials;
 
   int m_width;
   int m_height;
@@ -61,7 +71,7 @@ private:
                          glm::mat4(1.0f),
                          glm::vec3(0.0f, 0.0f, 0.0f),
                          glm::vec3(0.0f, 0.0f, 0.0f),
-                         glm::vec3(0.5f, 0.5f, 0.5f),
+                         glm::vec3(1.0f, 1.0f, 1.0f),
                          0.0f};
 
   bool m_shouldReloadShaders = false;
