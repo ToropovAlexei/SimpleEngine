@@ -14,9 +14,14 @@
 struct alignas(16) GlobalUBO {
   glm::mat4 view;
   glm::mat4 projection;
-  alignas(16) glm::vec3 cameraPos;
-  alignas(16) glm::vec3 lightPos;
-  alignas(16) glm::vec3 lightColor;
+  glm::vec3 cameraPos;
+  float constant;
+  glm::vec3 lightPos;
+  float linear;
+  glm::vec3 lightColor;
+  float quadratic;
+  alignas(16) glm::vec3 globalLightDir;
+  alignas(16) glm::vec3 globalLightColor;
   alignas(16) float elapsedTime;
 };
 
@@ -70,6 +75,11 @@ private:
   GlobalUBO m_uboData = {glm::mat4(1.0f),
                          glm::mat4(1.0f),
                          glm::vec3(0.0f, 0.0f, 0.0f),
+                         1.0f,
+                         glm::vec3(0.0f, 0.0f, 0.0f),
+                         0.09f,
+                         glm::vec3(1.0f, 1.0f, 1.0f),
+                         0.0032f,
                          glm::vec3(0.0f, 0.0f, 0.0f),
                          glm::vec3(1.0f, 1.0f, 1.0f),
                          0.0f};

@@ -229,6 +229,9 @@ void GlTestRenderer::render() {
               static_cast<double>(ImGui::GetIO().Framerate));
   ImGui::ColorEdit3("Light Color", glm::value_ptr(m_uboData.lightColor));
   ImGui::SliderFloat3("Light Position", glm::value_ptr(m_uboData.lightPos), -10.0f, 10.0f);
+  ImGui::SliderFloat("Constant", &m_uboData.constant, 0.0f, 1.0f);
+  ImGui::SliderFloat("Linear", &m_uboData.linear, 0.0f, 1.0f);
+  ImGui::SliderFloat("Quadratic", &m_uboData.quadratic, 0.0f, 1.0f);
   ImGui::End();
 
   ImGui::Begin("Material");
@@ -237,6 +240,11 @@ void GlTestRenderer::render() {
   ImGui::ColorEdit3("Specular", glm::value_ptr(m_materials[0].specular));
   ImGui::SliderFloat("Shininess", &m_materials[0].shininess, 0.0f, 128.0f);
   ImGui::SliderFloat("Opacity", &m_materials[0].opacity, 0.0f, 1.0f);
+  ImGui::End();
+
+  ImGui::Begin("Directional Light");
+  ImGui::ColorEdit3("Color", glm::value_ptr(m_uboData.globalLightColor));
+  ImGui::SliderFloat3("Direction", glm::value_ptr(m_uboData.globalLightDir), -1.0f, 1.0f);
   ImGui::End();
 }
 
