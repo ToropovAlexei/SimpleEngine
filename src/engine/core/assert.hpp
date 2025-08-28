@@ -2,22 +2,28 @@
 #include <engine/core/logger.hpp>
 #include <source_location>
 
-#ifndef NDEBUG
-#define SE_ASSERT(condition, ...)                                                                           \
-  do {                                                                                                      \
-    if (!(condition)) {                                                                                     \
-      core::Logger::fatal("Assertion failed: {} in {} at {}:{}", #condition, __FILE__, __func__, __LINE__); \
-      core::Logger::fatal(__VA_ARGS__);                                                                     \
-      if (std::getenv("SE_BREAK_ON_ASSERT")) { std::abort(); }                                              \
-      std::terminate();                                                                                     \
-    }                                                                                                       \
-  } while (false)
-#else
-#define SE_ASSERT(condition, ...) ((void)0)
-#endif
-
 
 namespace engine::core {
+template<typename... Args> struct assertion
+{
+  assertion(bool condition,
+    fmt::format_string<Args...> fmt,
+    Args &&...args,
+    const std::source_location &loc = std::source_location::current())
+  {
+#ifndef NDEBUG
+    if (!condition) [[unlikely]] {
+      Logger::fatal("core::assertion failed in {} at {}:{}", loc.file_name(), loc.function_name(), loc.line());
+      Logger::fatal(fmt, std::forward<Args>(args)...);
+
+      std::terminate();
+    }
+#endif
+  }
+};
+
+template<typename... Args> assertion(bool, fmt::format_string<Args...>, Args &&...) -> assertion<Args...>;
+
 template<typename... Args> struct unreachable
 {
   explicit unreachable(fmt::format_string<Args...> fmt,

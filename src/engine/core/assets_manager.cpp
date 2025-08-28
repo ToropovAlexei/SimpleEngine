@@ -42,14 +42,14 @@ std::string AssetsManager::loadShaderWithIncludes(const std::filesystem::path &p
   std::unordered_set<std::string> &includedFiles,
   int depth)
 {
-  SE_ASSERT(depth <= 32, "Maximum include depth reached (possible cyclic include)");
+  core::assertion(depth <= 32, "Maximum include depth reached (possible cyclic include)");
 
   std::string canonicalPath = std::filesystem::canonical(path).string();
   if (includedFiles.count(canonicalPath)) { return ""; }
   includedFiles.insert(canonicalPath);
 
   std::ifstream file(path);
-  SE_ASSERT(file.is_open(), "Failed to open shader file: {}", path.string());
+  core::assertion(file.is_open(), "Failed to open shader file: {}", path.string());
 
   std::stringstream buffer;
   std::string line;
@@ -81,7 +81,7 @@ std::vector<char> AssetsManager::readFile(std::string_view filename)
 {
   std::ifstream file(shadersPath / filename.data(), std::ios::ate | std::ios::binary);
 
-  SE_ASSERT(file.is_open(), "Failed to open {}!", filename);
+  core::assertion(file.is_open(), "Failed to open {}!", filename);
 
   size_t fileSize = static_cast<size_t>(file.tellg());
   std::vector<char> buffer(fileSize);

@@ -80,19 +80,19 @@ namespace renderer {
     SpvReflectShaderModule reflectModule;
     SpvReflectResult result = spvReflectCreateShaderModule(code.size(), code.data(), &reflectModule);
 
-    SE_ASSERT(result == SPV_REFLECT_RESULT_SUCCESS, "Spirv reflection failed!");
+    core::assertion(result == SPV_REFLECT_RESULT_SUCCESS, "Spirv reflection failed!");
 
     uint32_t inputCount = 0;
     result = spvReflectEnumerateInputVariables(&reflectModule, &inputCount, NULL);
 
-    SE_ASSERT(result == SPV_REFLECT_RESULT_SUCCESS, "Spirv reflection failed!");
+    core::assertion(result == SPV_REFLECT_RESULT_SUCCESS, "Spirv reflection failed!");
 
     if (inputCount > 0) {
       std::vector<SpvReflectInterfaceVariable *> inputVariables(inputCount);
 
       result = spvReflectEnumerateInputVariables(&reflectModule, &inputCount, inputVariables.data());
 
-      SE_ASSERT(result == SPV_REFLECT_RESULT_SUCCESS, "Spirv reflection failed!");
+      core::assertion(result == SPV_REFLECT_RESULT_SUCCESS, "Spirv reflection failed!");
 
       vk::VertexInputBindingDescription2EXT bindingDescription = {};
       bindingDescription.binding = 0;

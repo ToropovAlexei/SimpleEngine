@@ -59,7 +59,7 @@ void GLTexture::setData(void *data, int level)
 
 void GLTexture::setCubeFaceData(void *data, GLTextureFace face, int level)
 {
-  SE_ASSERT(m_type == GLTextureType::TextureCube, "setCubeFaceData only for cube maps");
+  core::assertion(m_type == GLTextureType::TextureCube, "setCubeFaceData only for cube maps");
   glTextureSubImage3D(m_id,
     level,
     0,

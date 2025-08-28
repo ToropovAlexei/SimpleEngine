@@ -38,10 +38,10 @@ VulkanRenderer::~VulkanRenderer()
 
 void VulkanRenderer::beginRendering(vk::CommandBuffer commandBuffer)
 {
-  SE_ASSERT(m_isFrameStarted,
+  core::assertion(m_isFrameStarted,
     "Can't call beginSwapChainRenderPass "
     "without first calling beginFrame");
-  SE_ASSERT(
+  core::assertion(
     commandBuffer == getCurrentCommandBuffer(), "Can't call beginSwapChainRenderPass on a different command buffer");
 
   m_device->transitionImageLayout(commandBuffer,
@@ -103,10 +103,10 @@ void VulkanRenderer::beginRendering(vk::CommandBuffer commandBuffer)
 
 void VulkanRenderer::endRendering(vk::CommandBuffer commandBuffer)
 {
-  SE_ASSERT(m_isFrameStarted,
+  core::assertion(m_isFrameStarted,
     "Can't call endSwapChainRenderPass "
     "without first calling beginFrame");
-  SE_ASSERT(
+  core::assertion(
     commandBuffer == getCurrentCommandBuffer(), "Can't call endSwapChainRenderPass on a different command buffer");
 
   commandBuffer.endRendering();
@@ -124,7 +124,7 @@ void VulkanRenderer::endRendering(vk::CommandBuffer commandBuffer)
 
 vk::CommandBuffer VulkanRenderer::beginFrame()
 {
-  SE_ASSERT(!m_isFrameStarted, "Can't call beginFrame while already in progress");
+  core::assertion(!m_isFrameStarted, "Can't call beginFrame while already in progress");
 
   auto result = m_swapChain->acquireNextImage(&m_currentImageIndex);
 
@@ -133,7 +133,7 @@ vk::CommandBuffer VulkanRenderer::beginFrame()
     return nullptr;
   }
 
-  SE_ASSERT(
+  core::assertion(
     result == vk::Result::eSuccess || result == vk::Result::eSuboptimalKHR, "Failed to acquire swap chain image!");
 
 #ifndef NDEBUG
@@ -149,7 +149,7 @@ vk::CommandBuffer VulkanRenderer::beginFrame()
 
 void VulkanRenderer::endFrame()
 {
-  SE_ASSERT(m_isFrameStarted, "Can't call endFrame while frame not in progress");
+  core::assertion(m_isFrameStarted, "Can't call endFrame while frame not in progress");
 
   auto commandBuffer = getCurrentCommandBuffer();
   commandBuffer.end();
@@ -183,7 +183,7 @@ void VulkanRenderer::recreateSwapChain()
     std::shared_ptr<VulkanSwapchain> oldSwapChain = std::move(m_swapChain);
     m_swapChain = std::make_unique<VulkanSwapchain>(m_device.get(), extent, oldSwapChain);
 
-    SE_ASSERT(m_swapChain->compareSwapFormats(*oldSwapChain), "Swap chain image format has changed!");
+    core::assertion(m_swapChain->compareSwapFormats(*oldSwapChain), "Swap chain image format has changed!");
   }
   core::Logger::info("Swap chain recreated");
 }
@@ -341,8 +341,8 @@ void VulkanRenderer::copyBuffer(VkCommandBuffer commandBuffer,
   size_t srcBufferSize = m_bufferManager->getBufferSize(srcBuffer);
   size_t dstBufferSize = m_bufferManager->getBufferSize(dstBuffer);
 
-  SE_ASSERT(srcOffset + range <= srcBufferSize, "Source Buffer out of bounds!");
-  SE_ASSERT(dstOffset + range <= dstBufferSize, "Destination Buffer out of bounds!");
+  core::assertion(srcOffset + range <= srcBufferSize, "Source Buffer out of bounds!");
+  core::assertion(dstOffset + range <= dstBufferSize, "Destination Buffer out of bounds!");
 
   vkCmdCopyBuffer(commandBuffer, vkSrcBuffer, vkDstBuffer, 1, &copyRegion);
 }
