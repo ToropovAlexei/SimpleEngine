@@ -58,6 +58,12 @@ CPMAddPackage(
   GIT_TAG master
 )
 
+CPMAddPackage(
+  NAME spdlog
+  VERSION 1.15.3
+  GITHUB_REPOSITORY gabime/spdlog
+)
+
 set(GLAD_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/glad/include)
 add_library(glad STATIC ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/glad/src/gl.c)
 target_include_directories(glad PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/glad/include)
@@ -102,6 +108,7 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
     OpenGL::GL
     glad
     efsw
+    spdlog::spdlog
 )
 
 target_compile_definitions(${PROJECT_NAME} PRIVATE

@@ -1,70 +1,44 @@
 #pragma once
 
-#include <chrono>
-#include <format>
-#include <print>
-#include <sstream>
-#include <string>
+#include <memory>
+
+#ifdef NDEBUG
+#define SPDLOG_ACTIVE_LEVEL SPDLOG_LEVEL_INFO
+#else
+#define SPDLOG_ACTIVE_LEVEL SPDLOG_LEVEL_TRACE
+#endif
+
+#include <spdlog/sinks/stdout_color_sinks.h>
+#include <spdlog/spdlog.h>
 
 namespace engine::core {
-
-enum class LogLevel { Trace, Debug, Info, Warn, Error, Fatal };
-
 class Logger
 {
 public:
-  template<LogLevel Level, typename... Args> static void log(std::format_string<Args...> fmt, Args &&...args)
+  static void init()
   {
-    std::println("[{}][{}] {}", currentTime(), logLevelToString(Level), std::format(fmt, std::forward<Args>(args)...));
+    if (s_logger) { return; };
+    auto console_sink = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();
+    console_sink->set_pattern("%^[%T] %n: %v%$");
+
+    s_logger = std::make_shared<spdlog::logger>("SimpleEngine", console_sink);
+    s_logger->set_level(spdlog::level::trace);
+    spdlog::register_logger(s_logger);
   }
+
+
+  static std::shared_ptr<spdlog::logger> &get() { return s_logger; }
 
 private:
-  static constexpr std::string logLevelToString(LogLevel level)
-  {
-    switch (level) {
-    case LogLevel::Trace:
-      return "\033[37mTRACE\033[0m";// Grey
-    case LogLevel::Debug:
-      return "\033[34mDEBUG\033[0m";// Blue
-    case LogLevel::Info:
-      return "\033[32mINFO\033[0m";// Green
-    case LogLevel::Warn:
-      return "\033[33mWARN\033[0m";// Yellow
-    case LogLevel::Error:
-      return "\033[31mERROR\033[0m";// Red
-    case LogLevel::Fatal:
-      return "\033[41m\033[37mFATAL\033[0m";// Red on Grey
-    default:
-      return "\033[0mUNKNOWN\033[0m";// White
-    }
-  }
-
-  static std::string currentTime()
-  {
-    auto now = std::chrono::system_clock::now();
-    auto time = std::chrono::system_clock::to_time_t(now);
-    std::tm tm = *std::localtime(&time);
-
-    std::stringstream ss;
-    ss << std::put_time(&tm, "%H:%M:%S");
-    return ss.str();
-  }
+  static std::shared_ptr<spdlog::logger> s_logger;
 };
 
-#ifndef NDEBUG
-#define LOG_TRACE(fmt, ...) engine::core::Logger::log<engine::core::LogLevel::Trace>(fmt __VA_OPT__(, ) __VA_ARGS__)
-#define LOG_DEBUG(fmt, ...) engine::core::Logger::log<engine::core::LogLevel::Debug>(fmt __VA_OPT__(, ) __VA_ARGS__)
-#define LOG_INFO(fmt, ...) engine::core::Logger::log<engine::core::LogLevel::Info>(fmt __VA_OPT__(, ) __VA_ARGS__)
-#define LOG_WARN(fmt, ...) engine::core::Logger::log<engine::core::LogLevel::Warn>(fmt __VA_OPT__(, ) __VA_ARGS__)
-#define LOG_ERROR(fmt, ...) engine::core::Logger::log<engine::core::LogLevel::Error>(fmt __VA_OPT__(, ) __VA_ARGS__)
-#define LOG_FATAL(fmt, ...) engine::core::Logger::log<engine::core::LogLevel::Fatal>(fmt __VA_OPT__(, ) __VA_ARGS__)
-#else
-#define LOG_TRACE(fmt, ...)
-#define LOG_DEBUG(fmt, ...)
-#define LOG_INFO(fmt, ...)
-#define LOG_WARN(fmt, ...)
-#define LOG_ERROR(fmt, ...)
-#define LOG_FATAL(fmt, ...)
-#endif
-
 }// namespace engine::core
+
+// Client log macros
+#define LOG_TRACE(...) SPDLOG_LOGGER_TRACE(engine::core::Logger::get(), __VA_ARGS__)
+#define LOG_DEBUG(...) SPDLOG_LOGGER_DEBUG(engine::core::Logger::get(), __VA_ARGS__)
+#define LOG_INFO(...) SPDLOG_LOGGER_INFO(engine::core::Logger::get(), __VA_ARGS__)
+#define LOG_WARN(...) SPDLOG_LOGGER_WARN(engine::core::Logger::get(), __VA_ARGS__)
+#define LOG_ERROR(...) SPDLOG_LOGGER_ERROR(engine::core::Logger::get(), __VA_ARGS__)
+#define LOG_FATAL(...) SPDLOG_LOGGER_CRITICAL(engine::core::Logger::get(), __VA_ARGS__)
