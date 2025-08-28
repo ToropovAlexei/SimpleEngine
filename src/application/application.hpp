@@ -9,7 +9,8 @@
 #include <string>
 #include <string_view>
 
-class Application {
+class Application
+{
 public:
   Application(int width, int height, std::string_view name);
   ~Application();
@@ -22,7 +23,6 @@ private:
   void render(float dt);
   void updateCamera(float dt);
 
-private:
   int m_width;
   int m_height;
   std::string m_name;

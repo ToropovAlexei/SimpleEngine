@@ -92,9 +92,13 @@ add_executable(${PROJECT_NAME}
 
 target_include_directories(${PROJECT_NAME} PRIVATE
     ${CMAKE_SOURCE_DIR}/src
-    ${stb_SOURCE_DIR}
     ${IMGUI_DIR}
     ${GLAD_INCLUDE_DIR}
+)
+
+target_include_directories(${PROJECT_NAME} SYSTEM PRIVATE
+    ${stb_SOURCE_DIR}
+    ${spirv-reflect_SOURCE_DIR}
 )
 
 find_program(GLSL_VALIDATOR NAMES glslangValidator)
