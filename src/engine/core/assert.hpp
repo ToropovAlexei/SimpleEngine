@@ -1,4 +1,6 @@
+#pragma once
 #include <engine/core/logger.hpp>
+#include <source_location>
 
 #ifndef NDEBUG
 #define SE_ASSERT(condition, ...)                                                                           \
@@ -14,20 +16,20 @@
 #define SE_ASSERT(condition, ...) ((void)0)
 #endif
 
+
+namespace engine::core {
+template<typename... Args> struct unreachable
+{
+  explicit unreachable(fmt::format_string<Args...> fmt,
+    Args &&...args,
+    const std::source_location &loc = std::source_location::current())
+  {
 #ifndef NDEBUG
-#define SE_UNREACHABLE(...)                                                                       \
-  do {                                                                                            \
-    core::Logger::fatal("Unreachable code reached in {} at {}:{}", __func__, __FILE__, __LINE__); \
-    core::Logger::fatal(__VA_ARGS__);                                                             \
-    if (std::getenv("SE_BREAK_ON_UNREACHABLE")) { std::abort(); }                                 \
-    std::terminate();                                                                             \
-  } while (false)
-#else
-#if defined(__GNUC__) || defined(__clang__)
-#define SE_UNREACHABLE(...) __builtin_unreachable()
-#elif defined(_MSC_VER)
-#define SE_UNREACHABLE(...) __assume(0)
-#else
-#define SE_UNREACHABLE(...) std::terminate()
+    core::Logger::fatal("Unreachable code reached in {} at {}:{}", loc.function_name(), loc.file_name(), loc.line());
+    core::Logger::fatal(fmt, std::forward<Args>(args)...);
+    std::terminate();
 #endif
-#endif
+  }
+};
+template<typename... Args> unreachable(fmt::format_string<Args...>, Args &&...) -> unreachable<Args...>;
+}// namespace engine::core
