@@ -2,10 +2,9 @@
 #include <SDL3/SDL_video.h>
 #include <engine/core/logger.hpp>
 
-namespace engine {
-
-namespace core {
-Window::Window(int width, int height, std::string_view title) {
+namespace engine::core {
+Window::Window(int width, int height, std::string_view title)
+{
   if (!SDL_Init(SDL_INIT_VIDEO)) {
     LOG_FATAL("Couldn't initialize SDL: {}", SDL_GetError());
     SDL_Quit();
@@ -14,7 +13,7 @@ Window::Window(int width, int height, std::string_view title) {
 
   m_window = SDL_CreateWindow(title.data(), width, height, SDL_WINDOW_RESIZABLE | SDL_WINDOW_OPENGL);
 
-  if (!m_window) {
+  if (m_window == nullptr) {
     LOG_FATAL("Couldn't create window: {}", SDL_GetError());
     SDL_Quit();
   }
@@ -23,16 +22,17 @@ Window::Window(int width, int height, std::string_view title) {
 
 Window::~Window() { SDL_DestroyWindow(m_window); }
 
-int Window::getWidth() {
+int Window::getWidth()
+{
   int width;
   SDL_GetWindowSize(m_window, &width, nullptr);
   return width;
 }
 
-int Window::getHeight() {
+int Window::getHeight()
+{
   int height;
   SDL_GetWindowSize(m_window, nullptr, &height);
   return height;
 }
-} // namespace core
-} // namespace engine
+}// namespace engine::core

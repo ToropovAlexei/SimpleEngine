@@ -12,25 +12,21 @@
 #error Unsupported platform
 #endif
 
-namespace engine {
-namespace core {
+namespace engine::core {
 
 constexpr size_t BUFFER_SIZE = 1024;
 
-inline std::filesystem::path getExecutablePath() {
+inline std::filesystem::path getExecutablePath()
+{
   static const std::filesystem::path executablePath = []() {
     std::array<char, BUFFER_SIZE> buffer{};
 
 #if defined(_WIN32)
     DWORD size = GetModuleFileNameA(nullptr, buffer.data(), static_cast<DWORD>(buffer.size()));
-    if (size == 0) {
-      throw std::runtime_error("Error getting executable path on Windows");
-    }
+    if (size == 0) { throw std::runtime_error("Error getting executable path on Windows"); }
 #elif defined(__linux__)
     ssize_t len = readlink("/proc/self/exe", buffer.data(), buffer.size() - 1);
-    if (len == -1) {
-      throw std::runtime_error("Error getting executable path on Linux");
-    }
+    if (len == -1) { throw std::runtime_error("Error getting executable path on Linux"); }
     buffer[static_cast<size_t>(len)] = '\0';
 #endif
 
@@ -40,9 +36,8 @@ inline std::filesystem::path getExecutablePath() {
   return executablePath;
 }
 
-inline std::filesystem::path getAbsolutePath(std::filesystem::path path) {
+inline std::filesystem::path getAbsolutePath(const std::filesystem::path &path)
+{
   return getExecutablePath().parent_path() / path;
 }
-
-} // namespace core
-} // namespace engine
+}// namespace engine::core

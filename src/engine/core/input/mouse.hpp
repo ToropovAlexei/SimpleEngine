@@ -4,9 +4,10 @@
 #include <SDL3/SDL_mouse.h>
 #include <bitset>
 
-namespace engine {
-namespace core {
-class Mouse {
+
+namespace engine::core {
+class Mouse
+{
 public:
   enum class Button {
     LEFT = SDL_BUTTON_LEFT,
@@ -17,13 +18,14 @@ public:
     COUNT
   };
 
-public:
-  void clearDeltas() noexcept {
+  void clearDeltas() noexcept
+  {
     m_dX = 0;
     m_dY = 0;
   }
 
-  void handleEvent(const SDL_Event &event) noexcept {
+  void handleEvent(const SDL_Event &event) noexcept
+  {
     if (event.type == SDL_EVENT_MOUSE_MOTION) {
       m_X = event.motion.x;
       m_Y = event.motion.y;
@@ -34,12 +36,12 @@ public:
     }
   }
 
-  inline bool isButtonPressed(Button button) const noexcept { return m_pressedBtns[static_cast<size_t>(button)]; }
-  inline bool isButtonReleased(Button button) const noexcept { return !m_pressedBtns[static_cast<size_t>(button)]; }
-  inline float getMouseX() const noexcept { return m_X; }
-  inline float getMouseY() const noexcept { return m_Y; }
-  inline float getMouseDeltaX() const noexcept { return m_dX; }
-  inline float getMouseDeltaY() const noexcept { return m_dY; }
+  bool isButtonPressed(Button button) const noexcept { return m_pressedBtns[static_cast<size_t>(button)]; }
+  bool isButtonReleased(Button button) const noexcept { return !m_pressedBtns[static_cast<size_t>(button)]; }
+  float getMouseX() const noexcept { return m_X; }
+  float getMouseY() const noexcept { return m_Y; }
+  float getMouseDeltaX() const noexcept { return m_dX; }
+  float getMouseDeltaY() const noexcept { return m_dY; }
 
 private:
   float m_X = 0;
@@ -48,5 +50,4 @@ private:
   float m_dY = 0;
   std::bitset<static_cast<size_t>(Button::COUNT)> m_pressedBtns;
 };
-} // namespace core
-} // namespace engine
+}// namespace engine::core

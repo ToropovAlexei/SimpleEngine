@@ -8,7 +8,8 @@
 #include <memory>
 
 namespace engine::core {
-Texture AssetsManager::loadTexture(std::string_view path) {
+Texture AssetsManager::loadTexture(std::string_view path)
+{
   Texture texture;
   std::string absPath = std::string(texturesPath / path);
 
@@ -30,20 +31,21 @@ Texture AssetsManager::loadTexture(std::string_view path) {
   return texture;
 };
 
-std::vector<char> AssetsManager::loadShader(std::string_view path) {
+std::vector<char> AssetsManager::loadShader(std::string_view path)
+{
   std::unordered_set<std::string> includedFiles;
   std::string code = loadShaderWithIncludes(std::filesystem::path(shadersPath / path.data()), includedFiles);
   return std::vector<char>(code.begin(), code.end());
 }
 
 std::string AssetsManager::loadShaderWithIncludes(const std::filesystem::path &path,
-                                                  std::unordered_set<std::string> &includedFiles, int depth) {
+  std::unordered_set<std::string> &includedFiles,
+  int depth)
+{
   SE_ASSERT(depth <= 32, "Maximum include depth reached (possible cyclic include)");
 
   std::string canonicalPath = std::filesystem::canonical(path).string();
-  if (includedFiles.count(canonicalPath)) {
-    return "";
-  }
+  if (includedFiles.count(canonicalPath)) { return ""; }
   includedFiles.insert(canonicalPath);
 
   std::ifstream file(path);
@@ -56,14 +58,11 @@ std::string AssetsManager::loadShaderWithIncludes(const std::filesystem::path &p
   while (std::getline(file, line)) {
     if (line.find("#include") == 0) {
       size_t start = line.find('"');
-      if (start == std::string::npos)
-        start = line.find('<');
-      if (start == std::string::npos)
-        continue;
+      if (start == std::string::npos) { start = line.find('<'); }
+      if (start == std::string::npos) { continue; }
 
       size_t end = line.find_last_of(start == line.find('"') ? '"' : '>');
-      if (end == std::string::npos)
-        continue;
+      if (end == std::string::npos) { continue; }
 
       std::string includePath = line.substr(start + 1, end - start - 1);
       std::filesystem::path fullIncludePath = parentDir / includePath;
@@ -78,10 +77,11 @@ std::string AssetsManager::loadShaderWithIncludes(const std::filesystem::path &p
   return buffer.str();
 }
 
-std::vector<char> AssetsManager::readFile(std::string_view path) {
-  std::ifstream file(shadersPath / path.data(), std::ios::ate | std::ios::binary);
+std::vector<char> AssetsManager::readFile(std::string_view filename)
+{
+  std::ifstream file(shadersPath / filename.data(), std::ios::ate | std::ios::binary);
 
-  SE_ASSERT(file.is_open(), "Failed to open {}!", path);
+  SE_ASSERT(file.is_open(), "Failed to open {}!", filename);
 
   size_t fileSize = static_cast<size_t>(file.tellg());
   std::vector<char> buffer(fileSize);
@@ -93,15 +93,16 @@ std::vector<char> AssetsManager::readFile(std::string_view path) {
   return buffer;
 }
 
-Texture AssetsManager::createErrorTexture(uint32_t size) {
+Texture AssetsManager::createErrorTexture(uint32_t size)
+{
   Texture texture;
   texture.width = size;
   texture.height = size;
   texture.channels = 4;
 
   texture.data = std::make_unique<std::byte[]>(size * size * 4);
-  const std::byte pink[] = {std::byte(0xFF), std::byte(0x00), std::byte(0xFF), std::byte(0xFF)};
-  const std::byte black[] = {std::byte(0x00), std::byte(0x00), std::byte(0x00), std::byte(0xFF)};
+  const std::byte pink[] = { std::byte(0xFF), std::byte(0x00), std::byte(0xFF), std::byte(0xFF) };
+  const std::byte black[] = { std::byte(0x00), std::byte(0x00), std::byte(0x00), std::byte(0xFF) };
 
   for (uint32_t y = 0; y < size; ++y) {
     for (uint32_t x = 0; x < size; ++x) {
@@ -117,24 +118,24 @@ Texture AssetsManager::createErrorTexture(uint32_t size) {
 }
 
 #ifndef NDEBUG
-AssetsManager::CallbackId AssetsManager::subscribe(FileChangeCallback callback) {
+AssetsManager::CallbackId AssetsManager::subscribe(FileChangeCallback callback)
+{
   if (!efswWatcher) {
     efswWatcher = std::make_unique<efsw::FileWatcher>();
     watcher = std::make_unique<AssetsWatcher>();
     efswWatcher->addWatch(std::filesystem::path(SOURCE_DIR) / "assets", watcher.get(), true);
     efswWatcher->watch();
   }
-  CallbackId id = {nextCallbackId++};
+  CallbackId id = { nextCallbackId++ };
   callbacks[id.value] = callback;
   return id;
 }
 
 void AssetsManager::unsubscribe(CallbackId id) { callbacks.erase(id.value); }
 
-void AssetsManager::onAssetsModified(std::string filename) {
-  for (auto &callback : callbacks) {
-    callback.second(filename);
-  }
+void AssetsManager::onAssetsModified(std::string filename)
+{
+  for (auto &callback : callbacks) { callback.second(filename); }
 }
 
 std::unordered_map<size_t, AssetsManager::FileChangeCallback> AssetsManager::callbacks{};
@@ -146,4 +147,4 @@ size_t AssetsManager::nextCallbackId = 0;
 std::filesystem::path AssetsManager::assetsPath = getAbsolutePath("assets");
 std::filesystem::path AssetsManager::shadersPath = AssetsManager::assetsPath / "shaders";
 std::filesystem::path AssetsManager::texturesPath = AssetsManager::assetsPath / "textures";
-} // namespace engine::core
+}// namespace engine::core

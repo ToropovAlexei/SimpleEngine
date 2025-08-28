@@ -6,39 +6,41 @@
 #include <sstream>
 #include <string>
 
-namespace engine {
-
-namespace core {
+namespace engine::core {
 
 enum class LogLevel { Trace, Debug, Info, Warn, Error, Fatal };
 
-class Logger {
+class Logger
+{
 public:
-  template <LogLevel Level, typename... Args> static void log(std::format_string<Args...> fmt, Args &&...args) {
+  template<LogLevel Level, typename... Args> static void log(std::format_string<Args...> fmt, Args &&...args)
+  {
     std::println("[{}][{}] {}", currentTime(), logLevelToString(Level), std::format(fmt, std::forward<Args>(args)...));
   }
 
 private:
-  static constexpr std::string logLevelToString(LogLevel level) {
+  static constexpr std::string logLevelToString(LogLevel level)
+  {
     switch (level) {
     case LogLevel::Trace:
-      return "\033[37mTRACE\033[0m"; // Grey
+      return "\033[37mTRACE\033[0m";// Grey
     case LogLevel::Debug:
-      return "\033[34mDEBUG\033[0m"; // Blue
+      return "\033[34mDEBUG\033[0m";// Blue
     case LogLevel::Info:
-      return "\033[32mINFO\033[0m"; // Green
+      return "\033[32mINFO\033[0m";// Green
     case LogLevel::Warn:
-      return "\033[33mWARN\033[0m"; // Yellow
+      return "\033[33mWARN\033[0m";// Yellow
     case LogLevel::Error:
-      return "\033[31mERROR\033[0m"; // Red
+      return "\033[31mERROR\033[0m";// Red
     case LogLevel::Fatal:
-      return "\033[41m\033[37mFATAL\033[0m"; // Red on Grey
+      return "\033[41m\033[37mFATAL\033[0m";// Red on Grey
     default:
-      return "\033[0mUNKNOWN\033[0m"; // White
+      return "\033[0mUNKNOWN\033[0m";// White
     }
   }
 
-  static std::string currentTime() {
+  static std::string currentTime()
+  {
     auto now = std::chrono::system_clock::now();
     auto time = std::chrono::system_clock::to_time_t(now);
     std::tm tm = *std::localtime(&time);
@@ -65,5 +67,4 @@ private:
 #define LOG_FATAL(fmt, ...)
 #endif
 
-} // namespace core
-} // namespace engine
+}// namespace engine::core

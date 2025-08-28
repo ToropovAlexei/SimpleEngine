@@ -9,7 +9,7 @@ void Camera::setPosition(const glm::vec3 &position) {
 
 void Camera::setDirection(const glm::vec3 &direction) {
   m_direction = glm::normalize(direction);
-  m_right = glm::normalize(glm::cross(m_direction, glm::vec3(0.0f, 1.0f, 0.0f)));
+  m_right = glm::normalize(glm::cross(m_direction, glm::vec3(0.0F, 1.0F, 0.0F)));
   m_up = glm::normalize(glm::cross(m_right, m_direction));
   updateViewMatrix();
 }

@@ -9,11 +9,13 @@
 #include <functional>
 #include <unordered_map>
 
-namespace engine {
-namespace core {
-class Keyboard {
+
+namespace engine::core {
+class Keyboard
+{
 public:
-  struct CallbackId {
+  struct CallbackId
+  {
     size_t value;
   };
   enum class Key {
@@ -33,31 +35,32 @@ public:
 
 public:
 #ifndef NDEBUG
-  ~Keyboard() {
+  ~Keyboard()
+  {
     if (std::any_of(m_callbacks.begin(), m_callbacks.end(), [](const auto &pair) { return !pair.empty(); })) {
       LOG_WARN("Keyboard has {} callbacks left",
-               std::count_if(m_callbacks.begin(), m_callbacks.end(), [](const auto &pair) { return !pair.empty(); }));
+        std::count_if(m_callbacks.begin(), m_callbacks.end(), [](const auto &pair) { return !pair.empty(); }));
     }
   }
 #endif
 
-  inline void handleEvent(const SDL_Event &event) noexcept {
+  void handleEvent(const SDL_Event &event) noexcept
+  {
     if (event.type == SDL_EVENT_KEY_DOWN || event.type == SDL_EVENT_KEY_UP) {
       if (!m_pressedKeys[event.key.scancode] && event.type == SDL_EVENT_KEY_DOWN) {
-        for (const auto &pair : m_callbacks[event.key.scancode]) {
-          pair.second();
-        }
+        for (const auto &pair : m_callbacks[event.key.scancode]) { pair.second(); }
       }
       m_pressedKeys[event.key.scancode] = event.type == SDL_EVENT_KEY_DOWN;
     }
   }
-  inline bool isKeyDown(Key scancode) const noexcept { return m_pressedKeys[static_cast<SDL_Scancode>(scancode)]; }
-  inline bool isKeyUp(Key scancode) const noexcept { return !m_pressedKeys[static_cast<SDL_Scancode>(scancode)]; }
-  inline void clear() noexcept { m_pressedKeys.reset(); }
+  bool isKeyDown(Key scancode) const noexcept { return m_pressedKeys[static_cast<SDL_Scancode>(scancode)]; }
+  bool isKeyUp(Key scancode) const noexcept { return !m_pressedKeys[static_cast<SDL_Scancode>(scancode)]; }
+  void clear() noexcept { m_pressedKeys.reset(); }
 
-  [[nodiscard]] CallbackId onKeyDown(Key scancode, std::function<void()> callback) {
+  [[nodiscard]] CallbackId onKeyDown(Key scancode, std::function<void()> callback)
+  {
     m_callbacks[static_cast<SDL_Scancode>(scancode)].emplace(nextCallbackId, callback);
-    return {nextCallbackId++};
+    return { nextCallbackId++ };
   }
 
   void unsubscribe(CallbackId id) { m_callbacks[id.value].erase(id.value); }
@@ -67,5 +70,4 @@ private:
   std::array<std::unordered_map<size_t, std::function<void()>>, SDL_SCANCODE_COUNT> m_callbacks;
   size_t nextCallbackId = 0;
 };
-} // namespace core
-} // namespace engine
+}// namespace engine::core

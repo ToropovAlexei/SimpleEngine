@@ -7,10 +7,9 @@
 #include <SDL3/SDL_video.h>
 #include <string_view>
 
-namespace engine {
-
-namespace core {
-class Window {
+namespace engine::core {
+class Window
+{
 public:
   Window(int width, int height, std::string_view title);
   ~Window();
@@ -23,5 +22,4 @@ public:
 private:
   SDL_Window *m_window;
 };
-} // namespace core
-} // namespace engine
+}// namespace engine::core
