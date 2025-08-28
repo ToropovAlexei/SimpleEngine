@@ -26,6 +26,36 @@ public:
     spdlog::register_logger(s_logger);
   }
 
+  template<typename... Args> static void trace(fmt::format_string<Args...> fmt, Args &&...args)
+  {
+    Logger::get()->trace(fmt, std::forward<Args>(args)...);
+  }
+
+  template<typename... Args> static void debug(fmt::format_string<Args...> fmt, Args &&...args)
+  {
+    Logger::get()->debug(fmt, std::forward<Args>(args)...);
+  }
+
+  template<typename... Args> static void info(fmt::format_string<Args...> fmt, Args &&...args)
+  {
+    Logger::get()->info(fmt, std::forward<Args>(args)...);
+  }
+
+  template<typename... Args> static void warn(fmt::format_string<Args...> fmt, Args &&...args)
+  {
+    Logger::get()->warn(fmt, std::forward<Args>(args)...);
+  }
+
+  template<typename... Args> static void error(fmt::format_string<Args...> fmt, Args &&...args)
+  {
+    Logger::get()->error(fmt, std::forward<Args>(args)...);
+  }
+
+  template<typename... Args> static void fatal(fmt::format_string<Args...> fmt, Args &&...args)
+  {
+    Logger::get()->critical(fmt, std::forward<Args>(args)...);
+  }
+
 
   static std::shared_ptr<spdlog::logger> &get() { return s_logger; }
 
@@ -33,12 +63,5 @@ private:
   static std::shared_ptr<spdlog::logger> s_logger;
 };
 
-}// namespace engine::core
 
-// Client log macros
-#define LOG_TRACE(...) SPDLOG_LOGGER_TRACE(engine::core::Logger::get(), __VA_ARGS__)
-#define LOG_DEBUG(...) SPDLOG_LOGGER_DEBUG(engine::core::Logger::get(), __VA_ARGS__)
-#define LOG_INFO(...) SPDLOG_LOGGER_INFO(engine::core::Logger::get(), __VA_ARGS__)
-#define LOG_WARN(...) SPDLOG_LOGGER_WARN(engine::core::Logger::get(), __VA_ARGS__)
-#define LOG_ERROR(...) SPDLOG_LOGGER_ERROR(engine::core::Logger::get(), __VA_ARGS__)
-#define LOG_FATAL(...) SPDLOG_LOGGER_CRITICAL(engine::core::Logger::get(), __VA_ARGS__)
+}// namespace engine::core

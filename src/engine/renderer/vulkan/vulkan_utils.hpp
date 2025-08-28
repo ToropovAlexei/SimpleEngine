@@ -4,21 +4,23 @@
 #include <engine/renderer/descriptors/pipeline_descriptors.hpp>
 #include <vulkan/vulkan.hpp>
 
-#define VK_CHECK_RESULT(result)                                                                                        \
-  do {                                                                                                                 \
-    VkResult res = result;                                                                                             \
-    if (res != VK_SUCCESS) {                                                                                           \
-      SE_THROW_ERROR("Vulkan error: " + std::string(vk::to_string(vk::Result(res))));                                  \
-    }                                                                                                                  \
-  } while (false)
 
-namespace engine {
-namespace renderer {
-class VulkanUtils {
+namespace engine::renderer {
+inline void checkVkResult(VkResult result)
+{
+  if (result != VK_SUCCESS) {
+    std::string errorStr = vk::to_string(vk::Result(result));
+    core::panic("Vulkan error: {}", errorStr);
+  }
+}
+
+class VulkanUtils
+{
 public:
   VulkanUtils() = delete;
 
-  static uint32_t getInputFormatSize(const InputFormat format) {
+  static uint32_t getInputFormatSize(const InputFormat format)
+  {
     switch (format) {
     // 4 bytes per component
     case InputFormat::R32G32B32A32_FLOAT:
@@ -80,12 +82,11 @@ public:
     case InputFormat::R8_SINT:
       return 1;
     default:
-      SE_THROW_ERROR("Invalid input format!");
+      core::panic("Invalid input format!");
     }
 
     return 1;
   }
 };
 
-} // namespace renderer
-} // namespace engine
+}// namespace engine::renderer

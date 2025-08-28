@@ -6,18 +6,18 @@ namespace engine::core {
 Window::Window(int width, int height, std::string_view title)
 {
   if (!SDL_Init(SDL_INIT_VIDEO)) {
-    LOG_FATAL("Couldn't initialize SDL: {}", SDL_GetError());
+    Logger::fatal("Couldn't initialize SDL: {}", SDL_GetError());
     SDL_Quit();
   }
-  LOG_INFO("SDL initialized");
+  Logger::info("SDL initialized");
 
   m_window = SDL_CreateWindow(title.data(), width, height, SDL_WINDOW_RESIZABLE | SDL_WINDOW_OPENGL);
 
   if (m_window == nullptr) {
-    LOG_FATAL("Couldn't create window: {}", SDL_GetError());
+    Logger::fatal("Couldn't create window: {}", SDL_GetError());
     SDL_Quit();
   }
-  LOG_INFO("Window created");
+  Logger::info("Window created");
 }
 
 Window::~Window() { SDL_DestroyWindow(m_window); }

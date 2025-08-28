@@ -6,23 +6,29 @@
 #include <glad/gl.h>
 
 namespace engine::renderer {
-static void GLAPIENTRY debugCallback([[maybe_unused]] GLenum source, [[maybe_unused]] GLenum type,
-                                     [[maybe_unused]] GLuint id, GLenum severity, [[maybe_unused]] GLsizei length,
-                                     const GLchar *message, [[maybe_unused]] const void *userParam) {
+static void GLAPIENTRY debugCallback([[maybe_unused]] GLenum source,
+  [[maybe_unused]] GLenum type,
+  [[maybe_unused]] GLuint id,
+  GLenum severity,
+  [[maybe_unused]] GLsizei length,
+  const GLchar *message,
+  [[maybe_unused]] const void *userParam)
+{
   if (severity == GL_DEBUG_SEVERITY_HIGH) {
-    LOG_ERROR("OpenGL: {}", message);
+    core::Logger::error("OpenGL: {}", message);
   } else if (severity == GL_DEBUG_SEVERITY_MEDIUM) {
-    LOG_WARN("OpenGL: {}", message);
+    core::Logger::warn("OpenGL: {}", message);
   } else if (severity == GL_DEBUG_SEVERITY_LOW) {
-    LOG_INFO("OpenGL: {}", message);
+    core::Logger::info("OpenGL: {}", message);
   } else if (severity == GL_DEBUG_SEVERITY_NOTIFICATION) {
-    // LOG_TRACE("OpenGL: {}", message);
+    // core::Logger::trace("OpenGL: {}", message);
   } else {
-    LOG_INFO("OpenGL: {}", message);
+    core::Logger::info("OpenGL: {}", message);
   }
 }
 
-GlRenderer::GlRenderer(SDL_Window *window) : m_window{window} {
+GlRenderer::GlRenderer(SDL_Window *window) : m_window{ window }
+{
   m_glCtx = SDL_GL_CreateContext(m_window);
   gladLoadGL((GLADloadfunc)SDL_GL_GetProcAddress);
   glEnable(GL_DEPTH_TEST);
@@ -39,14 +45,16 @@ GlRenderer::GlRenderer(SDL_Window *window) : m_window{window} {
   ImGui::StyleColorsDark();
 }
 
-GlRenderer::~GlRenderer() {
+GlRenderer::~GlRenderer()
+{
   ImGui_ImplOpenGL3_Shutdown();
   ImGui_ImplSDL3_Shutdown();
   ImGui::DestroyContext();
   SDL_GL_DestroyContext(m_glCtx);
 }
 
-void GlRenderer::beginFrame() {
+void GlRenderer::beginFrame()
+{
   ImGui_ImplOpenGL3_NewFrame();
   ImGui_ImplSDL3_NewFrame();
   ImGui::NewFrame();
@@ -58,11 +66,12 @@ void GlRenderer::beginFrame() {
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }
 
-void GlRenderer::endFrame() {
+void GlRenderer::endFrame()
+{
   ImGui::Render();
   ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
   SDL_GL_SwapWindow(m_window);
 }
 
 void GlRenderer::onResize(int width, int height) { glViewport(0, 0, width, height); }
-} // namespace engine::renderer
+}// namespace engine::renderer

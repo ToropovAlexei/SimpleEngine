@@ -4,15 +4,20 @@
 
 namespace engine {
 namespace renderer {
-VulkanImage::VulkanImage(VulkanDevice device, uint32_t width, uint32_t height, VkFormat format, VkImageUsageFlags usage)
-    : m_device{device}, m_width{width}, m_height{height}, m_format{format}, m_usage{usage} {
-  VkImageCreateInfo imageCreateInfo{
+  VulkanImage::VulkanImage(VulkanDevice device,
+    uint32_t width,
+    uint32_t height,
+    VkFormat format,
+    VkImageUsageFlags usage)
+    : m_device{ device }, m_width{ width }, m_height{ height }, m_format{ format }, m_usage{ usage }
+  {
+    VkImageCreateInfo imageCreateInfo{
       .sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
       .pNext = nullptr,
       .flags = 0,
       .imageType = VK_IMAGE_TYPE_2D,
       .format = m_format,
-      .extent = {m_width, m_height, 1},
+      .extent = { m_width, m_height, 1 },
       .mipLevels = 1,
       .arrayLayers = 1,
       .samples = VK_SAMPLE_COUNT_1_BIT,
@@ -22,18 +27,18 @@ VulkanImage::VulkanImage(VulkanDevice device, uint32_t width, uint32_t height, V
       .queueFamilyIndexCount = 0,
       .pQueueFamilyIndices = nullptr,
       .initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
-  };
+    };
 
-  VmaAllocationCreateInfo allocCreateInfo = {};
-  allocCreateInfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
+    VmaAllocationCreateInfo allocCreateInfo = {};
+    allocCreateInfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
 
-  VmaAllocation allocation;
-  VK_CHECK_RESULT(
+    VmaAllocation allocation;
+    checkVkResult(
       vmaCreateImage(m_device.getAllocator(), &imageCreateInfo, &allocCreateInfo, &m_image, &allocation, nullptr));
 
-  m_allocationHandle = allocation;
+    m_allocationHandle = allocation;
 
-  VkImageViewCreateInfo imageViewCreateInfo{
+    VkImageViewCreateInfo imageViewCreateInfo{
       .sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
       .pNext = nullptr,
       .flags = 0,
@@ -41,12 +46,12 @@ VulkanImage::VulkanImage(VulkanDevice device, uint32_t width, uint32_t height, V
       .viewType = VK_IMAGE_VIEW_TYPE_2D,
       .format = m_format,
       .components = {},
-      .subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1},
-  };
+      .subresourceRange = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 },
+    };
 
-  vkCreateImageView(m_device.getDevice(), &imageViewCreateInfo, nullptr, &m_imageView);
+    vkCreateImageView(m_device.getDevice(), &imageViewCreateInfo, nullptr, &m_imageView);
 
-  VkSamplerCreateInfo samplerCreateInfo{
+    VkSamplerCreateInfo samplerCreateInfo{
       .sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO,
       .pNext = nullptr,
       .flags = 0,
@@ -65,21 +70,16 @@ VulkanImage::VulkanImage(VulkanDevice device, uint32_t width, uint32_t height, V
       .borderColor = VK_BORDER_COLOR_FLOAT_OPAQUE_BLACK,
       .unnormalizedCoordinates = VK_FALSE,
       .anisotropyEnable = VK_FALSE,
-  };
+    };
 
-  vkCreateSampler(m_device.getDevice(), &samplerCreateInfo, nullptr, &m_sampler);
-}
+    vkCreateSampler(m_device.getDevice(), &samplerCreateInfo, nullptr, &m_sampler);
+  }
 
-VulkanImage::~VulkanImage() {
-  if (m_imageView) {
-    vkDestroyImageView(m_device.getDevice(), m_imageView, nullptr);
+  VulkanImage::~VulkanImage()
+  {
+    if (m_imageView) { vkDestroyImageView(m_device.getDevice(), m_imageView, nullptr); }
+    if (m_sampler) { vkDestroySampler(m_device.getDevice(), m_sampler, nullptr); }
+    if (m_allocationHandle) { vmaDestroyImage(m_device.getAllocator(), m_image, m_allocationHandle); }
   }
-  if (m_sampler) {
-    vkDestroySampler(m_device.getDevice(), m_sampler, nullptr);
-  }
-  if (m_allocationHandle) {
-    vmaDestroyImage(m_device.getAllocator(), m_image, m_allocationHandle);
-  }
-}
-} // namespace renderer
-} // namespace engine
+}// namespace renderer
+}// namespace engine

@@ -3,7 +3,8 @@
 #include <string>
 
 namespace engine::renderer {
-GLShader::GLShader(const std::vector<char> &code, ShaderType type) {
+GLShader::GLShader(const std::vector<char> &code, ShaderType type)
+{
   m_shaderId = glCreateShader(type);
   std::string shaderStr(code.data(), code.size());
   auto codeCStr = shaderStr.c_str();
@@ -21,14 +22,13 @@ GLShader::GLShader(const std::vector<char> &code, ShaderType type) {
     std::vector<GLchar> errorLog(static_cast<size_t>(logLength));
     glGetShaderInfoLog(m_shaderId, logLength, nullptr, errorLog.data());
 
-    LOG_ERROR("Shader compilation failed: {}", errorLog.data());
+    core::Logger::error("Shader compilation failed: {}", errorLog.data());
   }
 #endif
 }
 
-GLShader::~GLShader() {
-  if (m_shaderId != 0) {
-    glDeleteShader(m_shaderId);
-  }
+GLShader::~GLShader()
+{
+  if (m_shaderId != 0) { glDeleteShader(m_shaderId); }
 }
-} // namespace engine::renderer
+}// namespace engine::renderer

@@ -19,7 +19,7 @@ Texture AssetsManager::loadTexture(std::string_view path)
   std::byte *rawData = reinterpret_cast<std::byte *>(stbi_load(absPath.c_str(), &width, &height, &channels, 0));
 
   if (!rawData) {
-    LOG_ERROR("Failed to load texture: {}", absPath);
+    Logger::error("Failed to load texture: {}", absPath);
     return createErrorTexture();
   }
 

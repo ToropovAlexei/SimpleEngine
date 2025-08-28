@@ -1,30 +1,26 @@
 #include <engine/core/logger.hpp>
 
 #ifndef NDEBUG
-#define SE_ASSERT(condition, ...)                                                                                      \
-  do {                                                                                                                 \
-    if (!(condition)) {                                                                                                \
-      LOG_FATAL("Assertion failed: {} in {} at {}:{}", #condition, __FILE__, __func__, __LINE__);                      \
-      LOG_FATAL(__VA_ARGS__);                                                                                          \
-      if (std::getenv("SE_BREAK_ON_ASSERT")) {                                                                         \
-        std::abort();                                                                                                  \
-      }                                                                                                                \
-      std::terminate();                                                                                                \
-    }                                                                                                                  \
+#define SE_ASSERT(condition, ...)                                                                           \
+  do {                                                                                                      \
+    if (!(condition)) {                                                                                     \
+      core::Logger::fatal("Assertion failed: {} in {} at {}:{}", #condition, __FILE__, __func__, __LINE__); \
+      core::Logger::fatal(__VA_ARGS__);                                                                     \
+      if (std::getenv("SE_BREAK_ON_ASSERT")) { std::abort(); }                                              \
+      std::terminate();                                                                                     \
+    }                                                                                                       \
   } while (false)
 #else
 #define SE_ASSERT(condition, ...) ((void)0)
 #endif
 
 #ifndef NDEBUG
-#define SE_UNREACHABLE(...)                                                                                            \
-  do {                                                                                                                 \
-    LOG_FATAL("Unreachable code reached in {} at {}:{}", __func__, __FILE__, __LINE__);                                \
-    LOG_FATAL(__VA_ARGS__);                                                                                            \
-    if (std::getenv("SE_BREAK_ON_UNREACHABLE")) {                                                                      \
-      std::abort();                                                                                                    \
-    }                                                                                                                  \
-    std::terminate();                                                                                                  \
+#define SE_UNREACHABLE(...)                                                                       \
+  do {                                                                                            \
+    core::Logger::fatal("Unreachable code reached in {} at {}:{}", __func__, __FILE__, __LINE__); \
+    core::Logger::fatal(__VA_ARGS__);                                                             \
+    if (std::getenv("SE_BREAK_ON_UNREACHABLE")) { std::abort(); }                                 \
+    std::terminate();                                                                             \
   } while (false)
 #else
 #if defined(__GNUC__) || defined(__clang__)

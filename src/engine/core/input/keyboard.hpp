@@ -38,7 +38,7 @@ public:
   ~Keyboard()
   {
     if (std::any_of(m_callbacks.begin(), m_callbacks.end(), [](const auto &pair) { return !pair.empty(); })) {
-      LOG_WARN("Keyboard has {} callbacks left",
+      Logger::warn("Keyboard has {} callbacks left",
         std::count_if(m_callbacks.begin(), m_callbacks.end(), [](const auto &pair) { return !pair.empty(); }));
     }
   }

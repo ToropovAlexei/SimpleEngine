@@ -1,8 +1,23 @@
+#pragma once
 #include <engine/core/logger.hpp>
+#include <source_location>
 
-#define SE_THROW_ERROR(msg)                                                                                            \
-  do {                                                                                                                 \
-    LOG_FATAL("Runtime error: {}", msg);                                                                               \
-    LOG_FATAL("Exception: {} at {}:{}", __FILE__, __func__, __LINE__);                                                 \
-    throw std::runtime_error(std::string("Runtime error: ") + msg);                                                    \
-  } while (false)
+namespace engine::core {
+template<typename... Args> struct panic
+{
+  explicit panic(fmt::format_string<Args...> fmt,
+    Args &&...args,
+    const std::source_location &loc = std::source_location::current())
+  {
+    std::string message = fmt::format(fmt, std::forward<Args>(args)...);
+    Logger::fatal("PANIC: {}", message);
+    Logger::fatal("Location: {}:{} in {}", loc.file_name(), loc.line(), loc.function_name());
+
+    throw std::runtime_error(
+      fmt::format("PANIC at {}:{} in {}: {}", loc.file_name(), loc.line(), loc.function_name(), message));
+  }
+};
+
+template<typename... Args> panic(fmt::format_string<Args...>, Args &&...) -> panic<Args...>;
+
+}// namespace engine::core

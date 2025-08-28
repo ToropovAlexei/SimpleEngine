@@ -1,32 +1,35 @@
 #include "vulkan_swapchain.hpp"
 #include <engine/core/logger.hpp>
 
-namespace engine {
-namespace renderer {
-VulkanSwapchain::VulkanSwapchain(VulkanDevice *device, vk::Extent2D extent) : m_device{device}, m_windowExtent{extent} {
+namespace engine::renderer {
+VulkanSwapchain::VulkanSwapchain(VulkanDevice *device, vk::Extent2D extent)
+  : m_device{ device }, m_windowExtent{ extent }
+{
   init();
-  LOG_INFO("Vulkan swapchain created");
+  core::Logger::info("Vulkan swapchain created");
 }
 
-VulkanSwapchain::VulkanSwapchain(VulkanDevice *device, vk::Extent2D extent,
-                                 std::shared_ptr<VulkanSwapchain> previousSwapChain)
-    : m_device{device}, m_windowExtent{extent}, m_oldSwapChain{previousSwapChain} {
+VulkanSwapchain::VulkanSwapchain(VulkanDevice *device,
+  vk::Extent2D extent,
+  std::shared_ptr<VulkanSwapchain> previousSwapChain)
+  : m_device{ device }, m_windowExtent{ extent }, m_oldSwapChain{ previousSwapChain }
+{
   init();
   m_oldSwapChain = nullptr;
-  LOG_INFO("Vulkan swapchain created");
+  core::Logger::info("Vulkan swapchain created");
 }
 
-void VulkanSwapchain::init() {
+void VulkanSwapchain::init()
+{
   createSwapChain();
   createImageViews();
   createDepthResources();
   createSyncObjects();
 }
 
-VulkanSwapchain::~VulkanSwapchain() {
-  for (auto imageView : m_swapChainImageViews) {
-    m_device->getDevice().destroyImageView(imageView);
-  }
+VulkanSwapchain::~VulkanSwapchain()
+{
+  for (auto imageView : m_swapChainImageViews) { m_device->getDevice().destroyImageView(imageView); }
   m_swapChainImageViews.clear();
 
   if (m_swapChain != nullptr) {
@@ -46,20 +49,26 @@ VulkanSwapchain::~VulkanSwapchain() {
     m_device->getDevice().destroyFence(m_inFlightFences[i]);
   }
 
-  LOG_INFO("Vulkan swapchain destroyed");
+  core::Logger::info("Vulkan swapchain destroyed");
 }
 
-vk::Result VulkanSwapchain::acquireNextImage(uint32_t *imageIndex) {
-  m_device->getDevice().waitForFences({m_inFlightFences[m_currentFrame]}, vk::True,
-                                      std::numeric_limits<uint64_t>::max());
+vk::Result VulkanSwapchain::acquireNextImage(uint32_t *imageIndex)
+{
+  m_device->getDevice().waitForFences(
+    { m_inFlightFences[m_currentFrame] }, vk::True, std::numeric_limits<uint64_t>::max());
 
-  auto result = vkAcquireNextImageKHR(m_device->getDevice(), m_swapChain, std::numeric_limits<uint64_t>::max(),
-                                      m_imageAvailableSemaphores[m_currentFrame], VK_NULL_HANDLE, imageIndex);
+  auto result = vkAcquireNextImageKHR(m_device->getDevice(),
+    m_swapChain,
+    std::numeric_limits<uint64_t>::max(),
+    m_imageAvailableSemaphores[m_currentFrame],
+    VK_NULL_HANDLE,
+    imageIndex);
 
   return vk::Result(result);
 }
 
-vk::Result VulkanSwapchain::submitCommandBuffers(const vk::CommandBuffer *buffers, uint32_t *imageIndex) {
+vk::Result VulkanSwapchain::submitCommandBuffers(const vk::CommandBuffer *buffers, uint32_t *imageIndex)
+{
   if (m_imagesInFlight[*imageIndex] != nullptr) {
     m_device->getDevice().waitForFences(m_imagesInFlight[*imageIndex], vk::True, std::numeric_limits<uint64_t>::max());
   }
@@ -67,8 +76,8 @@ vk::Result VulkanSwapchain::submitCommandBuffers(const vk::CommandBuffer *buffer
 
   vk::SubmitInfo submitInfo = {};
 
-  vk::Semaphore waitSemaphores[] = {m_imageAvailableSemaphores[m_currentFrame]};
-  vk::PipelineStageFlags waitStages[] = {vk::PipelineStageFlagBits::eColorAttachmentOutput};
+  vk::Semaphore waitSemaphores[] = { m_imageAvailableSemaphores[m_currentFrame] };
+  vk::PipelineStageFlags waitStages[] = { vk::PipelineStageFlagBits::eColorAttachmentOutput };
   submitInfo.waitSemaphoreCount = 1;
   submitInfo.pWaitSemaphores = waitSemaphores;
   submitInfo.pWaitDstStageMask = waitStages;
@@ -76,7 +85,7 @@ vk::Result VulkanSwapchain::submitCommandBuffers(const vk::CommandBuffer *buffer
   submitInfo.commandBufferCount = 1;
   submitInfo.pCommandBuffers = buffers;
 
-  auto signalSemaphores = std::to_array({m_renderFinishedSemaphores[m_currentFrame]});
+  auto signalSemaphores = std::to_array({ m_renderFinishedSemaphores[m_currentFrame] });
   submitInfo.signalSemaphoreCount = signalSemaphores.size();
   submitInfo.pSignalSemaphores = signalSemaphores.data();
 
@@ -88,7 +97,7 @@ vk::Result VulkanSwapchain::submitCommandBuffers(const vk::CommandBuffer *buffer
   presentInfo.waitSemaphoreCount = signalSemaphores.size();
   presentInfo.pWaitSemaphores = signalSemaphores.data();
 
-  auto swapChains = std::to_array({m_swapChain});
+  auto swapChains = std::to_array({ m_swapChain });
   presentInfo.swapchainCount = swapChains.size();
   presentInfo.pSwapchains = swapChains.data();
 
@@ -101,7 +110,8 @@ vk::Result VulkanSwapchain::submitCommandBuffers(const vk::CommandBuffer *buffer
   return vk::Result(result);
 }
 
-void VulkanSwapchain::createSwapChain() {
+void VulkanSwapchain::createSwapChain()
+{
   SwapChainSupportDetails swapChainSupport = m_device->getSwapChainSupport();
 
   vk::SurfaceFormatKHR surfaceFormat = chooseSwapSurfaceFormat(swapChainSupport.formats);
@@ -123,7 +133,7 @@ void VulkanSwapchain::createSwapChain() {
   createInfo.imageUsage = vk::ImageUsageFlagBits::eColorAttachment;
 
   QueueFamilyIndices indices = m_device->findQueueFamilies();
-  uint32_t queueFamilyIndices[] = {indices.graphicsFamily.value(), indices.presentFamily.value()};
+  uint32_t queueFamilyIndices[] = { indices.graphicsFamily.value(), indices.presentFamily.value() };
 
   if (indices.graphicsFamily != indices.presentFamily) {
     createInfo.imageSharingMode = vk::SharingMode::eConcurrent;
@@ -131,8 +141,8 @@ void VulkanSwapchain::createSwapChain() {
     createInfo.pQueueFamilyIndices = queueFamilyIndices;
   } else {
     createInfo.imageSharingMode = vk::SharingMode::eExclusive;
-    createInfo.queueFamilyIndexCount = 0;     // Optional
-    createInfo.pQueueFamilyIndices = nullptr; // Optional
+    createInfo.queueFamilyIndexCount = 0;// Optional
+    createInfo.pQueueFamilyIndices = nullptr;// Optional
   }
 
   createInfo.preTransform = swapChainSupport.capabilities.currentTransform;
@@ -158,7 +168,8 @@ void VulkanSwapchain::createSwapChain() {
   m_aspectRatio = static_cast<float>(m_swapChainExtent.width) / static_cast<float>(m_swapChainExtent.height);
 }
 
-void VulkanSwapchain::createImageViews() {
+void VulkanSwapchain::createImageViews()
+{
   m_swapChainImageViews.resize(m_swapChainImages.size());
   for (size_t i = 0; i < m_swapChainImages.size(); i++) {
     vk::ImageViewCreateInfo viewInfo{};
@@ -175,7 +186,8 @@ void VulkanSwapchain::createImageViews() {
   }
 }
 
-void VulkanSwapchain::createDepthResources() {
+void VulkanSwapchain::createDepthResources()
+{
   vk::Format depthFormat = findDepthFormat();
   m_swapChainDepthFormat = depthFormat;
   vk::Extent2D swapChainExtent = getSwapChainExtent();
@@ -186,37 +198,38 @@ void VulkanSwapchain::createDepthResources() {
 
   for (size_t i = 0; i < m_depthImages.size(); i++) {
     vk::ImageCreateInfo imageInfo = {
-        .imageType = vk::ImageType::e2D,
-        .format = depthFormat,
-        .extent = {.width = swapChainExtent.width, .height = swapChainExtent.height, .depth = 1},
-        .mipLevels = 1,
-        .arrayLayers = 1,
-        .samples = vk::SampleCountFlagBits::e1,
-        .tiling = vk::ImageTiling::eOptimal,
-        .usage = vk::ImageUsageFlagBits::eDepthStencilAttachment,
-        .sharingMode = vk::SharingMode::eExclusive,
-        .queueFamilyIndexCount = 0,
-        .pQueueFamilyIndices = nullptr,
-        .initialLayout = vk::ImageLayout::eUndefined,
+      .imageType = vk::ImageType::e2D,
+      .format = depthFormat,
+      .extent = { .width = swapChainExtent.width, .height = swapChainExtent.height, .depth = 1 },
+      .mipLevels = 1,
+      .arrayLayers = 1,
+      .samples = vk::SampleCountFlagBits::e1,
+      .tiling = vk::ImageTiling::eOptimal,
+      .usage = vk::ImageUsageFlagBits::eDepthStencilAttachment,
+      .sharingMode = vk::SharingMode::eExclusive,
+      .queueFamilyIndexCount = 0,
+      .pQueueFamilyIndices = nullptr,
+      .initialLayout = vk::ImageLayout::eUndefined,
     };
 
     m_device->createImageWithInfo(imageInfo, VMA_MEMORY_USAGE_AUTO, m_depthImages[i], m_depthImageMemorys[i]);
 
-    vk::ImageViewCreateInfo viewInfo = {.image = m_depthImages[i],
-                                        .viewType = vk::ImageViewType::e2D,
-                                        .format = depthFormat,
-                                        .components = {},
-                                        .subresourceRange = {.aspectMask = vk::ImageAspectFlagBits::eDepth,
-                                                             .baseMipLevel = 0,
-                                                             .levelCount = 1,
-                                                             .baseArrayLayer = 0,
-                                                             .layerCount = 1}};
+    vk::ImageViewCreateInfo viewInfo = { .image = m_depthImages[i],
+      .viewType = vk::ImageViewType::e2D,
+      .format = depthFormat,
+      .components = {},
+      .subresourceRange = { .aspectMask = vk::ImageAspectFlagBits::eDepth,
+        .baseMipLevel = 0,
+        .levelCount = 1,
+        .baseArrayLayer = 0,
+        .layerCount = 1 } };
 
     m_depthImageViews[i] = m_device->getDevice().createImageView(viewInfo).value;
   }
 }
 
-void VulkanSwapchain::createSyncObjects() {
+void VulkanSwapchain::createSyncObjects()
+{
   m_imageAvailableSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
   m_renderFinishedSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
   m_inFlightFences.resize(MAX_FRAMES_IN_FLIGHT);
@@ -225,7 +238,7 @@ void VulkanSwapchain::createSyncObjects() {
   vk::SemaphoreCreateInfo semaphoreInfo = {};
 
   vk::FenceCreateInfo fenceInfo = {
-      .flags = vk::FenceCreateFlagBits::eSignaled,
+    .flags = vk::FenceCreateFlagBits::eSignaled,
   };
 
   for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
@@ -235,11 +248,11 @@ void VulkanSwapchain::createSyncObjects() {
   }
 }
 
-vk::SurfaceFormatKHR
-VulkanSwapchain::chooseSwapSurfaceFormat(const std::vector<vk::SurfaceFormatKHR> &availableFormats) {
+vk::SurfaceFormatKHR VulkanSwapchain::chooseSwapSurfaceFormat(const std::vector<vk::SurfaceFormatKHR> &availableFormats)
+{
   for (const auto &availableFormat : availableFormats) {
-    if (availableFormat.format == vk::Format::eB8G8R8A8Unorm &&
-        availableFormat.colorSpace == vk::ColorSpaceKHR::eSrgbNonlinear) {
+    if (availableFormat.format == vk::Format::eB8G8R8A8Unorm
+        && availableFormat.colorSpace == vk::ColorSpaceKHR::eSrgbNonlinear) {
       return availableFormat;
     }
   }
@@ -247,38 +260,40 @@ VulkanSwapchain::chooseSwapSurfaceFormat(const std::vector<vk::SurfaceFormatKHR>
   return availableFormats[0];
 }
 
-vk::PresentModeKHR
-VulkanSwapchain::chooseSwapPresentMode(const std::vector<vk::PresentModeKHR> &availablePresentModes) {
+vk::PresentModeKHR VulkanSwapchain::chooseSwapPresentMode(const std::vector<vk::PresentModeKHR> &availablePresentModes)
+{
   for (const auto &availablePresentMode : availablePresentModes) {
     if (availablePresentMode == vk::PresentModeKHR::eMailbox) {
-      LOG_INFO("Present mode: Mailbox");
+      core::Logger::info("Present mode: Mailbox");
       return availablePresentMode;
     }
   }
 
-  LOG_INFO("Present mode: V-Sync");
+  core::Logger::info("Present mode: V-Sync");
   return vk::PresentModeKHR::eFifo;
 }
 
-vk::Extent2D VulkanSwapchain::chooseSwapExtent(const vk::SurfaceCapabilitiesKHR &capabilities) {
+vk::Extent2D VulkanSwapchain::chooseSwapExtent(const vk::SurfaceCapabilitiesKHR &capabilities)
+{
   if (capabilities.currentExtent.width != std::numeric_limits<uint32_t>::max()) {
     return capabilities.currentExtent;
   } else {
     vk::Extent2D actualExtent = m_windowExtent;
     actualExtent.width =
-        std::clamp(actualExtent.width, capabilities.minImageExtent.width, capabilities.maxImageExtent.width);
+      std::clamp(actualExtent.width, capabilities.minImageExtent.width, capabilities.maxImageExtent.width);
     actualExtent.height =
-        std::clamp(actualExtent.height, capabilities.minImageExtent.height, capabilities.maxImageExtent.height);
+      std::clamp(actualExtent.height, capabilities.minImageExtent.height, capabilities.maxImageExtent.height);
 
     return actualExtent;
   }
 }
 
-vk::Format VulkanSwapchain::findDepthFormat() {
+vk::Format VulkanSwapchain::findDepthFormat()
+{
   return m_device->findSupportedFormat(
-      {vk::Format::eD32Sfloat, vk::Format::eD32SfloatS8Uint, vk::Format::eD24UnormS8Uint}, vk::ImageTiling::eOptimal,
-      vk::FormatFeatureFlagBits::eDepthStencilAttachment);
+    { vk::Format::eD32Sfloat, vk::Format::eD32SfloatS8Uint, vk::Format::eD24UnormS8Uint },
+    vk::ImageTiling::eOptimal,
+    vk::FormatFeatureFlagBits::eDepthStencilAttachment);
 }
 
-} // namespace renderer
-} // namespace engine
+}// namespace engine::renderer
