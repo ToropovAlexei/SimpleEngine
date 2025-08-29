@@ -2,7 +2,8 @@
 #include "engine/renderer/open_gl/gl_shader.hpp"
 
 namespace engine::renderer {
-GLShaderProgram::GLShaderProgram(const ShaderProgramCreateDesc desc) {
+GLShaderProgram::GLShaderProgram(const ShaderProgramCreateDesc desc)
+{
   m_shaderProgramId = glCreateProgram();
   auto vertexShader = GLShader(desc.vertexShaderCode, ShaderType::Vertex);
   auto fragmentShader = GLShader(desc.fragmentShaderCode, ShaderType::Fragment);
@@ -13,5 +14,5 @@ GLShaderProgram::GLShaderProgram(const ShaderProgramCreateDesc desc) {
 
 GLShaderProgram::~GLShaderProgram() { glDeleteProgram(m_shaderProgramId); }
 
-void GLShaderProgram::use() { glUseProgram(m_shaderProgramId); }
-} // namespace engine::renderer
+void GLShaderProgram::use() const { glUseProgram(m_shaderProgramId); }
+}// namespace engine::renderer

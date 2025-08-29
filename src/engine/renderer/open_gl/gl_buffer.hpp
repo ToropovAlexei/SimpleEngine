@@ -71,7 +71,7 @@ public:
 
   void update(size_t offset, size_t size, const void *data);
 
-  unsigned int id() const { return m_id; }
+  [[nodiscard]] unsigned int id() const { return m_id; }
 
 private:
   unsigned int m_id;
