@@ -64,6 +64,12 @@ CPMAddPackage(
   GITHUB_REPOSITORY gabime/spdlog
 )
 
+CPMAddPackage(
+  NAME tinygltf
+  GITHUB_REPOSITORY syoyo/tinygltf
+  GIT_TAG release
+)
+
 set(GLAD_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/glad/include)
 add_library(glad STATIC ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/glad/src/gl.c)
 target_include_directories(glad PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/glad/include)
@@ -113,11 +119,13 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
     glad
     efsw
     spdlog::spdlog
+    tinygltf
 )
 
 target_compile_definitions(${PROJECT_NAME} PRIVATE
   STB_IMAGE_IMPLEMENTATION
   STB_IMAGE_RESIZE_IMPLEMENTATION
+  STB_IMAGE_WRITE_IMPLEMENTATION
   VULKAN_HPP_DISPATCH_LOADER_DYNAMIC
   VULKAN_HPP_NO_CONSTRUCTORS
   VULKAN_HPP_NO_EXCEPTIONS

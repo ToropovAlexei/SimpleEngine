@@ -1,6 +1,7 @@
 #pragma once
 
 #include "engine/core/assert.hpp"
+#include "engine/core/assets_manager.hpp"
 #include "engine/renderer/gl_renderer.hpp"
 #include "engine/renderer/open_gl/gl_buffer.hpp"
 #include "engine/renderer/open_gl/gl_shader_program.hpp"
@@ -85,4 +86,6 @@ private:
                          0.0f};
 
   bool m_shouldReloadShaders = false;
+
+  tinygltf::Model m_gltfModel;
 };

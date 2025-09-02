@@ -7,6 +7,7 @@
 #include <functional>
 #include <unordered_map>
 #endif
+#include "tiny_gltf.h"
 #include <filesystem>
 #include <string_view>
 
@@ -56,6 +57,7 @@ private:
 public:
   [[nodiscard]] static Texture loadTexture(std::string_view path);
   [[nodiscard]] static std::vector<char> loadShader(std::string_view path);
+  [[nodiscard]] static tinygltf::Model loadModel(std::string_view path);
 
 #ifndef NDEBUG
   [[nodiscard]] static CallbackId subscribe(FileChangeCallback callback);
@@ -78,6 +80,9 @@ private:
   static std::filesystem::path assetsPath;
   static std::filesystem::path shadersPath;
   static std::filesystem::path texturesPath;
+  static std::filesystem::path modelsPath;
+
+  static tinygltf::TinyGLTF loader;
 
 #ifndef NDEBUG
   static std::unique_ptr<efsw::FileWatcher> efswWatcher;

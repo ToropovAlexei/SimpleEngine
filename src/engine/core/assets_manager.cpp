@@ -1,5 +1,7 @@
 #include "assets_manager.hpp"
 #include "stb_image.h"
+#include "tiny_gltf.h"
+#define TINYGLTF_IMPLEMENTATION
 #include <cstring>
 #include <engine/core/assert.hpp>
 #include <engine/core/filesystem.hpp>
@@ -77,6 +79,18 @@ std::string AssetsManager::loadShaderWithIncludes(const std::filesystem::path &p
   return buffer.str();
 }
 
+tinygltf::Model AssetsManager::loadModel(std::string_view path)
+{
+  std::string error;
+  std::string warn;
+  tinygltf::Model model;
+  std::string filename = modelsPath / path;
+  loader.LoadASCIIFromFile(&model, &error, &warn, filename);
+  if (error.size() > 0) { Logger::error("{}", error); }
+  if (warn.size() > 0) { Logger::warn("{}", warn); }
+  return model;
+}
+
 std::vector<char> AssetsManager::readFile(std::string_view filename)
 {
   std::ifstream file(shadersPath / filename.data(), std::ios::ate | std::ios::binary);
@@ -147,4 +161,7 @@ size_t AssetsManager::nextCallbackId = 0;
 std::filesystem::path AssetsManager::assetsPath = getAbsolutePath("assets");
 std::filesystem::path AssetsManager::shadersPath = AssetsManager::assetsPath / "shaders";
 std::filesystem::path AssetsManager::texturesPath = AssetsManager::assetsPath / "textures";
+std::filesystem::path AssetsManager::modelsPath = AssetsManager::assetsPath / "models";
+
+tinygltf::TinyGLTF AssetsManager::loader = tinygltf::TinyGLTF();
 }// namespace engine::core

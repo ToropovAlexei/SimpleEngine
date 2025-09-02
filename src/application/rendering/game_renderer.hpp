@@ -1,10 +1,12 @@
 #pragma once
 #include "application/rendering/test_renderer/gl_test_renderer.hpp"
 #include "engine/renderer/gl_renderer.hpp"
+#include "tiny_gltf.h"
 #include <engine/core/window.hpp>
 #include <memory>
 
-class GameRenderer {
+class GameRenderer
+{
 public:
   GameRenderer(engine::core::Window &window);
 
@@ -13,11 +15,13 @@ public:
   void updateRenderers(float dt);
 
   void setRenderSize(int width, int height);
-  void setView(const glm::mat4 &view) {
+  void setView(const glm::mat4 &view)
+  {
     m_view = view;
     m_testRenderer->setView(view);
   }
-  void setProjection(const glm::mat4 &projection) {
+  void setProjection(const glm::mat4 &projection)
+  {
     m_projection = projection;
     m_testRenderer->setProjection(projection);
   }
@@ -29,6 +33,7 @@ private:
   std::unique_ptr<GlTestRenderer> m_testRenderer;
   glm::mat4 m_view;
   glm::mat4 m_projection;
+  tinygltf::Model m_model;
   // std::unique_ptr<engine::renderer::VulkanDescriptorPool> m_globalPool;
   // GlobalUBO m_ubo;
   // std::vector<VkDescriptorSet> m_globalDescriptorSets;
