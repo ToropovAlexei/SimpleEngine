@@ -53,6 +53,7 @@ public:
 
 private:
   void reloadShaders();
+  void renderNode(int node_index);
 
 private:
   [[maybe_unused]] engine::renderer::GlRenderer *m_renderer;
@@ -88,4 +89,5 @@ private:
   bool m_shouldReloadShaders = false;
 
   tinygltf::Model m_gltfModel;
+  std::vector<std::unique_ptr<engine::renderer::GLTexture>> m_gltfTextures;
 };

@@ -15,4 +15,10 @@ GLShaderProgram::GLShaderProgram(const ShaderProgramCreateDesc desc)
 GLShaderProgram::~GLShaderProgram() { glDeleteProgram(m_shaderProgramId); }
 
 void GLShaderProgram::use() const { glUseProgram(m_shaderProgramId); }
+
+void GLShaderProgram::setInt(const std::string &name, int value)
+{
+  glUseProgram(m_shaderProgramId);
+  glUniform1i(glGetUniformLocation(m_shaderProgramId, name.c_str()), value);
+}
 }// namespace engine::renderer

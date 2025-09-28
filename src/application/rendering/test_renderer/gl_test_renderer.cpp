@@ -235,6 +235,15 @@ void GlTestRenderer::render()
   m_lightVAO->bind();
   glDrawElements(GL_TRIANGLES, static_cast<GLsizei>(indices.size()), GL_UNSIGNED_INT, nullptr);
 
+  // --- Garbage code to render glTF model ---
+  m_shader->use(); // Or a different shader if you have one for models
+
+  const auto& scene = m_gltfModel.scenes[m_gltfModel.defaultScene];
+  for (int node_index : scene.nodes) {
+    renderNode(node_index);
+  }
+  // --- End of garbage code ---
+
   ImGui::Begin("Test");
   ImGui::Text("Application average %.3f ms/frame (%.1f FPS)",
     static_cast<double>(1000.0f / ImGui::GetIO().Framerate),
@@ -280,4 +289,124 @@ void GlTestRenderer::update(float dt)
   m_uboData.lightPos = glm::vec3(-8.0f + std::sin(m_uboData.elapsedTime) * 6.0f, 2.0f, -15.0f);
   m_ssbo->update(m_instances);
   m_materialsSSBO->update(m_materials);
+}
+
+void GlTestRenderer::renderNode(int node_index) {
+    const auto& node = m_gltfModel.nodes[node_index];
+    if (node.mesh > -1) {
+        const auto& mesh = m_gltfModel.meshes[node.mesh];
+        for (const auto& primitive : mesh.primitives) {
+            const auto& indexAccessor = m_gltfModel.accessors[primitive.indices];
+            const auto& indexBufferView = m_gltfModel.bufferViews[indexAccessor.bufferView];
+            const auto& indexBuffer = m_gltfModel.buffers[indexBufferView.buffer];
+
+            const float* positionBuffer = nullptr;
+            const float* normalBuffer = nullptr;
+            const float* texcoordBuffer = nullptr;
+            size_t numVertices = 0;
+
+            if (primitive.attributes.find("POSITION") != primitive.attributes.end()) {
+                const auto& accessor = m_gltfModel.accessors.at(primitive.attributes.at("POSITION"));
+                const auto& bufferView = m_gltfModel.bufferViews.at(accessor.bufferView);
+                const auto& buffer = m_gltfModel.buffers.at(bufferView.buffer);
+                numVertices = accessor.count;
+                positionBuffer = reinterpret_cast<const float*>(&(buffer.data[bufferView.byteOffset + accessor.byteOffset]));
+            }
+
+            if (primitive.attributes.find("NORMAL") != primitive.attributes.end()) {
+                const auto& accessor = m_gltfModel.accessors.at(primitive.attributes.at("NORMAL"));
+                const auto& bufferView = m_gltfModel.bufferViews.at(accessor.bufferView);
+                const auto& buffer = m_gltfModel.buffers.at(bufferView.buffer);
+                normalBuffer = reinterpret_cast<const float*>(&(buffer.data[bufferView.byteOffset + accessor.byteOffset]));
+            }
+
+            if (primitive.attributes.find("TEXCOORD_0") != primitive.attributes.end()) {
+                const auto& accessor = m_gltfModel.accessors.at(primitive.attributes.at("TEXCOORD_0"));
+                const auto& bufferView = m_gltfModel.bufferViews.at(accessor.bufferView);
+                const auto& buffer = m_gltfModel.buffers.at(bufferView.buffer);
+                texcoordBuffer = reinterpret_cast<const float*>(&(buffer.data[bufferView.byteOffset + accessor.byteOffset]));
+            }
+
+
+            if (positionBuffer) {
+                std::vector<Vertex> modelVertices;
+                modelVertices.resize(numVertices);
+                for(size_t i=0; i<numVertices; ++i) {
+                    modelVertices[i].pos[0] = positionBuffer[i*3 + 0];
+                    modelVertices[i].pos[1] = positionBuffer[i*3 + 1];
+                    modelVertices[i].pos[2] = positionBuffer[i*3 + 2];
+
+                    if(normalBuffer) {
+                        modelVertices[i].normal[0] = normalBuffer[i*3 + 0];
+                        modelVertices[i].normal[1] = normalBuffer[i*3 + 1];
+                        modelVertices[i].normal[2] = normalBuffer[i*3 + 2];
+                    }
+
+                    if(texcoordBuffer) {
+                        modelVertices[i].uv[0] = texcoordBuffer[i*2 + 0];
+                        modelVertices[i].uv[1] = texcoordBuffer[i*2 + 1];
+                    } else {
+                        modelVertices[i].uv[0] = 0.0f;
+                        modelVertices[i].uv[1] = 0.0f;
+                    }
+                }
+
+                auto vbo = GLBuffer::createVBO(modelVertices);
+                std::unique_ptr<GLBuffer> ibo;
+
+                const void* indexData = &(indexBuffer.data[indexBufferView.byteOffset + indexAccessor.byteOffset]);
+
+                switch (indexAccessor.componentType) {
+                    case TINYGLTF_COMPONENT_TYPE_UNSIGNED_INT: {
+                        std::vector<unsigned int> indices(indexAccessor.count);
+                        memcpy(indices.data(), indexData, indexAccessor.count * sizeof(unsigned int));
+                        ibo = GLBuffer::createIBO(indices);
+                        break;
+                    }
+                    case TINYGLTF_COMPONENT_TYPE_UNSIGNED_SHORT: {
+                        std::vector<unsigned short> indices(indexAccessor.count);
+                        memcpy(indices.data(), indexData, indexAccessor.count * sizeof(unsigned short));
+                        ibo = GLBuffer::createIBO(indices);
+                        break;
+                    }
+                    case TINYGLTF_COMPONENT_TYPE_UNSIGNED_BYTE: {
+                        std::vector<unsigned char> indices(indexAccessor.count);
+                        memcpy(indices.data(), indexData, indexAccessor.count * sizeof(unsigned char));
+                        ibo = GLBuffer::createIBO(indices);
+                        break;
+                    }
+                    default:
+                        // Should not happen for valid glTF
+                        continue;
+                }
+
+                if (!ibo) {
+                    continue;
+                }
+
+                auto vao = std::make_unique<GLVertexArray>();
+                vao->attachVertexBuffer(vbo.get(), 0, sizeof(Vertex), 0);
+                vao->attachIndexBuffer(ibo.get());
+
+                vao->setAttributeFormat(0, 3, GL_FLOAT, GL_FALSE, offsetof(Vertex, pos));
+                vao->bindAttribute(0, 0);
+                vao->enableAttribute(0);
+
+                vao->setAttributeFormat(1, 3, GL_FLOAT, GL_FALSE, offsetof(Vertex, normal));
+                vao->bindAttribute(1, 0);
+                vao->enableAttribute(1);
+
+                vao->setAttributeFormat(2, 2, GL_FLOAT, GL_FALSE, offsetof(Vertex, uv));
+                vao->bindAttribute(2, 0);
+                vao->enableAttribute(2);
+
+                vao->bind();
+                glDrawElements(GL_TRIANGLES, static_cast<GLsizei>(indexAccessor.count), indexAccessor.componentType, (void*)0);
+            }
+        }
+    }
+
+    for (int child_index : node.children) {
+        renderNode(child_index);
+    }
 }

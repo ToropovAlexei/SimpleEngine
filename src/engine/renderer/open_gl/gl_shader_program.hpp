@@ -1,5 +1,6 @@
 #pragma once
 #include <glad/gl.h>
+#include <string>
 #include <vector>
 
 namespace engine::renderer {
@@ -16,6 +17,7 @@ public:
   ~GLShaderProgram();
 
   void use() const;
+  void setInt(const std::string &name, int value);
 
 private:
   unsigned int m_shaderProgramId;
